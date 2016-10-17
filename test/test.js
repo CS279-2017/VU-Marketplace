@@ -54,16 +54,19 @@ var base_url = "http://localhost:3000/"
                 done();
             });
         });
-
-        // it("returns Hello World", function(done) {
-        //     request.get(base_url, function(error, response, body) {
-        //         //expect(body).toBe("Hello World");
-        //         assert.equal("Hello World!", body);
-        //         server.closeServer();
-        //         done();
-        //     });
-        // });
     });
+        // describe("User Test", function(){
+        //     it("convert to JSON", function(done){
+        //         var user = new User();
+        //         return {
+        //             id: this.id,
+        //             username: this.username,
+        //             password: this.password,
+        //             venmo_id: this.venmo_id,
+        //         };
+        //     }
+        // })
+
 });
 // describe('Array', function() {
 //     describe('#indexOf()', function() {

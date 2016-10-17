@@ -22,24 +22,35 @@ var server = app.listen(3000, function () {
     users_collection = new UsersCollection();
     var user = new User("bowen", "jin");
     var transaction = new Transaction();
-    transaction.user_buy = user;
-    var conversation = new Conversation();
-    conversation.send_message(new Message());
-    conversation.send_message(new Message());
-    conversation.send_message(new Message());
-    transaction.conversation = conversation;
-    console.log(JSON.stringify(transaction));
+    transaction.conversation = new Conversation();
+    user.setCurrentTransaction(transaction);
+    user.sendMessage('hello');
+    console.log(JSON.stringify(user.current_transaction));
 });
 
+
 function Listing(id, title, description, location, creation_time, expiration_time, price, buy){
-    this.id = id;
-    this.title = title;
-    this.description = description;
-    this.location = location;
-    this.creation_time = creation_time;
-    this.expiration_time = expiration_time;
-    this.price = price;
-    this.buy = buy;
+    //Listing(id, titile, description, location, creation_time, expiration_time, price, buy)
+    if(arguments.length == 8) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.location = location;
+        this.creation_time = creation_time;
+        this.expiration_time = expiration_time;
+        this.price = price;
+        this.buy = buy;
+    }
+        //Listing()
+    else if(arguments.length == 0){
+        //create an empty listing
+    }
+        //Listing(id)
+    else if(arguments.length == 1){
+        //get argument from database, get listing with the id
+    }
+
+
 }
 
 Listing.prototype = {
@@ -89,6 +100,26 @@ User.prototype = {
     getTransactionHistory: function(){
         //query database for all transactions involving the user
     },
+
+    sendMessage: function(text){
+        //sends a message to the current conversation
+        //current_transaction cannot be null
+        if(this.current_transaction == null){
+            throw "tried to send message to null Transaction";
+        }
+        var message = new Message(new Date(), text, this);
+        this.current_transaction.conversation.send_message(message);
+    },
+    convertToJSON: function(){
+        //this is necessary because there are properties of user that shouldn't be converted to JSON, shouldn't be saved to database
+        return JSON.stringify({
+            id: this.id,
+            username: this.username,
+            password: this.password,
+            venmo_id: this.venmo_id,
+        });
+    }
+    
 }
 
 //a object that contains all the users that have ever been registered
@@ -170,10 +201,10 @@ Conversation.prototype = {
     },
 }
 
-function Message(){
-    this.text = "";
-    this.user = null;
-    this.time_sent = null;
+function Message(text, user, time_sent){
+    this.text = text;
+    this.user = user;
+    this.time_sent = time_sent;
 }
 
 Message.prototype = {
