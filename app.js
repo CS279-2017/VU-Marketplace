@@ -20,7 +20,15 @@ var server = app.listen(3000, function () {
     active_listings = new ActiveListings();
     active_transactions = new ActiveTransactions();
     users_collection = new UsersCollection();
-    console.log(JSON.stringify(new User("bowen", "jin")));
+    var user = new User("bowen", "jin");
+    var transaction = new Transaction();
+    transaction.user_buy = user;
+    var conversation = new Conversation();
+    conversation.send_message(new Message());
+    conversation.send_message(new Message());
+    conversation.send_message(new Message());
+    transaction.conversation = conversation;
+    console.log(JSON.stringify(transaction));
 });
 
 function Listing(id, title, description, location, creation_time, expiration_time, price, buy){
@@ -36,10 +44,6 @@ function Listing(id, title, description, location, creation_time, expiration_tim
 
 Listing.prototype = {
     constructor: Listing,
-    convertToJson: function(){
-
-    }
-
 }
 
 function ActiveListings(){
@@ -84,14 +88,6 @@ User.prototype = {
     },
     getTransactionHistory: function(){
         //query database for all transactions involving the user
-    },
-    convertToJson: function(){
-        return JSON.stringify(
-            {id: this.id,
-            username: this.username,
-            password: this.password,
-            venmo_id: this.venmo_id,}
-        );
     },
 }
 
@@ -140,17 +136,6 @@ function Transaction(){
 
 Transaction.prototype = {
     constructor: Transaction,
-    convertToJson: function(){
-        return JSON.stringify(
-            {
-                id: this.id,
-                user_buy: this.user_buy.convertToJson(),
-                user_sell: this.user_sell.convertToJson(),
-                conversation: this.conversation.convertToJson(),
-                listing: this.listing.convertToJson(),
-            }
-        );
-    }
 }
 
 //current active transactions, adds a transaction to database when it is removed from active transactions
@@ -181,15 +166,8 @@ function Conversation(){
 Conversation.prototype = {
     constructor: Conversation,
     send_message: function(message){
-        messages.add(message);
+        this.messages.push(message);
     },
-    convertToJson: function(){
-        return JSON.stringify(
-            {
-                messages: JSON.stringify(this.messages),
-            }
-        );
-    }
 }
 
 function Message(){
@@ -200,13 +178,6 @@ function Message(){
 
 Message.prototype = {
     constructor: Message,
-    // convertToJson: function(){
-    //     return JSON.stringify(
-    //         {
-    //             text: JSON.stringify(this.messages),
-    //         }
-    //     );
-    // }
 }
 
 function validateLoginInfo(username, password){
