@@ -33,6 +33,10 @@ var assert = require('assert');
 var server = require("../app.js");
 var request = require("request");
 var base_url = "http://localhost:3000/"
+// var mongodb = require('mongodb');
+//
+//
+//
 
 
 
@@ -78,7 +82,9 @@ describe("Hello World Server", function() {
             //TODO: write a test to ensure invalid username/password is caught and communicated to client
         });
         
-        it("invalid email")
+        it("invalid email", function(){
+           //TODO: test to make sure that an invalid email is caught 
+        });
     });
 
 });

@@ -1,6 +1,39 @@
 var express = require('express');
 var bodyParser = require('body-parser')
 
+//We need to work with "MongoClient" interface in order to connect to a mongodb server.
+var MongoClient = require('mongodb').MongoClient;
+// Connection URL. This is where your mongodb server is running.
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// // Use connect method to connect to the Server
+MongoClient.connect(url, function (err, db) {
+    if (err) {
+        console.log('Unable to connect to the mongoDB server. Error:', err);
+    } else {
+        //HURRAY!! We are connected. :)
+        console.log('Connection established to', url);
+
+    //     // Get the documents collection
+    //     var collection = db.collection('users');
+    //
+    //     //Create some users
+    //     var user1 = {name: 'modulus admin', age: 42, roles: ['admin', 'moderator', 'user']};
+    //     var user2 = {name: 'modulus user', age: 22, roles: ['user']};
+    //     var user3 = {name: 'modulus super admin', age: 92, roles: ['super-admin', 'admin', 'moderator', 'user']};
+    //
+    //     // Insert some users
+    //     collection.insert([user1, user2, user3], function (err, result) {
+    //         if (err) {
+    //             console.log(err);
+    //         } else {
+    //             console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
+    //         }
+    //         //Close connection
+    //         db.close();
+    //     });
+    }
+});
+
 var app = express();
 
 var exports = module.exports = {};
@@ -403,19 +436,28 @@ Message.prototype = {
 function registerEmailAddress(email_address){
     //TODO: implement details below
     //validate email address is real
+
     //validate email address is vanderbilt.edu
+
     //validate email address send out verification email
+
     //notify client that verification email has been sent (client moves to text page with verification code username and password)
 }
 
 function registerVerificationCode(verification_code, username, password, confirm_password){
     //TODO: implement details below
     //verify that the verification code is valid, or if user has clicked on verification link
+
     //verify that username is valid
+
     //verify password is valid
+
     //verify password confirm matches password
+
     //create user and add to database
+
     //store username and password on device
+
     //log client in
 }
 
