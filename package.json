@@ -5,11 +5,11 @@
   "main": "app.js",
   "scripts": {
     "test": "mocha"
-
   },
   "author": "Bowen Jin",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.15.2",
     "express": "^4.14.0",
     "request": "^2.75.0"
   }
