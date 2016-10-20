@@ -1,5 +1,16 @@
 var express = require('express');
 var bodyParser = require('body-parser')
+var nodemailer = require('nodemailer');
+
+// create reusable transporter object using the default SMTP transport
+var transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+        user: 'mealplanapp@gmail.com', // Your email id
+        pass: 'chocho513' // Your password
+    }
+});
+
 
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
@@ -592,7 +603,21 @@ function sendVerificationEmail(email_address){
             });
         }
         function sendEmail(email_address, verification_code){
+            // setup e-mail data with unicode symbols
+            var mailOptions = {
+                from: '"Meal Plan App" <mealplanapp@gmail.com>', // sender address
+                to: email_address, // list of receivers
+                subject: 'Verification Code for Meal Plan App', // Subject line
+                text: 'Verification Code:' + verification_code, // plaintext body
+            };
 
+            // send mail with defined transport object
+            transporter.sendMail(mailOptions, function(error, info){
+                if(error){
+                    return console.log(error);
+                }
+                console.log('Message sent: ' + info.response);
+            });
         }
     });
     return verification_code;
