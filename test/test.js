@@ -59,17 +59,16 @@ describe("Hello World Server", function() {
         });
     });
     describe("Registration", function(){
-        it("convert to JSON", function(done){
-            var json = '{"id":null,"username":"bowen","password":"jin","venmo_id":null,"current_transactions_ids":[],"all_transaction_ids":[],"current_location":null,"logged_in":null}';
-            request.post({
-                headers: {'content-type' : 'application/x-www-form-urlencoded'},
-                url:     base_url,
-                body:    "command=register&json="+json,
-
-            }, function(error, response, body){
-                
-                done();
-            });
+        it("send registration email", function(done){
+            // var json = '{"email_address": "bowen.jin@vanderbilt.edu"}';
+            // request.post({
+            //     headers: {'content-type' : 'application/x-www-form-urlencoded'},
+            //     url:     base_url,
+            //     body:    "command=register&json="+json,
+            //
+            // }, function(error, response, body){
+            //     done();
+            // });
         });
         
         it("SQL injection test", function(done){

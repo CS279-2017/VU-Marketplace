@@ -3,6 +3,7 @@ var bodyParser = require('body-parser')
 var nodemailer = require('nodemailer');
 
 // create reusable transporter object using the default SMTP transport
+//TODO: currently using gmail, switch to mailgun for more sends per day
 var transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
@@ -17,30 +18,6 @@ var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
 var url = 'mongodb://localhost:27017/mealplanappserver';
 // // Use connect method to connect to the Server
-MongoClient.connect(url, function (err, db) {
-    if (err) {
-        console.log('Unable to connect to the mongoDB server. Error:', err);
-    }
-
-    //     // Get the documents collection
-    //     var collection = db.collection('users');
-    //
-    //     //Create some users
-    //     var user1 = {name: 'modulus admin', age: 42, roles: ['admin', 'moderator', 'user']};
-    //     var user2 = {name: 'modulus user', age: 22, roles: ['user']};
-    //     var user3 = {name: 'modulus super admin', age: 92, roles: ['super-admin', 'admin', 'moderator', 'user']};
-    //
-    //     // Insert some users
-    //     collection.insert([user1, user2, user3], function (err, result) {
-    //         if (err) {
-    //             console.log(err);
-    //         } else {
-    //             console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
-    //         }
-    //         //Close connection
-    //         db.close();
-    //     });
-});
 
 var app = express();
 
@@ -68,7 +45,8 @@ app.post('/', function (req, res) {
     //TODO: also make sure that somebody isn't spamming the server
     //verifies email address and sends the verification code
     if(req.body.command == 'register_email_address'){
-        var email_address = req.body.email_address;
+        var json = req.body.json;
+        var email_address = json.email_address;
         try {
             registerEmailAddress(email_address);
         }catch(e){
@@ -78,11 +56,12 @@ app.post('/', function (req, res) {
     }
         //once verifictation code has been received, user enters the code along with other account info to create new account
     else if(req.body.command == 'register_verification'){
-        var verification_code = req.body.verification_code;
-        var username = req.body.username;
-        var password = req.body.password;
-        var confirm_password = req.body.confirm_password;
-        var email_address = req.body.email_address
+        var json = req.body.json;
+        var verification_code = json.verification_code;
+        var username = json.username;
+        var password = json.password;
+        var confirm_password = json.confirm_password;
+        var email_address = json.email_address
         try {
             registerVerificationCode(verification_code, username, password, confirm_password, email_address);
         }catch(e){
@@ -99,6 +78,9 @@ var server = app.listen(3000, function () {
     active_listings = new ActiveListings();
     active_transactions = new ActiveTransactions();
     active_users = new ActiveUsers();
+
+    // registerEmailAddress("bowen.jin@vanderbilt.edu");
+    registerVerificationCode('Ytx4Iq', "bowenjin", "chocho", "chocho", "bowen.jin@vanderbilt.edu")
 });
 
 
@@ -475,9 +457,6 @@ function registerEmailAddress(email_address){
 
 function registerVerificationCode(verification_code, username, password, confirm_password, email_address){
     //TODO: implement details below
-    //flag that is set to false if any step of the fla
-    //verify that the verification code is valid, or if user has clicked on verification link
-
     //verify that username is valid
     if(!validateUsername(username)){
         //TODO: return some error message
@@ -500,19 +479,46 @@ function registerVerificationCode(verification_code, username, password, confirm
         if (err) {
             console.log('Unable to connect to the mongoDB server. Error:', err);
         }
-        var collection = db.collection('users');
-        collection.insert(user, function (err, result) {
-            if (err) {
-                console.log(err);
-            } else {
-                console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
+        //TODO: verify that the verification code is valid, or if user has clicked on verification link
+        var collection_emails = db.collection('emails');
+        collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
+            if(docs.length > 0) {
+                if(docs[0].verification_code == verification_code && docs[0].registered == false){
+                    //register the user
+                    registerUser();
+                }
+                else{
+                    throw "verification code doesn't match"
+                }
             }
-            db.close();
-            //log client in
-            login(username, password)
-            //TODO:
-            // store username and password on device
+            else{
+                //TODO:
+                throw "cannot register, email_address not found in emails database "
+            }
+            db.close()
         });
+
+
+        function registerUser(){
+            var collection_users = db.collection('users');
+            //TODO: check to make sure that email (and perhaps username)
+            collection_users.insert(user, function (err, result) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
+                    //TODO:change emails database entry to reflect that a email has been registered
+                    collection_emails.update({'email_address':email_address}, {$set: {registered : true}}, function(err, result) {
+
+                    });
+                }
+                db.close();
+                //log client in
+                login(username, password)
+                //TODO:
+                // store username and password on device
+            });
+        }
     });
 
     //return something indicating all the validation of input is valid but database may still trigger error
@@ -526,7 +532,7 @@ function login(username, password){
         if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
         var collection = db.collection('users');
         collection.find({username: username, password: password}).toArray(function(err, docs) {
-            if(docs.length() > 0) {
+            if(docs.length > 0) {
                 //TODO:
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 var user = Object.create(User.prototype, docs[0]);
@@ -573,14 +579,17 @@ function sendVerificationEmail(email_address){
             console.log('Unable to connect to the mongoDB server. Error:', err);
         }
         var collection = db.collection('emails');
-        collection.find({email: email_address}).toArray(function(err, docs) {
-            if(docs.length() > 0) {
+        collection.find({email_address: email_address}).toArray(function(err, docs) {
+            if(docs.length > 0) {
                 //if email has already been registered throw error saying email is taken
                if(docs[0].registered == true){
                    throw "email address has already been registered"
                }
                else{
-                   collection.remove({email: email_address});
+                   collection.remove({email_address: email_address}, function(err, result) {
+                       if (err) {console.log(err);}
+                       console.log(result);
+                   });
                }
             }
             //adds the verification code and email to db
@@ -608,7 +617,7 @@ function sendVerificationEmail(email_address){
                 from: '"Meal Plan App" <mealplanapp@gmail.com>', // sender address
                 to: email_address, // list of receivers
                 subject: 'Verification Code for Meal Plan App', // Subject line
-                text: 'Verification Code:' + verification_code, // plaintext body
+                text: 'Verification Code: ' + verification_code, // plaintext body
             };
 
             // send mail with defined transport object
