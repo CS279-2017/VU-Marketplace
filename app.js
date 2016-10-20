@@ -9,9 +9,7 @@ var url = 'mongodb://localhost:27017/mealplanappserver';
 MongoClient.connect(url, function (err, db) {
     if (err) {
         console.log('Unable to connect to the mongoDB server. Error:', err);
-    } else {
-        //HURRAY!! We are connected. :)
-        console.log('Connection established to', url);
+    }
 
     //     // Get the documents collection
     //     var collection = db.collection('users');
@@ -31,7 +29,6 @@ MongoClient.connect(url, function (err, db) {
     //         //Close connection
     //         db.close();
     //     });
-    }
 });
 
 var app = express();
@@ -128,6 +125,7 @@ ActiveListings.prototype = {
 
 //do not include password in User object, use password only to retrieve from database on login
 function User(username, password, email){
+    //TODO: find way to get a unique id that we can then assign the user, probably have to get it by querying the Database
     this.id = null;
     this.username = username;
     this.password = password;
@@ -226,12 +224,8 @@ User.prototype = {
 }
 
 //TODO:
-//a object that contains all the users that have ever been registered
-//get returns that user, returns null if user not found
-//add adds a new user
-//adding a user updates database
-function ActiveUsers(database){
-    //these two instance variables will be synced with database
+//contains all active (online) users
+function ActiveUsers(){
     this.users = {};
     this.max_id = -1;
 }
@@ -239,20 +233,16 @@ function ActiveUsers(database){
 //
 ActiveUsers.prototype = {
     constructor: ActiveUsers,
-    login: function(user){
+    add: function(user){
         this.users[username] = user;
         max_id++;
     },
     get: function(username){
         return this.users[username];
     },
-    logout: function(username){
+    remove: function(username){
         delete this.users[username]
         //we don't delete from database, because database keeps track of all registered users
-    },
-    register: function(username, password){
-        //TODO:
-        //add to database, can be done concurrently
     },
     getNewId: function(){
         return guid();
@@ -434,38 +424,92 @@ Message.prototype = {
 // }
 
 function registerEmailAddress(email_address){
-    //TODO: implement details below
     //validate email address is real
-
+    if(validateEmail(email_address) == false){
+        //TODO: return a object type that has an error message
+        return false;
+    }
     //validate email address is vanderbilt.edu
-
+    if(validateVanderbiltEmail(email_address) == false){
+        //TODO: return a object type that has an error message
+        return false;
+    }
+    //TODO: implement details below
     //validate email address send out verification email
 
     //notify client that verification email has been sent (client moves to text page with verification code username and password)
+    //TODO:return message that indicates validation of email was successful
+    return true;
 }
 
-function registerVerificationCode(verification_code, username, password, confirm_password){
+function registerVerificationCode(verification_code, username, password, confirm_password, email_address){
     //TODO: implement details below
+    //flag that is set to false if any step of the fla
     //verify that the verification code is valid, or if user has clicked on verification link
 
     //verify that username is valid
-
+    if(!validateUsername(username)){
+        //TODO: return some error message
+        return false;
+    }
     //verify password is valid
-
+    if(!validatePassword(password)) {
+        //TODO: return some error message
+        return false;
+    }
     //verify password confirm matches password
-
+    if(password != confirm_password){
+        //TODO: return a object type that has an error message
+        return false;
+    }
     //create user and add to database
+    var user = new User(username, password, email_address);
+    //note this action happens asynchronously, subsequent events will probably occur before callback occurs
+    MongoClient.connect(url, function (err, db) {
+        if (err) {
+            console.log('Unable to connect to the mongoDB server. Error:', err);
+        }
+        var collection = db.collection('users');
+        collection.insert(user, function (err, result) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
+            }
+            db.close();
+            //log client in
+            login(username, password)
+            //TODO:
+            // store username and password on device
+        });
+    });
 
-    //store username and password on device
-
-    //log client in
+    //return something indicating all the validation of input is valid but database may still trigger error
+    return true;
 }
 
 function login(username, password){
     //TODO: implement details below
     //query database for user with given username and password
-    //if not found: alert user that login failed, because incorrect username/password
-    //else: log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+    MongoClient.connect(url, function (err, db) {
+        if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
+        var collection = db.collection('users');
+        collection.find({username: username, password: password}).toArray(function(err, docs) {
+            if(docs.length() > 0) {
+                //TODO:
+                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                var user = Object.create(User.prototype, docs[0]);
+                active_users.add(user);
+
+            }
+            else{
+                //TODO:
+                //if not found: alert user that login failed, because incorrect username/password
+
+            }
+            db.close()
+        });
+    });
 }
 
 // function recoverUsername(email_address){
@@ -512,4 +556,21 @@ function guid() {
     }
     return s4() + s4() + s4() + s4() +
         s4() + s4() + s4() + s4();
+}
+
+function validateEmail(email) {
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+}
+
+function validateVanderbiltEmail(email){
+    return /@vanderbilt.edu\s*$/.test(email);
+}
+
+function validateUsername(username){
+    return true;
+}
+
+function validatePassword(password){
+    return true;
 }
