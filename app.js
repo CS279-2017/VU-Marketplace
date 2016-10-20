@@ -55,14 +55,29 @@ app.get('/', function (req, res) {
 app.post('/', function (req, res) {
     //TODO: clean req body to make sure doesn't contain any SQL injection or other threats
     //TODO: also make sure that somebody isn't spamming the server
-    if(req.body.command == 'register'){
-        var json = req.body.json;
+    //verifies email address and sends the verification code
+    if(req.body.command == 'register_email_address'){
+        var email_address = req.body.email_address;
         try {
-            var user_json = JSON.parse(json);
-            var user = new User(user_json.username, user_json.password);
-            // console.log(JSON.stringify(user))
-        }catch(e){ return null; }
-        res.send(user.username);
+            registerEmailAddress(email_address);
+        }catch(e){
+            //TODO: send a message to the client with this error
+            return console.log(message);
+        }
+    }
+        //once verifictation code has been received, user enters the code along with other account info to create new account
+    else if(req.body.command == 'register_verification'){
+        var verification_code = req.body.verification_code;
+        var username = req.body.username;
+        var password = req.body.password;
+        var confirm_password = req.body.confirm_password;
+        var email_address = req.body.email_address
+        try {
+            registerVerificationCode(verification_code, username, password, confirm_password, email_address);
+        }catch(e){
+            //TODO: send a message to the client with this error
+            return console.log(message);
+        }
     }
     // res.send('POST request to the homepage');
 });
@@ -427,16 +442,21 @@ function registerEmailAddress(email_address){
     //validate email address is real
     if(validateEmail(email_address) == false){
         //TODO: return a object type that has an error message
-        return false;
+        throw "invalid email address";
     }
     //validate email address is vanderbilt.edu
     if(validateVanderbiltEmail(email_address) == false){
         //TODO: return a object type that has an error message
-        return false;
+        throw "must be a vanderbilt.edu email address"
     }
     //TODO: implement details below
     //validate email address send out verification email
-
+    try {
+        //generates veritification code and sends out email containing the code to email_address
+        sendVerificationEmail(email_address);
+    }catch(e){
+        console.log(e.message);
+    }
     //notify client that verification email has been sent (client moves to text page with verification code username and password)
     //TODO:return message that indicates validation of email was successful
     return true;
@@ -518,6 +538,68 @@ function login(username, password){
 //     //send email containing username to the email address
 // }
 
+//returns the verification_code and asychronously adds it to the database
+function sendVerificationEmail(email_address){
+    //TODO: first ensure that email address has not already been verified
+    //TODO: if the email address exists but hasn't been verified delete the email address
+    function makeVerificationCode(length){
+        var text = "";
+        var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        for( var i=0; i < length; i++ )
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+        return text;
+    }
+    MongoClient.connect(url, function (err, db) {
+        if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
+        var collection = db.collection('users');
+
+    });
+    var verification_code = makeVerificationCode(6);
+    MongoClient.connect(url, function (err, db) {
+        if (err) {
+            console.log('Unable to connect to the mongoDB server. Error:', err);
+        }
+        var collection = db.collection('emails');
+        collection.find({email: email_address}).toArray(function(err, docs) {
+            if(docs.length() > 0) {
+                //if email has already been registered throw error saying email is taken
+               if(docs[0].registered == true){
+                   throw "email address has already been registered"
+               }
+               else{
+                   collection.remove({email: email_address});
+               }
+            }
+            //adds the verification code and email to db
+            insertVerificationCode();
+            sendEmail(email_address, verification_code);
+            db.close()
+        });
+        //email address, verified, registered, verification_code
+        //generate a random verification code
+
+        function insertVerificationCode(){
+            var email = {email_address: email_address, registered: false, verification_code: verification_code}
+            collection.insert(email, function (err, result) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
+                }
+                db.close();
+            });
+        }
+        function sendEmail(email_address, verification_code){
+
+        }
+    });
+    return verification_code;
+}
+
+
+
 function resetPassword(email_address){
     //send message back to client saying "if valid email address then you will receive a reset password at this link"
     //search database to see if valid email_address
@@ -568,9 +650,11 @@ function validateVanderbiltEmail(email){
 }
 
 function validateUsername(username){
-    return true;
+    //username must be between 6-20 characters, can only contain alphanumeric and numbers
+    //first character must be alphanumeric
+    return /^[A-Za-z][A-Za-z0-9]{5,19}$/.test(username);
 }
 
 function validatePassword(password){
-    return true;
+    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password);
 }
