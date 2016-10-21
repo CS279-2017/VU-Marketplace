@@ -5,10 +5,13 @@ var nodemailer = require('nodemailer');
 // create reusable transporter object using the default SMTP transport
 //TODO: currently using gmail, switch to mailgun for more sends per day
 var transporter = nodemailer.createTransport({
-    service: 'Gmail',
+    //service: 'Gmail',
+    service: 'SendGrid',
     auth: {
-        user: 'mealplanapp@gmail.com', // Your email id
-        pass: 'chocho513' // Your password
+        // user: 'mealplanapp@gmail.com', // Your email id
+        // pass: 'chocho513' // Your password
+        user: 'mealplanapp',
+        pass: 'chocho513'
     }
 });
 
@@ -80,7 +83,7 @@ var server = app.listen(3000, function () {
     active_users = new ActiveUsers();
 
     // registerEmailAddress("bowen.jin@vanderbilt.edu");
-    registerVerificationCode('Ytx4Iq', "bowenjin", "chocho", "chocho", "bowen.jin@vanderbilt.edu")
+    registerVerificationCode('g5emGu', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu")
 });
 
 
@@ -460,17 +463,17 @@ function registerVerificationCode(verification_code, username, password, confirm
     //verify that username is valid
     if(!validateUsername(username)){
         //TODO: return some error message
-        return false;
+        throw "invalid username";
     }
     //verify password is valid
     if(!validatePassword(password)) {
         //TODO: return some error message
-        return false;
+        throw "invalid password";
     }
     //verify password confirm matches password
     if(password != confirm_password){
         //TODO: return a object type that has an error message
-        return false;
+        throw "password doesn't match";
     }
     //create user and add to database
     var user = new User(username, password, email_address);
@@ -481,11 +484,19 @@ function registerVerificationCode(verification_code, username, password, confirm
         }
         //TODO: verify that the verification code is valid, or if user has clicked on verification link
         var collection_emails = db.collection('emails');
+        //TODO: the fact that checking if registered is false and setting registered to true are not atomic operations
+        //TODO:leads to possibility of race condition, though unlikely
+        //register the user
         collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
             if(docs.length > 0) {
-                if(docs[0].verification_code == verification_code && docs[0].registered == false){
-                    //register the user
-                    registerUser();
+                //checks that verification_code is valid and email hasn't already been registered
+                if(docs[0].verification_code == verification_code){
+                    if(docs[0].registered == false){
+                        registerUser();
+                    }
+                    else{
+                        throw email_address + " has already been registered";
+                    }
                 }
                 else{
                     throw "verification code doesn't match"
@@ -495,30 +506,59 @@ function registerVerificationCode(verification_code, username, password, confirm
                 //TODO:
                 throw "cannot register, email_address not found in emails database "
             }
-            db.close()
         });
 
 
         function registerUser(){
+            var collection_emails = db.collection('emails');
             var collection_users = db.collection('users');
-            //TODO: check to make sure that email (and perhaps username)
-            collection_users.insert(user, function (err, result) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
-                    //TODO:change emails database entry to reflect that a email has been registered
-                    collection_emails.update({'email_address':email_address}, {$set: {registered : true}}, function(err, result) {
-
-                    });
-                }
-                db.close();
-                //log client in
+            //TODO: check to make sure that email and username are unique
+            //TODO:change emails database entry to reflect that a email has been registered
+            checkIfEmailAndUserNameUnique(insertUser(function(){
+                //TODO: log user registering
                 login(username, password)
-                //TODO:
-                // store username and password on device
-            });
+            }));
+
+            //TODO: should we use usernames or real names? Real Names might require integration with Facebook
+            function checkIfEmailAndUserNameUnique(callback){
+                collection_users.find({email_address: email_address}).toArray(function(err, docs) {
+                    if(docs.length > 0) {
+                        throw "email address has already been registered"
+                    }
+                    else{
+                        //TODO:
+                        collections.find({username: username}).toArray(function(err, docs){
+                            if(docs.length > 0){
+                                throw "username has been taken";
+                            }
+                            else{
+                                callback();
+                            }
+                        });
+                    }
+                });
+            }
+
+            function insertUser(callback){
+                collection_emails.update({email_address:email_address}, {$set: {registered : true}}, function(err, result) {
+                    if(err){
+                        console.log(err);
+                    }
+                    console.log("updated registered to true");
+                    collection_users.insert(user, function (err, result) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
+
+                        }
+                        callback();
+                    });
+                    db.close(); //we close the db in the callback of the last database operation is performed
+                });
+            }
         }
+
     });
 
     //return something indicating all the validation of input is valid but database may still trigger error
@@ -528,21 +568,29 @@ function registerVerificationCode(verification_code, username, password, confirm
 function login(username, password){
     //TODO: implement details below
     //query database for user with given username and password
+    console.log("login called");
     MongoClient.connect(url, function (err, db) {
         if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
         var collection = db.collection('users');
         collection.find({username: username, password: password}).toArray(function(err, docs) {
+            console.log("docs.length" + docs.length);
+            console.log(docs);
             if(docs.length > 0) {
                 //TODO:
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 var user = Object.create(User.prototype, docs[0]);
+                console.log("user Object:");
+                console.log(user);
                 active_users.add(user);
+                console.log(user.username + "is logged in");
+                //TODO: notify user that they've been logged in
+                //update user to logged in db, or maybe not don't know if it is necessary
 
             }
             else{
                 //TODO:
                 //if not found: alert user that login failed, because incorrect username/password
-
+                throw "invalid username/password";
             }
             db.close()
         });
@@ -581,6 +629,7 @@ function sendVerificationEmail(email_address){
         var collection = db.collection('emails');
         collection.find({email_address: email_address}).toArray(function(err, docs) {
             if(docs.length > 0) {
+                console.log(docs[0]);
                 //if email has already been registered throw error saying email is taken
                if(docs[0].registered == true){
                    throw "email address has already been registered"
@@ -588,7 +637,7 @@ function sendVerificationEmail(email_address){
                else{
                    collection.remove({email_address: email_address}, function(err, result) {
                        if (err) {console.log(err);}
-                       console.log(result);
+                       console.log("Successfully removed entry with email_address = " + email_address);
                    });
                }
             }
@@ -601,6 +650,8 @@ function sendVerificationEmail(email_address){
         //generate a random verification code
 
         function insertVerificationCode(){
+            //TODO: add a number of attempts that gets incremented everytime an attempt is wrong, once a certain number is reached
+            //TODO: delete the entry
             var email = {email_address: email_address, registered: false, verification_code: verification_code}
             collection.insert(email, function (err, result) {
                 if (err) {
@@ -690,5 +741,6 @@ function validateUsername(username){
 }
 
 function validatePassword(password){
+    //must be atleast 8 characters long
     return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password);
 }
