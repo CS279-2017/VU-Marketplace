@@ -72,6 +72,13 @@ app.post('/', function (req, res) {
             return console.log(message);
         }
     }
+    else if(req.body.command == 'login'){
+        var json = req.body.json;
+        var username = json.username;
+        var password = json.password;
+        var email_address = json.email_address
+        login(username, password);
+    }
     // res.send('POST request to the homepage');
 });
 
@@ -82,8 +89,16 @@ var server = app.listen(3000, function () {
     active_transactions = new ActiveTransactions();
     active_users = new ActiveUsers();
 
-    // registerEmailAddress("bowen.jin@vanderbilt.edu");
-    registerVerificationCode('g5emGu', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu")
+    // registerEmailAddress("bowen.jin@vanderbilt.edu", function(){
+    //     console.log("Email address registration complete");
+    // });
+    registerVerificationCode('wx5UA1', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
+        console.log("registration complete, now trying to login");
+        login("bowejin", "chocho513");
+    });
+    // login("bowenjin", "chocho513", function(){
+    //     logout("bowenjin", "chocho513");
+    // });
 });
 
 
@@ -137,7 +152,6 @@ ActiveListings.prototype = {
 //do not include password in User object, use password only to retrieve from database on login
 function User(username, password, email){
     //TODO: find way to get a unique id that we can then assign the user, probably have to get it by querying the Database
-    this.id = null;
     this.username = username;
     this.password = password;
     this.email = email
@@ -156,6 +170,15 @@ function User(username, password, email){
 User.prototype = {
     //TODO: add getters for username and email, note: password should never be gotten only used internally in a user object
     constructor: User,
+    initUser: function(user){
+        this._id = user._id;
+        this.username = user.username;
+        this.password = user.password;
+        this.venmo_id = user.venmo_id;
+        this.current_transactions_ids = user.current_transactions_ids
+        this.all_transaction_ids = user.all_transaction_ids;
+        this.current_location = user.current_location;
+    },
     setVenmoId: function(venmo_id){
         this.venmo_id = venmo_id;
         //some function that does an update in the db in table Users
@@ -167,23 +190,6 @@ User.prototype = {
         //TODO:
         //query database for all transactions involving the user
         //use all_transaction_ids
-    },
-    convertToJSON: function(){
-        //this is necessary because there are properties of user that shouldn't be converted to JSON, shouldn't be saved to database
-        return JSON.stringify({
-            id: this.id,
-            username: this.username,
-            password: this.password,
-            venmo_id: this.venmo_id,
-        });
-
-        // return JSON.stringify(this, function( key, value) {
-        //     if(key == 'current_transaction') {
-        //         return value.convertToJSON();
-        //     } else {
-        //         return value;
-        //     };
-        // });
     },
     makeListing: function(id, title, description, location, expiration_time, price, buy){
         var creation_time = new Date(); //should we use Date? Can date we converted to JSON and then converted back to date?
@@ -234,33 +240,43 @@ User.prototype = {
     }
 }
 
-//TODO:
+//TODO: login/logout simply manipulates ActiveUsers, note current user object manipulation all revolve around username
+//TODO: may want to change focus to something else, may even want to remove usernames all together and only use real names
 //contains all active (online) users
 function ActiveUsers(){
     this.users = {};
     this.max_id = -1;
 }
-
-//
 ActiveUsers.prototype = {
     constructor: ActiveUsers,
     add: function(user){
-        this.users[username] = user;
-        max_id++;
+        if(this.users[user.username] == undefined) {
+            this.users[user.username] = user;
+            console.log(this.users[user.username].username + "has been added to ActiveUsers");
+        }
+        else{
+            throw "user is already logged in, can't login"
+        }
+
     },
     get: function(username){
         return this.users[username];
     },
     remove: function(username){
-        delete this.users[username]
+        if(this.users[username] != undefined){
+            delete this.users[username]
+            if(this.users[username] == undefined) {
+                console.log(username + " has been removed from ActiveUsers");
+            }
+            else{
+                throw "removing " + username + " failed";
+            }
+        }
+        else{
+            throw "user is not logged in, can't logout"
+        }
         //we don't delete from database, because database keeps track of all registered users
     },
-    getNewId: function(){
-        return guid();
-        //TODO:
-        //if we wanted to have ids signify the number of values in the database at that time, we can query database
-        //when the database is created to get the size and thus the appropriate index value;
-    }
 }
 
 //TODO:
@@ -434,7 +450,7 @@ Message.prototype = {
 //
 // }
 
-function registerEmailAddress(email_address){
+function registerEmailAddress(email_address, callback){
     //validate email address is real
     if(validateEmail(email_address) == false){
         //TODO: return a object type that has an error message
@@ -453,12 +469,92 @@ function registerEmailAddress(email_address){
     }catch(e){
         console.log(e.message);
     }
+
+    //returns the verification_code and asychronously adds it to the database
+    function sendVerificationEmail(email_address){
+        //TODO: first ensure that email address has not already been verified
+        //TODO: if the email address exists but hasn't been verified delete the email address
+        function makeVerificationCode(length){
+            var text = "";
+            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            for( var i=0; i < length; i++ )
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+            return text;
+        }
+        MongoClient.connect(url, function (err, db) {
+            if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
+            var collection = db.collection('users');
+
+        });
+        var verification_code = makeVerificationCode(6);
+        MongoClient.connect(url, function (err, db) {
+            if (err) {
+                console.log('Unable to connect to the mongoDB server. Error:', err);
+            }
+            var collection = db.collection('emails');
+            collection.find({email_address: email_address}).toArray(function(err, docs) {
+                if(docs.length > 0) {
+                    //if email has already been registered throw error saying email is taken
+                    if(docs[0].registered == true){
+                        throw "email address has already been registered"
+                    }
+                    else{
+                        collection.remove({email_address: email_address}, function(err, result) {
+                            if (err) {console.log(err);}
+                            console.log("Successfully removed entry with email_address = " + email_address);
+                        });
+                    }
+                }
+                //adds the verification code and email to db
+                insertVerificationCode();
+                sendEmail(email_address, verification_code);
+                db.close()
+            });
+            //email address, verified, registered, verification_code
+            //generate a random verification code
+
+            function insertVerificationCode(){
+                //TODO: add a number of attempts that gets incremented everytime an attempt is wrong, once a certain number is reached
+                //TODO: delete the entry
+                var email = {email_address: email_address, registered: false, verification_code: verification_code}
+                collection.insert(email, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        console.log('Inserted verification code '+verification_code+' into the email db under email address '+email_address);
+                    }
+                    db.close();
+                });
+            }
+            function sendEmail(email_address, verification_code){
+                // setup e-mail data with unicode symbols
+                var mailOptions = {
+                    from: '"Meal Plan App" <mealplanapp@gmail.com>', // sender address
+                    to: email_address, // list of receivers
+                    subject: 'Verification Code for Meal Plan App', // Subject line
+                    text: 'Verification Code: ' + verification_code, // plaintext body
+                };
+
+                // send mail with defined transport object
+                transporter.sendMail(mailOptions, function(error, info){
+                    if(error){
+                        return console.log(error);
+                    }
+                    console.log('Message sent: ' + info.response);
+                    if(callback != undefined){ callback();}
+                });
+            }
+        });
+        return verification_code;
+    }
     //notify client that verification email has been sent (client moves to text page with verification code username and password)
     //TODO:return message that indicates validation of email was successful
     return true;
 }
 
-function registerVerificationCode(verification_code, username, password, confirm_password, email_address){
+function registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback){
     //TODO: implement details below
     //verify that username is valid
     if(!validateUsername(username)){
@@ -516,7 +612,7 @@ function registerVerificationCode(verification_code, username, password, confirm
             //TODO:change emails database entry to reflect that a email has been registered
             checkIfEmailAndUserNameUnique(insertUser(function(){
                 //TODO: log user registering
-                login(username, password)
+                if(callback != undefined){ callback(); }
             }));
 
             //TODO: should we use usernames or real names? Real Names might require integration with Facebook
@@ -526,12 +622,14 @@ function registerVerificationCode(verification_code, username, password, confirm
                         throw "email address has already been registered"
                     }
                     else{
+                        console.log(email_address + " is unique!")
                         //TODO:
-                        collections.find({username: username}).toArray(function(err, docs){
+                        collection_users.find({username: username}).toArray(function(err, docs){
                             if(docs.length > 0){
                                 throw "username has been taken";
                             }
                             else{
+                                console.log(username + " is unique!")
                                 callback();
                             }
                         });
@@ -549,7 +647,7 @@ function registerVerificationCode(verification_code, username, password, confirm
                         if (err) {
                             console.log(err);
                         } else {
-                            console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
+                            console.log('Inserted ' + user.username + ' into database');
 
                         }
                         callback();
@@ -565,7 +663,8 @@ function registerVerificationCode(verification_code, username, password, confirm
     return true;
 }
 
-function login(username, password){
+//TODO: login with username and password or email address, or facebook?
+function login(username, password, callback){
     //TODO: implement details below
     //query database for user with given username and password
     console.log("login called");
@@ -573,18 +672,48 @@ function login(username, password){
         if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
         var collection = db.collection('users');
         collection.find({username: username, password: password}).toArray(function(err, docs) {
-            console.log("docs.length" + docs.length);
-            console.log(docs);
             if(docs.length > 0) {
                 //TODO:
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                var user = Object.create(User.prototype, docs[0]);
-                console.log("user Object:");
+                var user = new User();
+                user.initUser(docs[0]);
+                console.log("User Object: ")
                 console.log(user);
                 active_users.add(user);
                 console.log(user.username + "is logged in");
-                //TODO: notify user that they've been logged in
+                // //TODO: notify user that they've been logged in
                 //update user to logged in db, or maybe not don't know if it is necessary
+                if(callback != undefined){ callback(); }
+
+            }
+            else{
+                //TODO:
+                //if not found: alert user that login failed, because incorrect username/password
+                throw "invalid username/password";
+            }
+            db.close()
+        });
+    });
+}
+
+function logout(username, password, callback){
+    console.log("logout called");
+    //verify credentials of user calling logout
+    MongoClient.connect(url, function (err, db) {
+        if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
+        var collection = db.collection('users');
+        collection.find({username: username, password: password}).toArray(function(err, docs) {
+            if(docs.length > 0) {
+                //TODO:
+                var user = docs[0];
+                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                console.log("user Object:");
+                console.log(user);
+                active_users.remove(user.username);
+                console.log(user.username + "has logged out");
+                // //TODO: notify user that they've been logged out
+                //update user to logged in db, or maybe not don't know if it is necessary
+                if(callback != undefined){ callback(); }
 
             }
             else{
@@ -602,86 +731,6 @@ function login(username, password){
 //     //query User database for user with the given email address
 //     //send email containing username to the email address
 // }
-
-//returns the verification_code and asychronously adds it to the database
-function sendVerificationEmail(email_address){
-    //TODO: first ensure that email address has not already been verified
-    //TODO: if the email address exists but hasn't been verified delete the email address
-    function makeVerificationCode(length){
-        var text = "";
-        var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-        for( var i=0; i < length; i++ )
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-        return text;
-    }
-    MongoClient.connect(url, function (err, db) {
-        if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-        var collection = db.collection('users');
-
-    });
-    var verification_code = makeVerificationCode(6);
-    MongoClient.connect(url, function (err, db) {
-        if (err) {
-            console.log('Unable to connect to the mongoDB server. Error:', err);
-        }
-        var collection = db.collection('emails');
-        collection.find({email_address: email_address}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                console.log(docs[0]);
-                //if email has already been registered throw error saying email is taken
-               if(docs[0].registered == true){
-                   throw "email address has already been registered"
-               }
-               else{
-                   collection.remove({email_address: email_address}, function(err, result) {
-                       if (err) {console.log(err);}
-                       console.log("Successfully removed entry with email_address = " + email_address);
-                   });
-               }
-            }
-            //adds the verification code and email to db
-            insertVerificationCode();
-            sendEmail(email_address, verification_code);
-            db.close()
-        });
-        //email address, verified, registered, verification_code
-        //generate a random verification code
-
-        function insertVerificationCode(){
-            //TODO: add a number of attempts that gets incremented everytime an attempt is wrong, once a certain number is reached
-            //TODO: delete the entry
-            var email = {email_address: email_address, registered: false, verification_code: verification_code}
-            collection.insert(email, function (err, result) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
-                }
-                db.close();
-            });
-        }
-        function sendEmail(email_address, verification_code){
-            // setup e-mail data with unicode symbols
-            var mailOptions = {
-                from: '"Meal Plan App" <mealplanapp@gmail.com>', // sender address
-                to: email_address, // list of receivers
-                subject: 'Verification Code for Meal Plan App', // Subject line
-                text: 'Verification Code: ' + verification_code, // plaintext body
-            };
-
-            // send mail with defined transport object
-            transporter.sendMail(mailOptions, function(error, info){
-                if(error){
-                    return console.log(error);
-                }
-                console.log('Message sent: ' + info.response);
-            });
-        }
-    });
-    return verification_code;
-}
 
 
 
