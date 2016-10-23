@@ -47,15 +47,17 @@ app.post('/', function (req, res) {
     //TODO: clean req body to make sure doesn't contain any SQL injection or other threats
     //TODO: also make sure that somebody isn't spamming the server
     //verifies email address and sends the verification code
+    //note the below function calls are all asynchronous and thus cannot use exceptions, because by the time the
+    //exception is triggered by the asynchronous function, the original try, catch block will be out of scope
     if(req.body.command == 'register_email_address'){
         var json = req.body.json;
         var email_address = json.email_address;
-        try {
-            registerEmailAddress(email_address);
-        }catch(e){
-            //TODO: send a message to the client with this error
-            return console.log(message);
+        var callback = function(){};
+        //TODO: write proper error_handler
+        var error_handler = function(){
+            console.log(e.message);
         }
+        registerEmailAddress(email_address, callback, error_handler);
     }
         //once verifictation code has been received, user enters the code along with other account info to create new account
     else if(req.body.command == 'register_verification'){
@@ -65,19 +67,40 @@ app.post('/', function (req, res) {
         var password = json.password;
         var confirm_password = json.confirm_password;
         var email_address = json.email_address
-        try {
-            registerVerificationCode(verification_code, username, password, confirm_password, email_address);
-        }catch(e){
-            //TODO: send a message to the client with this error
-            return console.log(message);
+
+        var callback = function(){};
+        //TODO: write proper error_handler
+        var error_handler = function() {
+            console.log(e.message);
         }
+        registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler);
     }
     else if(req.body.command == 'login'){
         var json = req.body.json;
         var username = json.username;
         var password = json.password;
         var email_address = json.email_address
-        login(username, password);
+
+        var callback = function(){};
+        //TODO: write proper error_handler
+        var error_handler = function() {
+            console.log(e.message);
+        }
+        login(username, password, callback, error_handler);
+
+    }
+    else if(req.body.command == 'logout'){
+        var json = req.body.json;
+        var username = json.username;
+        var password = json.password;
+        var email_address = json.email_address
+
+        var callback = function(){};
+        //TODO: write proper error_handler
+        var error_handler = function() {
+            console.log(e.message);
+        }
+        logout(username, password, callback, error_handler);
     }
     // res.send('POST request to the homepage');
 });
@@ -89,16 +112,28 @@ var server = app.listen(3000, function () {
     active_transactions = new ActiveTransactions();
     active_users = new ActiveUsers();
 
-    // registerEmailAddress("bowen.jin@vanderbilt.edu", function(){
-    //     console.log("Email address registration complete");
-    // });
-    registerVerificationCode('wx5UA1', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
-        console.log("registration complete, now trying to login");
-        login("bowejin", "chocho513");
-    });
-    // login("bowenjin", "chocho513", function(){
-    //     logout("bowenjin", "chocho513");
-    // });
+    try {
+        // registerEmailAddress("bowen.jin@vanderbilt.edu", function () {
+        //     console.log("Email address registration complete");
+        // }, function(error){
+        //     console.log(error);
+        // }
+        // );
+        registerVerificationCode('fhF6GC', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
+            console.log("Verification code registration complete, now trying to login");
+            login("bowenjin", "chocho513");
+        },
+        function(error){
+           console.log(error);
+        });
+        // login("bowenjin", "chocho513", function(){
+        //     logout("bowenjin", "chocho513");
+        // },function(error){
+        //     console.log(error);
+        // });
+    }catch(e){
+        console.log(e.message);
+    }
 });
 
 
@@ -344,17 +379,6 @@ Transaction.prototype = {
             this.user_sell.removeTransaction(this.id);
         }
     },
-    convertToJSON: function(){
-        // return JSON.stringify(this, function( key, value) {
-        //     if(key == 'user_buy') {
-        //         return value.convertToJSON();
-        //     } else if(key == 'user_sell') {
-        //         return value.convertToJSON();
-        //     }else if(key == 'conversation'){
-        //         return value.convertToJSON();
-        //     }
-        // });
-    }
 }
 
 //current active transactions, adds a transaction to database when it is removed from active transactions
@@ -423,43 +447,20 @@ Message.prototype = {
     }
 }
 
-// function validateLoginInfo(username, password){
-//     if(users_collection.get(username) != undefined){
-//         return true;
-//     }
-// }
-//
-// function validateRegistrationInfo(username, password){
-//     //TODO:
-//     //check to make sure to username and password are valid strings
-//
-//     //check to make sure username isn't already taken
-//     if(users_collection.get(username) == undefined){
-//         return true;
-//     }
-// }
-//
-// function registerUser(username, password){
-//     if(validateRegistrationInfo(username, password)){
-//
-//         users_collection.add()
-//     }
-// }
-
-// function loginUser(username, password){
-//
-// }
-
-function registerEmailAddress(email_address, callback){
+//TODO: note we pass an error handler method to each of these methods, if the methods are called, they are passed
+//TODO: a string that describes the error
+function registerEmailAddress(email_address, callback, error_handler){
     //validate email address is real
     if(validateEmail(email_address) == false){
         //TODO: return a object type that has an error message
-        throw "invalid email address";
+        error_handler("invalid email address");
+        return;
     }
     //validate email address is vanderbilt.edu
     if(validateVanderbiltEmail(email_address) == false){
         //TODO: return a object type that has an error message
-        throw "must be a vanderbilt.edu email address"
+        error_handler("must be a vanderbilt.edu email address")
+        return;
     }
     //TODO: implement details below
     //validate email address send out verification email
@@ -483,22 +484,19 @@ function registerEmailAddress(email_address, callback){
 
             return text;
         }
-        MongoClient.connect(url, function (err, db) {
-            if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-            var collection = db.collection('users');
-
-        });
         var verification_code = makeVerificationCode(6);
         MongoClient.connect(url, function (err, db) {
             if (err) {
-                console.log('Unable to connect to the mongoDB server. Error:', err);
+                error_handler('Unable to connect to the mongoDB server. Error:' +  err);
+                return;
             }
             var collection = db.collection('emails');
             collection.find({email_address: email_address}).toArray(function(err, docs) {
                 if(docs.length > 0) {
                     //if email has already been registered throw error saying email is taken
                     if(docs[0].registered == true){
-                        throw "email address has already been registered"
+                        error_handler("email address has already been registered")
+                        return;
                     }
                     else{
                         collection.remove({email_address: email_address}, function(err, result) {
@@ -554,29 +552,33 @@ function registerEmailAddress(email_address, callback){
     return true;
 }
 
-function registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback){
+function registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler){
     //TODO: implement details below
     //verify that username is valid
     if(!validateUsername(username)){
         //TODO: return some error message
-        throw "invalid username";
+        error_handler("invalid username");
+        return;
     }
     //verify password is valid
     if(!validatePassword(password)) {
         //TODO: return some error message
-        throw "invalid password";
+        error_handler("invalid password");
+        return;
     }
     //verify password confirm matches password
     if(password != confirm_password){
         //TODO: return a object type that has an error message
-        throw "password doesn't match";
+        error_handler("password doesn't match");
+        return;
     }
     //create user and add to database
     var user = new User(username, password, email_address);
     //note this action happens asynchronously, subsequent events will probably occur before callback occurs
     MongoClient.connect(url, function (err, db) {
         if (err) {
-            console.log('Unable to connect to the mongoDB server. Error:', err);
+            error_handler('Unable to connect to theserver. Error:' +  err);
+            return;
         }
         //TODO: verify that the verification code is valid, or if user has clicked on verification link
         var collection_emails = db.collection('emails');
@@ -591,16 +593,19 @@ function registerVerificationCode(verification_code, username, password, confirm
                         registerUser();
                     }
                     else{
-                        throw email_address + " has already been registered";
+                        error_handler(email_address + " has already been registered");
+                        return;
                     }
                 }
                 else{
-                    throw "verification code doesn't match"
+                    error_handler("verification code doesn't match")
+                    return;
                 }
             }
             else{
                 //TODO:
-                throw "cannot register, email_address not found in emails database "
+                error_handler("cannot register, email_address not found in emails database ")
+                return;
             }
         });
 
@@ -619,14 +624,16 @@ function registerVerificationCode(verification_code, username, password, confirm
             function checkIfEmailAndUserNameUnique(callback){
                 collection_users.find({email_address: email_address}).toArray(function(err, docs) {
                     if(docs.length > 0) {
-                        throw "email address has already been registered"
+                        error_handler("email address has already been registered")
+                        return;
                     }
                     else{
                         console.log(email_address + " is unique!")
                         //TODO:
                         collection_users.find({username: username}).toArray(function(err, docs){
                             if(docs.length > 0){
-                                throw "username has been taken";
+                                error_handler("username has been taken");
+                                return;
                             }
                             else{
                                 console.log(username + " is unique!")
@@ -640,12 +647,14 @@ function registerVerificationCode(verification_code, username, password, confirm
             function insertUser(callback){
                 collection_emails.update({email_address:email_address}, {$set: {registered : true}}, function(err, result) {
                     if(err){
-                        console.log(err);
+                        error_handler(err);
+                        return;
                     }
                     console.log("updated registered to true");
                     collection_users.insert(user, function (err, result) {
                         if (err) {
-                            console.log(err);
+                            error_handler(err);
+                            return;
                         } else {
                             console.log('Inserted ' + user.username + ' into database');
 
@@ -664,7 +673,7 @@ function registerVerificationCode(verification_code, username, password, confirm
 }
 
 //TODO: login with username and password or email address, or facebook?
-function login(username, password, callback){
+function login(username, password, callback, error_handler){
     //TODO: implement details below
     //query database for user with given username and password
     console.log("login called");
@@ -679,7 +688,12 @@ function login(username, password, callback){
                 user.initUser(docs[0]);
                 console.log("User Object: ")
                 console.log(user);
-                active_users.add(user);
+                try {
+                    active_users.add(user);
+                }catch(error){
+                    error_handler(error.message);
+                    return;
+                }
                 console.log(user.username + "is logged in");
                 // //TODO: notify user that they've been logged in
                 //update user to logged in db, or maybe not don't know if it is necessary
@@ -689,14 +703,14 @@ function login(username, password, callback){
             else{
                 //TODO:
                 //if not found: alert user that login failed, because incorrect username/password
-                throw "invalid username/password";
+                error_handler("invalid username/password");
             }
             db.close()
         });
     });
 }
 
-function logout(username, password, callback){
+function logout(username, password, callback, error_handler){
     console.log("logout called");
     //verify credentials of user calling logout
     MongoClient.connect(url, function (err, db) {
@@ -709,7 +723,12 @@ function logout(username, password, callback){
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 console.log("user Object:");
                 console.log(user);
-                active_users.remove(user.username);
+                try {
+                    active_users.remove(user.username);
+                }catch(e){
+                    error_handler(e.message);
+                    return;
+                }
                 console.log(user.username + "has logged out");
                 // //TODO: notify user that they've been logged out
                 //update user to logged in db, or maybe not don't know if it is necessary
@@ -719,7 +738,7 @@ function logout(username, password, callback){
             else{
                 //TODO:
                 //if not found: alert user that login failed, because incorrect username/password
-                throw "invalid username/password";
+                error_handler("invalid username/password");
             }
             db.close()
         });
@@ -745,33 +764,6 @@ function resetPasswordVerification(new_password, new_password_confirm){
     //check to see if new password is valid
     //check to see if new password confirm is equal to new password
     //update the password for the user in the database (note verification code must be associated with a user)
-}
-
-// function getUserFromDatabase(username){
-//
-// }
-//
-// function addUserToDatabase(user){
-//
-// }
-//
-// function getTransactionFromDatabase(transaction_id){
-//
-// }
-//
-// function addTransactionToDatabase(transaction_id){
-//
-// }
-
-
-function guid() {
-    function s4() {
-        return Math.floor((1 + Math.random()) * 0x10000)
-            .toString(16)
-            .substring(1);
-    }
-    return s4() + s4() + s4() + s4() +
-        s4() + s4() + s4() + s4();
 }
 
 function validateEmail(email) {
