@@ -28,6 +28,10 @@ var exports = module.exports = {};
 exports.closeServer = function(){
     server.close();
 };
+exports.registerEmail = registerEmailAddress;
+exports.registerVerificationCode = registerVerificationCode;
+exports.login = login;
+exports.logout = logout;
 
 var active_listings = null;
 var active_users = null;
@@ -59,8 +63,8 @@ app.post('/', function (req, res) {
         }
         registerEmailAddress(email_address, callback, error_handler);
     }
-        //once verifictation code has been received, user enters the code along with other account info to create new account
-    else if(req.body.command == 'register_verification'){
+    //once verifictation code has been received, user enters the code along with other account info to create new account
+    else if(req.body.command == 'register_verification_code'){
         var json = req.body.json;
         var verification_code = json.verification_code;
         var username = json.username;
@@ -75,6 +79,9 @@ app.post('/', function (req, res) {
         }
         registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler);
     }
+        //logs user in, creates user object from an entry in the database and then adds the user object to the active_users object
+        //sends the user a key that identifies their login instance, attach the key to the user object that was added to
+        //active_users, that way in the future we can authenticate without querying database
     else if(req.body.command == 'login'){
         var json = req.body.json;
         var username = json.username;
@@ -89,6 +96,7 @@ app.post('/', function (req, res) {
         login(username, password, callback, error_handler);
 
     }
+    //logs user out, if username and password are correct, remove the user from active_users
     else if(req.body.command == 'logout'){
         var json = req.body.json;
         var username = json.username;
@@ -187,6 +195,7 @@ ActiveListings.prototype = {
 //do not include password in User object, use password only to retrieve from database on login
 function User(username, password, email){
     //TODO: find way to get a unique id that we can then assign the user, probably have to get it by querying the Database
+    //this.id (assigned after inserting into database)
     this.username = username;
     this.password = password;
     this.email = email
@@ -205,7 +214,8 @@ function User(username, password, email){
 User.prototype = {
     //TODO: add getters for username and email, note: password should never be gotten only used internally in a user object
     constructor: User,
-    initUser: function(user){
+    //initUserFromDatabase initializes a user object based on an object returned from database
+    initUserFromDatabase: function(user){
         this._id = user._id;
         this.username = user.username;
         this.password = user.password;
@@ -282,6 +292,7 @@ function ActiveUsers(){
     this.users = {};
     this.max_id = -1;
 }
+//TODO:change from indexing by username to indexing by _id
 ActiveUsers.prototype = {
     constructor: ActiveUsers,
     add: function(user){
@@ -541,7 +552,8 @@ function registerEmailAddress(email_address, callback, error_handler){
                         return console.log(error);
                     }
                     console.log('Message sent: ' + info.response);
-                    if(callback != undefined){ callback();}
+                    //send verification_code to callback as well as email (for testing purposes)
+                    if(callback != undefined){ callback(verification_code, email_address);}
                 });
             }
         });
@@ -551,6 +563,7 @@ function registerEmailAddress(email_address, callback, error_handler){
     //TODO:return message that indicates validation of email was successful
     return true;
 }
+
 
 function registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler){
     //TODO: implement details below
@@ -615,10 +628,14 @@ function registerVerificationCode(verification_code, username, password, confirm
             var collection_users = db.collection('users');
             //TODO: check to make sure that email and username are unique
             //TODO:change emails database entry to reflect that a email has been registered
-            checkIfEmailAndUserNameUnique(insertUser(function(){
-                //TODO: log user registering
-                if(callback != undefined){ callback(); }
-            }));
+            checkIfEmailAndUserNameUnique(function() {
+                insertUser(function () {
+                    //TODO: log user registering
+                    if (callback != undefined) {
+                        callback(username + " with email address " + email_address + " has been registered");
+                    }
+                })
+            });
 
             //TODO: should we use usernames or real names? Real Names might require integration with Facebook
             function checkIfEmailAndUserNameUnique(callback){
@@ -632,7 +649,8 @@ function registerVerificationCode(verification_code, username, password, confirm
                         //TODO:
                         collection_users.find({username: username}).toArray(function(err, docs){
                             if(docs.length > 0){
-                                error_handler("username has been taken");
+                                console.log(username + " has been taken");
+                                error_handler(username + " has been taken");
                                 return;
                             }
                             else{
@@ -672,6 +690,7 @@ function registerVerificationCode(verification_code, username, password, confirm
     return true;
 }
 
+//TODO: return the id from registration and use that for future server accesses along with the password
 //TODO: login with username and password or email address, or facebook?
 function login(username, password, callback, error_handler){
     //TODO: implement details below
@@ -685,7 +704,8 @@ function login(username, password, callback, error_handler){
                 //TODO:
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 var user = new User();
-                user.initUser(docs[0]);
+                user.initUserFromDatabase(docs[0]);
+
                 console.log("User Object: ")
                 console.log(user);
                 try {
@@ -782,6 +802,6 @@ function validateUsername(username){
 }
 
 function validatePassword(password){
-    //must be atleast 8 characters long
-    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password);
+    //must be atleast 6 characters long
+    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(password);
 }
