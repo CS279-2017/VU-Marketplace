@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/test.js" afterPath="$PROJECT_DIR$/test/test.js" />
     </list>
@@ -28,8 +27,8 @@
       <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/node_modules/express/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="165">
+              <caret line="11" column="0" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
               </folding>
@@ -57,21 +56,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="app.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="727">
-              <caret line="805" column="47" selection-start-line="805" selection-start-column="47" selection-end-line="805" selection-end-column="47" />
+            <state relative-caret-position="182">
+              <caret line="725" column="53" selection-start-line="725" selection-start-column="48" selection-end-line="725" selection-end-column="53" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="test.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="test.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/test/test.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-623">
-              <caret line="32" column="38" selection-start-line="32" selection-start-column="38" selection-end-line="32" selection-end-column="38" />
+            <state relative-caret-position="157">
+              <caret line="117" column="26" selection-start-line="117" selection-start-column="26" selection-end-line="117" selection-end-column="26" />
               <folding />
             </state>
           </provider>
@@ -253,12 +252,12 @@
       <updated>1476484626614</updated>
       <workItem from="1476484627761" duration="61584000" />
       <workItem from="1477150127672" duration="594000" />
-      <workItem from="1477240010127" duration="18657000" />
+      <workItem from="1477240010127" duration="20067000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="80835000" />
+    <option name="totallyTimeSpent" value="82245000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1280" height="694" extended-state="0" />
@@ -384,14 +383,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/package.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="6" column="6" selection-start-line="6" selection-start-column="6" selection-end-line="6" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -402,26 +393,34 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/node_modules/express/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state relative-caret-position="165">
+          <caret line="11" column="0" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app.js">
+    <entry file="file://$PROJECT_DIR$/package.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="727">
-          <caret line="805" column="47" selection-start-line="805" selection-start-column="47" selection-end-line="805" selection-end-column="47" />
+        <state relative-caret-position="90">
+          <caret line="6" column="6" selection-start-line="6" selection-start-column="6" selection-end-line="6" selection-end-column="6" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/test/test.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-623">
-          <caret line="32" column="38" selection-start-line="32" selection-start-column="38" selection-end-line="32" selection-end-column="38" />
+        <state relative-caret-position="157">
+          <caret line="117" column="26" selection-start-line="117" selection-start-column="26" selection-end-line="117" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="182">
+          <caret line="725" column="53" selection-start-line="725" selection-start-column="48" selection-end-line="725" selection-end-column="53" />
           <folding />
         </state>
       </provider>

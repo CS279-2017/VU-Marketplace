@@ -73,7 +73,7 @@ describe("Hello World Server", function() {
            
         });
         
-        it("inserting invalid username and password", function(done){
+        it("registering username that's been taken", function(done){
             dropUsersAndEmailsDatabase(function(){
                 app.registerEmail('aa' + "@vanderbilt.edu", callback1, error_handler);
                 app.registerEmail('ab' + "@vanderbilt.edu", callback1, error_handler);
@@ -110,7 +110,39 @@ describe("Hello World Server", function() {
     });
 
     describe("Login", function(done){
+        it("register 26 then login", function(done){
+            dropUsersAndEmailsDatabase(callback0);
+            function callback0(){
+                var push_strings = []; //push strings onto here after popping off of possible_strings;
+                var possible_strings = getAllPossibleStrings(1);
+                var i = 0;
+                function callback1(verification_code, email_address){
+                    var username = possible_strings.pop();
+                    push_strings.push(username);
+                    // console.log("calling registerVerificationCode");
+                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
+                }
+                function callback2(message) {
+                    // console.log(message);
+                    i++;
+                    app.login(username, "chocho513", callback, error_handler);
+                    function callback() {
+                        if(i == 26){
+                            console.log(app.getActiveUsers());
+                            done();
+                        }
+                    }
+                    
+                }
+                function error_handler(error){
+                    console.log(error);
+                }
+                for(var string in possible_strings){
+                    app.registerEmail(string + "@vanderbilt.edu", callback1, error_handler);
+                }
+            }
 
+        });
     });
 
 });

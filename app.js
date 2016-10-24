@@ -32,6 +32,7 @@ exports.registerEmail = registerEmailAddress;
 exports.registerVerificationCode = registerVerificationCode;
 exports.login = login;
 exports.logout = logout;
+exports.getActiveUsers = getActiveUsers;
 
 var active_listings = null;
 var active_users = null;
@@ -771,7 +772,9 @@ function logout(username, password, callback, error_handler){
 //     //send email containing username to the email address
 // }
 
-
+function getActiveUsers(){
+    return active_users;
+}
 
 function resetPassword(email_address){
     //send message back to client saying "if valid email address then you will receive a reset password at this link"
