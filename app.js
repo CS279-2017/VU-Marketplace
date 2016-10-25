@@ -330,7 +330,8 @@ function registerVerificationCode(verification_code, username, password, confirm
                 insertUser(function () {
                     //TODO: log user registering
                     if (callback != undefined) {
-                        callback(username + " with email address " + email_address + " has been registered");
+                        // callback(username + " with email address " + email_address + " has been registered");
+                        callback(username, password, email_address); //used for testing purposes
                     }
                 })
             });
@@ -372,10 +373,10 @@ function registerVerificationCode(verification_code, username, password, confirm
                             error_handler(err);
                             return;
                         } else {
-                            console.log('Inserted ' + user.username + ' into database');
+                            console.log('Inserted ' + user.username + ' into user database');
 
                         }
-                        callback();
+                        callback(); //return username, password, and email_address of user that's been registered for testing purposes
                     });
                     db.close(); //we close the db in the callback of the last database operation is performed
                 });

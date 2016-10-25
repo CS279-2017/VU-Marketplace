@@ -31,47 +31,45 @@ describe("Hello World Server", function() {
 
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
-        it("register 26 users", function(done){
-            dropUsersAndEmailsDatabase(callback0);
-            function callback0(){
-                var possible_strings = getAllPossibleStrings(1);
-                var i = 0;
-                function callback1(verification_code, email_address){
-                    var username = possible_strings.pop();
-                    // console.log("calling registerVerificationCode");
-                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
-                }
-                function callback2(message) {
-                    // console.log(message);
-                    i++;
-                    if(i == 26){
-                        MongoClient.connect(url, function (err, db) {
-                            if (err) {
-                                error_handler('Unable to connect to the mongoDB server. Error:' +  err);
-                                return;
-                            }
-                            var collection = db.collection('users');
-                            collection.count(null,null,function(err, count){
-                                if(err){ error_handler(err); return;}
-                                dropUsersAndEmailsDatabase(function(){
-                                    assert(count, 26);
-                                    db.close();
-                                    done();
-                                });
-                            });
-
-                        });
-                    }
-                }
-                function error_handler(error){
-                    console.log(error);
-                }
-                for(var string in possible_strings){
-                    app.registerEmail(string + "@vanderbilt.edu", callback1, error_handler);
-                }
-            }
-           
-        });
+        // it("register 26 users", function(done){
+        //     dropUsersAndEmailsDatabase(callback0);
+        //     function callback0(){
+        //         var possible_strings = getAllPossibleStrings(1);
+        //         var i = 0;
+        //         function callback1(verification_code, email_address){
+        //             var username = possible_strings.pop();
+        //             // console.log("calling registerVerificationCode");
+        //             app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
+        //         }
+        //         function callback2(message) {
+        //             // console.log(message);
+        //             i++;
+        //             if(i == 26){
+        //                 MongoClient.connect(url, function (err, db) {
+        //                     if (err) {
+        //                         error_handler('Unable to connect to the mongoDB server. Error:' +  err);
+        //                         return;
+        //                     }
+        //                     var collection = db.collection('users');
+        //                     collection.count(null,null,function(err, count){
+        //                         if(err){ error_handler(err); return;}
+        //                         assert(count, 26);
+        //                         db.close();
+        //                         done();
+        //                     });
+        //
+        //                 });
+        //             }
+        //         }
+        //         function error_handler(error){
+        //             console.log(error);
+        //         }
+        //         for(var string in possible_strings){
+        //             app.registerEmail(string + "@vanderbilt.edu", callback1, error_handler);
+        //         }
+        //     }
+        //
+        // });
         
         it("registering username that's been taken", function(done){
             dropUsersAndEmailsDatabase(function(){
@@ -110,40 +108,72 @@ describe("Hello World Server", function() {
     });
 
     describe("Login", function(done){
-        it("register 26 then login", function(done){
+        // it("register 26 then login", function(done){
+        //     dropUsersAndEmailsDatabase(callback0);
+        //     function callback0(){
+        //         var push_strings = []; //push strings onto here after popping off of possible_strings;
+        //         var possible_strings = getAllPossibleStrings(1);
+        //         var i = 0;
+        //         var users = [];
+        //         function callback1(verification_code, email_address){
+        //             var username = possible_strings.pop();
+        //             push_strings.push(username);
+        //             // console.log("calling registerVerificationCode");
+        //             app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
+        //         }
+        //         function callback2(username, password) {
+        //             // users.push({username: username, password: password, email_address: email_address});
+        //             console.log("attempting to login as " + username + " with password " + password);
+        //             app.login(username, password, callback, error_handler);
+        //             function callback() {
+        //                 i++;
+        //                 if(i == 26){
+        //                     console.log(app.getActiveUsers());
+        //                     done();
+        //                 }
+        //             }
+        //
+        //         }
+        //         function error_handler(error){
+        //             console.log(error);
+        //         }
+        //         for(var string in possible_strings){
+        //             app.registerEmail(string + "@vanderbilt.edu", callback1, error_handler);
+        //         }
+        //     }
+        //
+        // });
+
+        it("register then login then logout", function(done){
             dropUsersAndEmailsDatabase(callback0);
             function callback0(){
-                var push_strings = []; //push strings onto here after popping off of possible_strings;
-                var possible_strings = getAllPossibleStrings(1);
-                var i = 0;
+                app.registerEmail( "bowen.leeroy@vanderbilt.edu", callback1, error_handler);
                 function callback1(verification_code, email_address){
-                    var username = possible_strings.pop();
-                    push_strings.push(username);
-                    // console.log("calling registerVerificationCode");
-                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
+                    app.registerVerificationCode(verification_code, 'bowenjin', "chocho513", "chocho513", email_address, callback2, error_handler);
                 }
-                function callback2(message) {
-                    // console.log(message);
-                    i++;
-                    app.login(username, "chocho513", callback, error_handler);
-                    function callback() {
-                        if(i == 26){
-                            console.log(app.getActiveUsers());
+                function callback2(username, password) {
+                    // users.push({username: username, password: password, email_address: email_address});
+                    console.log("attempting to login as " + username + " with password " + password);
+                    app.login(username, password, callback3, error_handler);
+                    function callback3() {
+                        var active_users = app.getActiveUsers();
+                        console.log(active_users);
+                        app.logout(username, password, function(){
+                            console.log(username + " has logged out");
+                            console.log(active_users);
                             done();
-                        }
+                        }, error_handler)
                     }
-                    
                 }
                 function error_handler(error){
                     console.log(error);
-                }
-                for(var string in possible_strings){
-                    app.registerEmail(string + "@vanderbilt.edu", callback1, error_handler);
                 }
             }
 
         });
     });
+
+
 
 });
 
