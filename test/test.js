@@ -144,7 +144,7 @@ describe("Hello World Server", function() {
         //
         // });
 
-        it("register then login then logout", function(done){
+        it("register then login then logout then login", function(done){
             dropUsersAndEmailsDatabase(callback0);
             function callback0(){
                 app.registerEmail( "bowen.leeroy@vanderbilt.edu", callback1, error_handler);
@@ -156,12 +156,14 @@ describe("Hello World Server", function() {
                     console.log("attempting to login as " + username + " with password " + password);
                     app.login(username, password, callback3, error_handler);
                     function callback3() {
-                        var active_users = app.getActiveUsers();
-                        console.log(active_users);
+                        app.getActiveUsers().get(username).setVenmoId("some_venmo_id");
                         app.logout(username, password, function(){
-                            console.log(username + " has logged out");
-                            console.log(active_users);
-                            done();
+                            console.log(app.getActiveUsers());
+                            app.login(username, password, function(){
+                                console.log(app.getActiveUsers());
+                                done();
+                            }, error_handler)
+
                         }, error_handler)
                     }
                 }

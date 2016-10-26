@@ -139,13 +139,13 @@ var server = app.listen(3000, function () {
         //     console.log(error);
         // }
         // );
-        registerVerificationCode('fhF6GC', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
-            console.log("Verification code registration complete, now trying to login");
-            login("bowenjin", "chocho513");
-        },
-        function(error){
-           console.log(error);
-        });
+        // registerVerificationCode('fhF6GC', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
+        //     console.log("Verification code registration complete, now trying to login");
+        //     login("bowenjin", "chocho513");
+        // },
+        // function(error){
+        //    console.log(error);
+        // });
         // login("bowenjin", "chocho513", function(){
         //     logout("bowenjin", "chocho513");
         // },function(error){
@@ -443,15 +443,24 @@ function logout(username, password, callback, error_handler){
                 console.log("user Object:");
                 console.log(user);
                 try {
+                    var user_id = user._id;
+                    console.log("active_user inside logout:")
+                    console.log(active_users);
+                    //this saves the user data to the database before logging out
+                    collection.update({_id:user._id}, active_users.get(username), function(err, result) {
+                        if(err){error_handler(err);}
+                        console.log(user_id + " info saved to database");
+                        db.close()
+                        console.log(user.username + "has logged out");
+                        // //TODO: notify user that they've been logged out
+                        if(callback != undefined){ callback(); }
+                    });
+                        //update database with new user info
                     active_users.remove(user.username);
                 }catch(e){
                     error_handler(e.message);
                     return;
                 }
-                console.log(user.username + "has logged out");
-                // //TODO: notify user that they've been logged out
-                //update user to logged in db, or maybe not don't know if it is necessary
-                if(callback != undefined){ callback(); }
 
             }
             else{
@@ -459,7 +468,6 @@ function logout(username, password, callback, error_handler){
                 //if not found: alert user that login failed, because incorrect username/password
                 error_handler("invalid username/password");
             }
-            db.close()
         });
     });
 }

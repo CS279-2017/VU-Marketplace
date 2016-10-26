@@ -3,10 +3,10 @@ module.exports = User;
 //do not include password in User object, use password only to retrieve from database on login
 function User(username, password, email){
     //TODO: find way to get a unique id that we can then assign the user, probably have to get it by querying the Database
-    //this.id (assigned after inserting into database)
+    //this.id (assigned when retrieved from database)
     this.username = username;
     this.password = password;
-    this.email = email
+    this.email_address = email
     this.venmo_id = null;
     //TODO:
     //should user store a history of all the transactions and listings or should he/she just query the database?
@@ -28,6 +28,7 @@ User.prototype = {
         this.username = user.username;
         this.password = user.password;
         this.venmo_id = user.venmo_id;
+        this.email_address = user.email_address;
         this.current_transactions_ids = user.current_transactions_ids
         this.all_transaction_ids = user.all_transaction_ids;
         this.current_location = user.current_location;
@@ -50,6 +51,7 @@ User.prototype = {
         return new Listing(id ,this.username, title, description, location, creation_time, expiration_time, price, buy)
         //location might have to be modified into appropriate structure
     },
+    //TODO: make Transaction should call make Transaction on the listing
     makeTransaction:function(listing){
         //TODO:
         //make create a transaction and add it to activeTransactions

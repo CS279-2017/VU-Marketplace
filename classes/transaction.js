@@ -4,8 +4,8 @@ module.exports = Transaction;
 //transaction is saved to database when it has been terminated
 //note create the transaction before deleting a listing
 //note if we had to recreate transaction object from database, we would need a parameter for conversation as well
-function Transaction(id, user_buy, user_sell, listing){
-    this.id = id;
+function Transaction(user_buy, user_sell, listing){
+    //this._id (this is assigned when transaction retrieved from database)
     this.user_buy = user_buy; //convert to json and save to database
     this.user_sell = user_sell; //convert to json and save to database
     this.conversation = new Conversation(); //convert to json and save to database

@@ -5,9 +5,9 @@ module.exports = ActiveUsers;
 //contains all active (online) users
 function ActiveUsers(){
     this.users = {};
-    this.max_id = -1;
 }
-//TODO:change from indexing by username to indexing by _id
+//TODO: what should ActiveUsers be indexed by? username, email_address, _id, or something else?
+//TODO:change from indexing by username to indexing by _id, this allows us to remove usernames if necessary, makes username option
 ActiveUsers.prototype = {
     constructor: ActiveUsers,
     add: function(user){
@@ -25,9 +25,9 @@ ActiveUsers.prototype = {
     },
     remove: function(username){
         if(this.users[username] != undefined){
-            delete this.users[username]
+            delete this.users[username];
             if(this.users[username] == undefined) {
-                console.log(username + " has been removed from ActiveUsers");
+                console.log("user with username " + username + " has been removed from ActiveUsers");
             }
             else{
                 throw "removing " + username + " failed";
