@@ -160,7 +160,7 @@ describe("Hello World Server", function() {
                         app.logout(username, password, function(){
                             console.log(app.getActiveUsers());
                             app.login(username, password, function(){
-                                console.log(app.getActiveUsers());
+                                assert(app.getActiveUsers().get(username).venmo_id == "some_venmo_id");
                                 done();
                             }, error_handler)
 

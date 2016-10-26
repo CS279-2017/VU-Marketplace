@@ -3,15 +3,18 @@ var bodyParser = require('body-parser');
 var nodemailer = require('nodemailer');
 
 //import classes
-var User = require("./classes/user.js");
-var Message = require("./classes/message.js");
-var Transaction = require("./classes/transaction.js");
-var Listing = require("./classes/listing.js");
-var Conversation = require("./classes/conversation.js");
+var User = require("./model/classes/user.js");
+var Message = require("./model/classes/message.js");
+var Transaction = require("./model/classes/transaction.js");
+var Listing = require("./model/classes/listing.js");
+var Conversation = require("./model/classes/conversation.js");
 
-var ActiveUsers = require("./classes/active_users.js");
-var ActiveListings = require("./classes/active_listings.js");
-var ActiveTransactions = require("./classes/active_transactions.js");
+var ActiveUsers = require("./model/classes/active_users.js");
+var ActiveListings = require("./model/classes/active_listings.js");
+var ActiveTransactions = require("./model/classes/active_transactions.js");
+
+//import database class
+var database = require("./model/database.js");
 
 // create reusable transporter object using the default SMTP transport
 //TODO: currently using gmail, switch to mailgun for more sends per day
@@ -128,6 +131,8 @@ app.post('/', function (req, res) {
 
 var server = app.listen(3000, function () {
     console.log('Example app listening on port 3000!');
+    //TODO: whenever active_listing, active_transactions, or active_users is changed i.e add/remove is called, 
+    // TODO: all users must be notified of this change
     active_listings = new ActiveListings();
     active_transactions = new ActiveTransactions();
     active_users = new ActiveUsers();
@@ -403,7 +408,7 @@ function login(username, password, callback, error_handler){
                 //TODO:
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 var user = new User();
-                user.initUserFromDatabase(docs[0]);
+                user.initFromDatabase(docs[0]);
 
                 console.log("User Object: ")
                 console.log(user);

@@ -10,13 +10,4 @@ function Message(text, username, time_sent){
 
 Message.prototype = {
     constructor: Message,
-    converToJSON: function(){
-        return JSON.stringify(this, function( key, value) {
-            if (key == 'user') {
-                return user.convertToJSON();
-            } else{
-                return value;
-            }
-        });
-    }
 }
