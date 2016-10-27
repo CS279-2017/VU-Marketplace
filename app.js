@@ -3,18 +3,15 @@ var bodyParser = require('body-parser');
 var nodemailer = require('nodemailer');
 
 //import classes
-var User = require("./model/classes/user.js");
-var Message = require("./model/classes/message.js");
-var Transaction = require("./model/classes/transaction.js");
-var Listing = require("./model/classes/listing.js");
-var Conversation = require("./model/classes/conversation.js");
+var User = require("./classes/user.js");
+var Message = require("./classes/message.js");
+var Transaction = require("./classes/transaction.js");
+var Listing = require("./classes/listing.js");
+var Conversation = require("./classes/conversation.js");
 
-var ActiveUsers = require("./model/classes/active_users.js");
-var ActiveListings = require("./model/classes/active_listings.js");
-var ActiveTransactions = require("./model/classes/active_transactions.js");
-
-//import database class
-var database = require("./model/database.js");
+var ActiveUsers = require("./classes/active_users.js");
+var ActiveListings = require("./classes/active_listings.js");
+var ActiveTransactions = require("./classes/active_transactions.js");
 
 // create reusable transporter object using the default SMTP transport
 //TODO: currently using gmail, switch to mailgun for more sends per day
