@@ -72,20 +72,25 @@ describe("Hello World Server", function() {
         // });
         
         it("registering username that's been taken", function(done){
+            this.timeout(5000);
             dropUsersAndEmailsDatabase(function(){
+                //simultaneously registering (creates a race condition)
                 app.registerEmail('aa' + "@vanderbilt.edu", callback1, error_handler);
                 app.registerEmail('ab' + "@vanderbilt.edu", callback1, error_handler);
             })
 
             function callback1(verification_code, email_address){
+                console.log("callback1 called on " + email_address)
                 var username = 'helloooo';
                 // console.log("calling registerVerificationCode");
                 app.registerVerificationCode(verification_code, username , "chocho513", "chocho513", email_address, callback2, error_handler);
             }
             function callback2(message) {
+                console.log("callback2 called");
                 console.log(message);
             }
             function error_handler(error){
+                console.log(error);
                 assert(error, "helloooo has been taken");
                 done();
             }
@@ -109,6 +114,7 @@ describe("Hello World Server", function() {
 
     describe("Login", function(done){
         // it("register 26 then login", function(done){
+        //         this.timeout(5000);
         //     dropUsersAndEmailsDatabase(callback0);
         //     function callback0(){
         //         var push_strings = []; //push strings onto here after popping off of possible_strings;
@@ -141,10 +147,11 @@ describe("Hello World Server", function() {
         //             app.registerEmail(string + "@vanderbilt.edu", callback1, error_handler);
         //         }
         //     }
-        //
+
         // });
 
         it("register then login then logout then login", function(done){
+            this.timeout(5000);
             dropUsersAndEmailsDatabase(callback0);
             function callback0(){
                 app.registerEmail( "bowen.leeroy@vanderbilt.edu", callback1, error_handler);
@@ -156,12 +163,12 @@ describe("Hello World Server", function() {
                     // users.push({username: username, password: password, email_address: email_address});
                     console.log("attempting to login as " + username + " with password " + password);
                     app.login(username, password, callback3, error_handler);
-                    function callback3() {
-                        app.getActiveUsers().get(username).setVenmoId("some_venmo_id");
+                    function callback3(_id) {
+                        app.getActiveUsers().get(_id).setVenmoId("some_venmo_id");
                         app.logout(username, password, function(){
                             console.log(app.getActiveUsers());
-                            app.login(username, password, function(){
-                                assert(app.getActiveUsers().get(username).venmo_id == "some_venmo_id");
+                            app.login(username, password, function(_id){
+                                assert(app.getActiveUsers().get(_id).venmo_id == "some_venmo_id");
                                 done();
                             }, error_handler)
 

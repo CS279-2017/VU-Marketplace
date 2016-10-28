@@ -6,31 +6,30 @@ module.exports = ActiveUsers;
 function ActiveUsers(){
     this.users = {};
 }
-//TODO: what should ActiveUsers be indexed by? username, email_address, _id, or something else?
-//TODO:change from indexing by username to indexing by _id, this allows us to remove usernames if necessary, makes username option
+//active_users now indexed by _id rather than username, thus making login indepedent of username
 ActiveUsers.prototype = {
     constructor: ActiveUsers,
     add: function(user){
-        if(this.users[user.username] == undefined) {
-            this.users[user.username] = user;
-            console.log(this.users[user.username].username + "has been added to ActiveUsers");
+        if(this.users[user._id] == undefined) {
+            this.users[user._id] = user;
+            console.log(this.users[user._id].username + "has been added to ActiveUsers");
         }
         else{
             throw "user is already logged in, can't login"
         }
 
     },
-    get: function(username){
-        return this.users[username];
+    get: function(_id){
+        return this.users[_id];
     },
-    remove: function(username){
-        if(this.users[username] != undefined){
-            delete this.users[username];
-            if(this.users[username] == undefined) {
-                console.log("user with username " + username + " has been removed from ActiveUsers");
+    remove: function(_id){
+        if(this.users[_id] != undefined){
+            delete this.users[_id];
+            if(this.users[_id] == undefined) {
+                console.log("user with username " + users[_id].username + " has been removed from ActiveUsers");
             }
             else{
-                throw "removing " + username + " failed";
+                throw "removing user with id " + _id  + " failed";
             }
         }
         else{

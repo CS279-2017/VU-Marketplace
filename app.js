@@ -35,6 +35,8 @@ var url = 'mongodb://localhost:27017/mealplanappserver';
 
 var app = express();
 
+var registrationUserSet = {};
+
 var exports = module.exports = {};
 exports.closeServer = function(){
     server.close();
@@ -219,7 +221,6 @@ function registerEmailAddress(email_address, callback, error_handler){
                 //adds the verification code and email to db
                 insertVerificationCode();
                 sendEmail(email_address, verification_code);
-                db.close()
             });
             //email address, verified, registered, verification_code
             //generate a random verification code
@@ -341,6 +342,13 @@ function registerVerificationCode(verification_code, username, password, confirm
 
             //TODO: should we use usernames or real names? Real Names might require integration with Facebook
             function checkIfEmailAndUserNameUnique(callback){
+                if(registrationUserSet[username] != undefined){
+                    error_handler(username + " has been taken");
+                    return;
+                }
+                else{
+                    registrationUserSet[username] = username;
+                }
                 collection_users.find({email_address: email_address}).toArray(function(err, docs) {
                     if(docs.length > 0) {
                         error_handler("email address has already been registered")
@@ -417,9 +425,8 @@ function login(username, password, callback, error_handler){
                     return;
                 }
                 console.log(user.username + "is logged in");
-                // //TODO: notify user that they've been logged in
-                //update user to logged in db, or maybe not don't know if it is necessary
-                if(callback != undefined){ callback(); }
+                //return user._id, use this to authenticate rather than username, thus login is independent of username
+                if(callback != undefined){ callback(user._id); }
 
             }
             else{
@@ -450,7 +457,7 @@ function logout(username, password, callback, error_handler){
                     console.log("active_user inside logout:")
                     console.log(active_users);
                     //this saves the user data to the database before logging out
-                    collection.update({_id:user._id}, active_users.get(username), function(err, result) {
+                    collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
                         if(err){error_handler(err);}
                         console.log(user_id + " info saved to database");
                         db.close()
@@ -459,7 +466,7 @@ function logout(username, password, callback, error_handler){
                         if(callback != undefined){ callback(); }
                     });
                         //update database with new user info
-                    active_users.remove(user.username);
+                    active_users.remove(user_id);
                 }catch(e){
                     error_handler(e.message);
                     return;
