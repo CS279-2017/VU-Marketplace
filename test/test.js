@@ -86,7 +86,7 @@ describe("Hello World Server", function() {
                 console.log(message);
             }
             function error_handler(error){
-                assert(error, "username has been taken");
+                assert(error, "helloooo has been taken");
                 done();
             }
 
@@ -149,6 +149,7 @@ describe("Hello World Server", function() {
             function callback0(){
                 app.registerEmail( "bowen.leeroy@vanderbilt.edu", callback1, error_handler);
                 function callback1(verification_code, email_address){
+                    console.log("registering bowenjin with verification code " + verification_code);
                     app.registerVerificationCode(verification_code, 'bowenjin', "chocho513", "chocho513", email_address, callback2, error_handler);
                 }
                 function callback2(username, password) {

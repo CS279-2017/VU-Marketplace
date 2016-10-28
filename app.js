@@ -141,13 +141,13 @@ var server = app.listen(3000, function () {
         //     console.log(error);
         // }
         // );
-        // registerVerificationCode('fhF6GC', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
-        //     console.log("Verification code registration complete, now trying to login");
-        //     login("bowenjin", "chocho513");
-        // },
-        // function(error){
-        //    console.log(error);
-        // });
+        registerVerificationCode('One6Tl', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
+            console.log("Verification code registration complete, now trying to login");
+            login("bowenjin", "chocho513");
+        },
+        function(error){
+           console.log(error);
+        });
         // login("bowenjin", "chocho513", function(){
         //     logout("bowenjin", "chocho513");
         // },function(error){
@@ -266,6 +266,7 @@ function registerEmailAddress(email_address, callback, error_handler){
 
 
 function registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler){
+    console.log("called registerVerificationCode");
     //TODO: implement details below
     //verify that username is valid
     if(!validateUsername(username)){
@@ -290,7 +291,7 @@ function registerVerificationCode(verification_code, username, password, confirm
     //note this action happens asynchronously, subsequent events will probably occur before callback occurs
     MongoClient.connect(url, function (err, db) {
         if (err) {
-            error_handler('Unable to connect to theserver. Error:' +  err);
+            error_handler('Unable to connect to the server. Error:' +  err);
             return;
         }
         //TODO: verify that the verification code is valid, or if user has clicked on verification link
