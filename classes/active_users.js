@@ -37,4 +37,11 @@ ActiveUsers.prototype = {
         }
         //we don't delete from database, because database keeps track of all registered users
     },
+    getAll: function(){
+        var users_arr = [];
+        for(key in this.users){
+            users_arr.push(this.users[key]);
+        }
+        return users_arr;
+    },
 }

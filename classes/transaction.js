@@ -46,4 +46,30 @@ Transaction.prototype = {
         var message = new Message(text, username, new Date());
         this.conversation.send_message(message);
     },
+    //TODO: the below modifications should be done atomically so as the avoid race conditions
+    //initiates for the user with user_id (checks both user_id_buyer and user_id_seller to find which initiate to change)
+    inititate: function(user_id){
+        //TODO: check whether user_id is of buyer or of seller, then set the appropriate will_initiate value
+
+    },
+    dontInititate: function(user_id){
+        //TODO: check whether user_id is of buyer or of seller, then set the appropriate will_initiate value
+    },
+    
+    confirm: function(user_id){
+        //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
+        //TODO: set the confirm to true for the appropriate
+
+    },
+    reject: function(user_id){
+        //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
+        //TODO: set the confirm to false for the appropriate_user
+    },
+    //returns whether transaction has been initiated
+    hasInitated: function(){
+        //TODO: if both initiated boolean values are true then has started
+    },
+    hasCompleted: function(){
+        //TODO: if both confirm_met_up are true then return true;
+    },
 }

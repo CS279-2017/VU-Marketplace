@@ -35,8 +35,6 @@ var url = 'mongodb://localhost:27017/mealplanappserver';
 
 var app = express();
 
-var registrationUserSet = {};
-
 var exports = module.exports = {};
 exports.closeServer = function(){
     server.close();
@@ -45,7 +43,10 @@ exports.registerEmail = registerEmailAddress;
 exports.registerVerificationCode = registerVerificationCode;
 exports.login = login;
 exports.logout = logout;
+exports.makeListing = makeListing;
+exports.removeListing = removeListing;
 exports.getActiveUsers = getActiveUsers;
+exports.getActiveListings = getActiveListings;
 
 var active_listings = null;
 var active_users = null;
@@ -124,6 +125,27 @@ app.post('/', function (req, res) {
         }
         logout(username, password, callback, error_handler);
     }
+    else if(req.body.command == 'make_listing'){
+        
+    }
+    else if(req.body.command == 'remove_listing'){
+        
+    }
+    else if(req.body.command == 'initiate_transaction'){
+
+    }
+    else if(req.body.command == 'accept_initiate_transaction'){
+        
+    }
+    else if(req.body.command == 'decline_initiate_transaction'){
+        
+    }
+    else if(req.body.command == 'confirm_transaction'){
+        
+    }
+    else if(req.body.command == 'reject_transaction'){
+        
+    }
     // res.send('POST request to the homepage');
 });
 
@@ -137,19 +159,20 @@ var server = app.listen(3000, function () {
     active_users = new ActiveUsers();
 
     try {
+        createUniqueIndex();
         // registerEmailAddress("bowen.jin@vanderbilt.edu", function () {
         //     console.log("Email address registration complete");
         // }, function(error){
         //     console.log(error);
         // }
         // );
-        registerVerificationCode('One6Tl', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
-            console.log("Verification code registration complete, now trying to login");
-            login("bowenjin", "chocho513");
-        },
-        function(error){
-           console.log(error);
-        });
+        // registerVerificationCode('One6Tl', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
+        //     console.log("Verification code registration complete, now trying to login");
+        //     login("bowenjin", "chocho513");
+        // },
+        // function(error){
+        //    console.log(error);
+        // });
         // login("bowenjin", "chocho513", function(){
         //     logout("bowenjin", "chocho513");
         // },function(error){
@@ -159,6 +182,17 @@ var server = app.listen(3000, function () {
         console.log(e.message);
     }
 });
+
+function createUniqueIndex(callback) {
+    MongoClient.connect(url, function (err, db) {
+        if (err) {
+            error_handler('Unable to connect to the mongoDB server. Error:' + err);
+            return;
+        }
+    });
+}
+
+//THE BELOW METHODS ARE API METHODS THAT USERS CALL ON THE SERVER
 
 //TODO: note we pass an error handler method to each of these methods, if the methods are called, they are passed
 //TODO: a string that describes the error
@@ -211,16 +245,17 @@ function registerEmailAddress(email_address, callback, error_handler){
                         error_handler("email address has already been registered")
                         return;
                     }
-                    else{
-                        collection.remove({email_address: email_address}, function(err, result) {
-                            if (err) {console.log(err);}
-                            console.log("Successfully removed entry with email_address = " + email_address);
-                        });
-                    }
+                    // else{
+                    //     collection.remove({email_address: email_address}, function(err, result) {
+                    //         if (err) {console.log(err);}
+                    //         console.log("Successfully removed entry with email_address = " + email_address);
+                    //     });
+                    // }
                 }
                 //adds the verification code and email to db
                 insertVerificationCode();
-                sendEmail(email_address, verification_code);
+                //TODO: For testing purposes, dont actually send emails!
+                // sendEmail(email_address, verification_code);
             });
             //email address, verified, registered, verification_code
             //generate a random verification code
@@ -229,13 +264,24 @@ function registerEmailAddress(email_address, callback, error_handler){
                 //TODO: add a number of attempts that gets incremented everytime an attempt is wrong, once a certain number is reached
                 //TODO: delete the entry
                 var email = {email_address: email_address, registered: false, verification_code: verification_code}
-                collection.insert(email, function (err, result) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log('Inserted verification code '+verification_code+' into the email db under email address '+email_address);
-                    }
-                    db.close();
+                //adding unique index on email_address ensures no duplicate email_addresses
+                //TODO: add something that translates the duplicate error into a more user friendly message
+                collection.ensureIndex({email_address: 1}, {unique:true}, function(){
+                    collection.update({email_address: email_address}, email, {upsert: true}, function (err, result) {
+                        if (err) {
+                            if(err.message.indexOf('duplicate key error') >= 0){
+                                error_handler('username has been taken, cannot register ' + user.username);
+                            }
+                            else {
+                                error_handler(err);
+                            }
+                            return;
+                        } else {
+                            console.log('Inserted verification code '+verification_code+' into the email db under email address '+email_address);
+                            if(callback != undefined){ callback(verification_code, email_address);}
+                        }
+                        db.close();
+                    });
                 });
             }
             function sendEmail(email_address, verification_code){
@@ -254,7 +300,6 @@ function registerEmailAddress(email_address, callback, error_handler){
                     }
                     console.log('Message sent: ' + info.response);
                     //send verification_code to callback as well as email (for testing purposes)
-                    if(callback != undefined){ callback(verification_code, email_address);}
                 });
             }
         });
@@ -265,7 +310,7 @@ function registerEmailAddress(email_address, callback, error_handler){
     return true;
 }
 
-
+//TODO: this causes a race condition is two users registerVerification code within about .5 seconds of each other
 function registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler){
     console.log("called registerVerificationCode");
     //TODO: implement details below
@@ -295,6 +340,7 @@ function registerVerificationCode(verification_code, username, password, confirm
             error_handler('Unable to connect to the server. Error:' +  err);
             return;
         }
+
         //TODO: verify that the verification code is valid, or if user has clicked on verification link
         var collection_emails = db.collection('emails');
         //TODO: the fact that checking if registered is false and setting registered to true are not atomic operations
@@ -328,6 +374,7 @@ function registerVerificationCode(verification_code, username, password, confirm
         function registerUser(){
             var collection_emails = db.collection('emails');
             var collection_users = db.collection('users');
+            collection_users.createIndex({ "username": 1 , unique: true });
             //TODO: check to make sure that email and username are unique
             //TODO:change emails database entry to reflect that a email has been registered
             checkIfEmailAndUserNameUnique(function() {
@@ -342,13 +389,6 @@ function registerVerificationCode(verification_code, username, password, confirm
 
             //TODO: should we use usernames or real names? Real Names might require integration with Facebook
             function checkIfEmailAndUserNameUnique(callback){
-                if(registrationUserSet[username] != undefined){
-                    error_handler(username + " has been taken");
-                    return;
-                }
-                else{
-                    registrationUserSet[username] = username;
-                }
                 collection_users.find({email_address: email_address}).toArray(function(err, docs) {
                     if(docs.length > 0) {
                         error_handler("email address has already been registered")
@@ -378,18 +418,27 @@ function registerVerificationCode(verification_code, username, password, confirm
                         error_handler(err);
                         return;
                     }
-                    console.log("updated registered to true");
-                    collection_users.insert(user, function (err, result) {
-                        if (err) {
-                            error_handler(err);
-                            return;
-                        } else {
-                            console.log('Inserted ' + user.username + ' into user database');
+                    //adding unique index on usernames makes sure no duplicate usernames will be inserted
+                    //TODO: add something that translates the duplicate error into a more user friendly message
+                    collection_users.createIndex({username: 1}, {unique: true}, function(){
+                        console.log("updated registered to true");
+                        collection_users.insert(user, function (err, result) {
+                            if (err) {
+                                if(err.message.indexOf('duplicate key error') >= 0){
+                                    error_handler('username has been taken, cannot register ' + user.username);
+                                }
+                                else{
+                                    error_handler(err);
+                                }
+                                return;
+                            } else {
+                                console.log('Inserted ' + user.username + ' into user database');
 
-                        }
-                        callback(); //return username, password, and email_address of user that's been registered for testing purposes
-                    });
-                    db.close(); //we close the db in the callback of the last database operation is performed
+                            }
+                            callback(); //return username, password, and email_address of user that's been registered for testing purposes
+                        });
+                        db.close(); //we close the db in the callback of the last database operation is performed
+                    })
                 });
             }
         }
@@ -482,15 +531,135 @@ function logout(username, password, callback, error_handler){
     });
 }
 
+//check active_users using user_id key, check if password matches password of the user, if so call callback,
+//passes user object from active_users with user_id to the callback method
+// otherwise call error_handler
+function authenticate(user_id, password, callback, error_handler){
+    var user = active_users.get(user_id);
+    console.log("trying to authenticate user_id: " + user_id + " password: " + password);
+    console.log("user: ");
+    console.log(user);
+    if(user == undefined){
+        error_handler("tried to authenticate an invalid user_id/password combination");
+    }
+    else if(user.getPassword() != password){
+        error_handler("tried to authenticate an invalid user_id/password combination");
+    }
+    else{
+        console.log("authentication success!!")
+        callback(user);
+    }
+}
+
+//1. first authenticate if successful then create a listing,
+//2. add listing to database,
+//3. add listing to active_listings
+function makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
+        MongoClient.connect(url, function (err, db) {
+            if (err) {
+                error_handler('Unable to connect to the mongoDB server. Error:' + err);
+                return;
+            }
+            var collection_transactions = db.collection('transactions');
+            collection_transactions.insert(new_listing, function (err, count, status) {
+                if(err){error_handler(err.message);}
+                else{
+                    collection_transactions.find(new_listing).toArray(function(err, docs){
+                        if(docs.length == 1){
+                            new_listing.initFromDatabase(docs[0]);
+                            try {
+                                active_listings.add(new_listing);
+                            }catch(e){error_handler(e.message)};
+                            if(callback != undefined){ callback(new_listing._id);}
+                        }
+                        else{
+                            error_handler("more than 1 transaction inserted into db");
+                            return;
+                        }
+                    });
+                }
+            });
+        });
+    }, error_handler)
+}
+
+//1. authenticate if not successful pass message to error_handler
+//2. get listing from active_listings using listing_id, if not found pass message to error handler
+//3. if user_id of listing matches user_id, then remove listing from active_listings
+function removeListing(user_id, password, listing_id, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var listing = active_listings.get(listing_id);
+        if(listing.user_id == user_id){
+            active_listings.remove(listing_id);
+            if(callback != undefined){
+                callback(listing_id);
+            }
+        }
+        else{
+            error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
+        }
+    }, error_handler);
+}
+
+//called on a user (using user_id) and a listing (using listing_id)
+//1. authenticate, if successful proceed; else return message to error_handler ("invalid authentication info")
+//2. get listing from active_listings, if null then return message to error_handler
+//3. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
+//4. send message to user to made the listing to accept or decline listing
+function initiateTransaction(user_id, listing_id){
+    
+}
+
+
+//1. authenticate, if successful proceed, else return message to error_handler ("invalid authentication_info")
+//2. get transaction from active_transactions using transaction_id,
+// if null then return "invalid transaction_id, unable to find transaction" to error_handler
+//3. verify that user_id matches the user_id of the user that hasn't initiated yet,
+//else send message to error handler "user_id doesn't match the user_id's of the transaction, user isn't part of transaction"
+//4. verify that that the other user has initiated
+//else send message to error handler "the other user has yet to initiate"
+//5. set the will_initiate that corresponds to the user_id to true
+//6. add _id of transaction to transaction_id of listing
+//7. update listing in database
+//8. remove listing from active_listings
+//9. send a message to both users that transaction has begun
+function acceptInitiateTransaction(user_id, transaction_id){
+
+}
+
+//1-4 same as acceptInitiateTransaction()
+//5. set the will_initiate that corresponds to the user_id to false
+//6. update transaction in transaction database
+//7. remove transaction from active_transactions
+function declineInitiateTransaction(){
+
+}
+
+//1. authenticate, same as above
+//2. get transaction, same as above
+//3. confirm the transaction (call confirm on the transaction), passing in user_id
+//4. check if the transaction ahs completed, if so run appropriate methods
+function confirmTransaction(){
+    
+}
+
+//1. authenticate, same as above
+//2. get transaction, same as above
+//3. reject the transaction (call reject on the transaction), passing in user_id
+//4. check if transaction has completed, if so run appropriate methods
+function rejectTransaction(){
+    
+}
+
+
+
 // function recoverUsername(email_address){
 //     //TODO: implement details below
 //     //query User database for user with the given email address
 //     //send email containing username to the email address
 // }
-
-function getActiveUsers(){
-    return active_users;
-}
 
 function resetPassword(email_address){
     //send message back to client saying "if valid email address then you will receive a reset password at this link"
@@ -503,6 +672,14 @@ function resetPasswordVerification(new_password, new_password_confirm){
     //check to see if new password is valid
     //check to see if new password confirm is equal to new password
     //update the password for the user in the database (note verification code must be associated with a user)
+}
+
+function getActiveUsers(){
+    return active_users;
+}
+
+function getActiveListings(){
+    return active_listings;
 }
 
 function validateEmail(email) {
