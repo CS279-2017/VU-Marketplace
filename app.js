@@ -65,6 +65,7 @@ app.get('/', function (req, res) {
 app.post('/', function (req, res) {
     //TODO: clean req body to make sure doesn't contain any SQL injection or other threats
     //TODO: also make sure that somebody isn't spamming the server
+    //Router Method Header: register_email_address(email_address)
     //verifies email address and sends the verification code
     //note the below function calls are all asynchronous and thus cannot use exceptions, because by the time the
     //exception is triggered by the asynchronous function, the original try, catch block will be out of scope
@@ -78,6 +79,8 @@ app.post('/', function (req, res) {
         }
         registerEmailAddress(email_address, callback, error_handler);
     }
+
+    //Router Method Header: register_verification_code(verification_code, username, password, confirm_password, email_address)
     //once verifictation code has been received, user enters the code along with other account info to create new account
     else if(req.body.command == 'register_verification_code'){
         var json = req.body.json;
@@ -94,6 +97,8 @@ app.post('/', function (req, res) {
         }
         registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler);
     }
+
+        //Router Method Header: login(username, password)
         //logs user in, creates user object from an entry in the database and then adds the user object to the active_users object
         //sends the user a key that identifies their login instance, attach the key to the user object that was added to
         //active_users, that way in the future we can authenticate without querying database
@@ -111,47 +116,72 @@ app.post('/', function (req, res) {
         login(username, password, callback, error_handler);
 
     }
+    //Router Method Header: logout(user_id, password)
     //logs user out, if username and password are correct, remove the user from active_users
     else if(req.body.command == 'logout'){
         var json = req.body.json;
-        var username = json.username;
+        var user_id = json.user_id;
         var password = json.password;
-        var email_address = json.email_address
 
-        var callback = function(){};
+        function callback(){
+
+        }
         //TODO: write proper error_handler
-        var error_handler = function() {
+        function error_handler(){
             console.log(e.message);
         }
-        logout(username, password, callback, error_handler);
+        logout(user_id, password, callback, error_handler);
     }
+
+        //Router Method Header: make_listing(user_id, password, title, description, location, expiration_time, price, buy)
     else if(req.body.command == 'make_listing'){
         var json = req.body.json;
-        var username = json.user_id;
+        var user_id = json.user_id;
         var password = json.password;
-        var email_address = json.email_address
-        var error_handler = function(){
+        var title = json.title;
+        var description = json.description;
+        var location = json.location;
+        var expiration_time = json.expiration_time;
+        var price = json.price;
+        var buy = json.buy;
+        function error_handler(){
             console.log(e.message);
+        }
+        function callback(listing_id){
+
         }
         makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
     }
     else if(req.body.command == 'remove_listing'){
         
     }
-    else if(req.body.command == 'initiate_transaction'){
+    //initiate_transaction_request:
+    //1. make the transaction
+    //2. send transaction_request to user who owns the listing
+    //3. await response from user
+    else if(req.body.command == 'initiate_transaction_request'){
+        var json = req.body.json;
+        var user_id = json.user_id;
+        var password = json.password;
+        function error_handler(){
+            console.log(e.message);
+        }
+        function callback(){
+
+        }
+        initiateTransactionRequest(user_id, password, callback, error_handler)
+    }
+    else if(req.body.command == 'accept_transaction_request'){
+        
+    }
+    else if(req.body.command == 'decline_transaction_request'){
 
     }
-    else if(req.body.command == 'accept_initiate_transaction'){
-        
-    }
-    else if(req.body.command == 'decline_initiate_transaction'){
-        
-    }
     else if(req.body.command == 'confirm_transaction'){
-        
+
     }
     else if(req.body.command == 'reject_transaction'){
-        
+
     }
     // res.send('POST request to the homepage');
 });
@@ -600,40 +630,84 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
     }, error_handler);
 }
 
-//called on a user (using user_id) and a listing (using listing_id)
+
+//makes a transaction from a listing and sends a transaction_request to the owner of the listing
+function initiateTransactionRequest(user_id, listing_id, callback, error_handler){
+    makeTransaction(user_id, listing_id, function(transaction_id){
+        var listing = active_listings[listing_id]; //note the listing still exists since transaction hasn't been accepted
+        var user_id_request_recipient = listing.user_id;
+        sendTransactionRequest(user_id_request_recipient, function(){
+            callback();
+        }, error_handler);
+    }, error_handler)
+
+    //sends a transaction request to the user_id
+    function sendTransactionRequest(user_id, callback){
+
+    }
+
+    //called on a user (using user_id) and a listing (using listing_id)
 //1. authenticate, if successful proceed; else return message to error_handler ("invalid authentication info")
 //2. get listing from active_listings, if null then return message to error_handler
 //3. check to make sure that the user_id on listing isn't the user_id intiating the transaction (can't have transaction with self)
 //4. if transaction is of type buy then user_id is user_id_sell else user_id_buy
-//4. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
-//5. send message to user to made the listing to accept or decline listing
-function initiateTransaction(user_id, listing_id, callback, error_handler){
-    authenticate(user_id, password, function(user){
-        var new_transaction = createTransactionFromListing(user_id, listing_id);
+//5. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
+    function makeTransaction(user_id, listing_id, callback, error_handler){
+        authenticate(user_id, password, function(user){
+            var new_transaction = createTransactionFromListing(user_id, listing_id);
+            addTransactionToDatabase(new_transaction, function(new_transaction){
+                try {
+                    active_transactions.add(new_transaction);
+                }catch(e){error_handler(e.message)};
+                if(callback != undefined && callback != null){
+                    callback(new_transaction._id);
+                }
+            });
+        },error_handler)
 
-    },error_handler)
-
-    function createTransactionFromListing(user_id, listing_id){
-        var listing = active_listings.get(listing_id);
-        if(listing == undefined){
-            error_handler("initiateTransaction: no listing found with listing_id "+listing_id);
-            return;
+        function createTransactionFromListing(user_id, listing_id){
+            var listing = active_listings.get(listing_id);
+            if(listing == undefined){
+                error_handler("makeTransaction: no listing found with listing_id "+listing_id);
+                return;
+            }
+            var user_id_buy;
+            var user_id_sell;
+            if(listing.buy == true){
+                user_id_sell = user_id;
+                user_id_buy = listing.user_id;
+            }
+            else{
+                user_id_sell = listing.user_id;
+                user_id_buy = user_id;
+            }
+            return new Transaction(user_id_buy, user_id_sell, listing_id);
         }
-        var user_id_buy;
-        var user_id_sell;
-        if(listing.buy == true){
-            user_id_sell = user_id;
-            user_id_buy = listing.user_id;
-        }
-        else{
-            user_id_sell = listing.user_id;
-            user_id_buy = user_id;
-        }
-        return new Transaction(user_id_buy, user_id_sell, listing_id);
-    }
 
-    function addTransactionToDatabase(new_transaction){
-
+        function addTransactionToDatabase(new_transaction, callback){
+            MongoClient.connect(url, function (err, db) {
+                if (err) {
+                    error_handler('Unable to connect to the mongoDB server. Error:' + err);
+                    return;
+                }
+                var collection_transactions = db.collection('transactions');
+                collection_transactions.insert(new_transaction, function (err, count, status) {
+                    if(err){error_handler(err.message);}
+                    else{
+                        collection_transactions.find(new_listing).toArray(function(err, docs){
+                            if(docs.length == 1){
+                                new_transaction.initFromDatabase(docs[0]);
+                                if(callback != undefined){ callback(new_transaction);}
+                            }
+                            else{
+                                error_handler("more than 1 transaction inserted into db");
+                                return;
+                            }
+                        });
+                    }
+                });
+            });
+        }
     }
 }
 
@@ -645,20 +719,20 @@ function initiateTransaction(user_id, listing_id, callback, error_handler){
 //else send message to error handler "user_id doesn't match the user_id's of the transaction, user isn't part of transaction"
 //4. verify that that the other user has initiated
 //else send message to error handler "the other user has yet to initiate"
-//5. set the will_initiate that corresponds to the user_id to true
+//5. set the accept_request boolean that corresponds to the user_id to true
 //6. add _id of transaction to transaction_id of listing
 //7. update listing in database
 //8. remove listing from active_listings
 //9. send a message to both users that transaction has begun
-function acceptInitiateTransaction(user_id, transaction_id){
+function acceptTransactionRequest(user_id, transaction_id){
 
 }
 
-//1-4 same as acceptInitiateTransaction()
-//5. set the will_initiate that corresponds to the user_id to false
+//1-4 same as acceptTransactionRequest()
+//5. set the accept_request boolean that corresponds to the user_id to false
 //6. update transaction in transaction database
 //7. remove transaction from active_transactions
-function declineInitiateTransaction(){
+function declineTransactionRequest(){
 
 }
 

@@ -24,8 +24,8 @@ function Transaction(user_id_buy, user_id_sell, listing_id){
     this.user_id_sell = user_id_sell; //_id of Seller
     this.listing_id = listing_id; //listing_id
     this.conversation = new Conversation();
-    this.user_buy_will_initiate = null; //whether buyer agrees to begin transaction, true = yes, false = no, null = not responded yet
-    this.user_sell_will_initiate = null; //whether seller agrees to begin transaction, true = yes, false = no, null = not responded yet
+    this.user_buy_accept_request = null; //whether buyer agrees to begin transaction, true = yes, false = no, null = not responded yet
+    this.user_sell_accept_request = null; //whether seller agrees to begin transaction, true = yes, false = no, null = not responded yet
     this.user_buy_confirm_met_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
     this.user_sell_confirm_met_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
     //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
@@ -48,12 +48,12 @@ Transaction.prototype = {
     },
     //TODO: the below modifications should be done atomically so as the avoid race conditions
     //initiates for the user with user_id (checks both user_id_buyer and user_id_seller to find which initiate to change)
-    inititate: function(user_id){
-        //TODO: check whether user_id is of buyer or of seller, then set the appropriate will_initiate value
+    acceptRequest: function(user_id){
+        //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
 
     },
-    dontInititate: function(user_id){
-        //TODO: check whether user_id is of buyer or of seller, then set the appropriate will_initiate value
+    declineRequest: function(user_id){
+        //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
     },
     
     confirm: function(user_id){
