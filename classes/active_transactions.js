@@ -20,4 +20,16 @@ ActiveTransactions.prototype = {
     get: function (transaction_id){
         return active_transactions[transaction_id];
     }
+    ,
+    //gets all transactions involving a user with a given user_id 
+    getTransactionsForUser: function(user_id){
+        var transactions_arr = [];
+        for(transaction_id in active_transactions){
+            var transaction = active_transactions[transaction_id];
+            if(user_id == transaction.user_id_buy || user_id == transaction.user_id_sell){
+                transactions_arr.push(transaction);
+            }
+        }
+        return transactions_arr;
+    }
 }

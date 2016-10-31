@@ -642,6 +642,7 @@ function initiateTransactionRequest(user_id, listing_id, callback, error_handler
     }, error_handler)
 
     //sends a transaction request to the user_id
+    //TODO: implement this method
     function sendTransactionRequest(user_id, callback){
 
     }
@@ -724,8 +725,56 @@ function initiateTransactionRequest(user_id, listing_id, callback, error_handler
 //7. update listing in database
 //8. remove listing from active_listings
 //9. send a message to both users that transaction has begun
-function acceptTransactionRequest(user_id, transaction_id){
+function acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var transaction = active_transactions.get(transaction_id);
+        if(transaction == null || transaction == undefined){
+            error_handler("unable to find transaction with transaction_id: " + transaction_id);
+            return;
+        }
+        try {
+            transaction.acceptRequest(user_id);
+            //throws error if user with the user_id has already accepted request or if user_id
+            //doesn't match either user_id of the transactions
+            //verify that the other user has already accepted_request if not throw error
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
+        var listing = active_listings[transaction.listing_id];
+        listing.transaction_id = transaction_id;
+        //TODO: update listing in database
+        updateListings(listing, function(){
+            active_listings.remove(transaction.listing_id);
+            //send message to both users that transaction has begun
+            sendTransactionStartedMessage(function(){
+                callback();
+            });
+        });
 
+
+    }, error_handler)
+
+    function updateListings(listing, callback){
+        MongoClient.connect(url, function (err, db) {
+            if (err) {
+                error_handler('Unable to connect to the mongoDB server. Error:' + err);
+                return;
+            }
+            var collection_listings = db.collection('listings');
+            collection_listings.update({_id: listing._id}, listing, function (err, count, status) {
+                if(err){error_handler(err.message);}
+                else{
+                    if(callback != undefined && callback != null){callback();}
+                }
+            });
+        });
+    }
+
+    //TODO: implement sending transaction started message
+    function sendTransactionStartedMessage(callback){
+
+    }
 }
 
 //1-4 same as acceptTransactionRequest()
