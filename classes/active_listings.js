@@ -28,6 +28,7 @@ ActiveListings.prototype = {
     get: function(listing_id){
         return this.map[listing_id];
     },
+    //returns an array of all the listings
     getAll: function(){
         return this.listings;
     },

@@ -36,6 +36,14 @@ ActiveTransactions.prototype = {
         }
         return transactions_arr;
     },
+    //returns an array of all the transactions
+    getAll: function(){
+        var transactions_arr = [];
+        for(key in this.transactions){
+            transactions_arr.push(this.transactions[key]);
+        }
+        return transactions_arr;
+    },
     //clears the active_transactions, for testing purposes
     clear: function() {
         this.transactions = {};
