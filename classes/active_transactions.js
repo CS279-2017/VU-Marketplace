@@ -1,6 +1,10 @@
 module.exports = ActiveTransactions;
 
-//current active transactions, adds a transaction to database when it is removed from active transactions
+//current active transactions, adds a transaction to database when a transaction is initiated
+//remove transaction from active_transactions when it has completed or has been declined and never intiated
+//transactions database contains both complete and incomplete transactions (can use Transaction variables to determine
+//the category of a transaction
+
 function ActiveTransactions(){
     this.transactions = {};
 }
@@ -31,5 +35,9 @@ ActiveTransactions.prototype = {
             }
         }
         return transactions_arr;
-    }
+    },
+    //clears the active_transactions, for testing purposes
+    clear: function() {
+        this.transactions = {};
+    },
 }

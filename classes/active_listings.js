@@ -33,6 +33,11 @@ ActiveListings.prototype = {
     },
     size: function(){
         return this.listings.length;
-    }
+    },
+    //clears the active_listings, for testing purposes
+    clear: function(){
+        this.listings = [];
+        this.map = {};
+    },
 
 }

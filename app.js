@@ -47,6 +47,7 @@ exports.makeListing = makeListing;
 exports.removeListing = removeListing;
 exports.getActiveUsers = getActiveUsers;
 exports.getActiveListings = getActiveListings;
+exports.getActiveTransactions = getActiveTransactions;
 
 var active_listings = null;
 var active_users = null;
@@ -581,6 +582,8 @@ function authenticate(user_id, password, callback, error_handler){
 //1. first authenticate if successful then create a listing,
 //2. add listing to database,
 //3. add listing to active_listings
+//4. add listing_id to user's current_listings
+//4. notify all that a new listing has been added 
 function makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler){
     authenticate(user_id, password, function(user){
         var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
@@ -598,6 +601,7 @@ function makeListing(user_id, password, title, description, location, expiration
                             new_listing.initFromDatabase(docs[0]);
                             try {
                                 active_listings.add(new_listing);
+                                user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
                             }catch(e){error_handler(e.message)};
                             if(callback != undefined){ callback(new_listing._id);}
                         }
@@ -615,11 +619,14 @@ function makeListing(user_id, password, title, description, location, expiration
 //1. authenticate if not successful pass message to error_handler
 //2. get listing from active_listings using listing_id, if not found pass message to error handler
 //3. if user_id of listing matches user_id, then remove listing from active_listings
+//4. remove listing_id from user's current listings
+//5. notify all that a listing has been removed
 function removeListing(user_id, password, listing_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var listing = active_listings.get(listing_id);
         if(listing.user_id == user_id){
             active_listings.remove(listing_id);
+            user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
             if(callback != undefined){
                 callback(listing_id);
             }
@@ -725,6 +732,7 @@ function initiateTransactionRequest(user_id, listing_id, callback, error_handler
 //7. update listing in database
 //8. remove listing from active_listings
 //9. send a message to both users that transaction has begun
+//10. add transaction to both user's current transactions
 function acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
@@ -747,13 +755,13 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         updateListings(listing, function(){
             active_listings.remove(transaction.listing_id);
             //send message to both users that transaction has begun
-            sendTransactionStartedMessage(function(){
+            sendTransactionStartedMessage(transaction, function(){
                 callback();
             });
         });
 
 
-    }, error_handler)
+    }, error_handler);
 
     function updateListings(listing, callback){
         MongoClient.connect(url, function (err, db) {
@@ -772,7 +780,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
     }
 
     //TODO: implement sending transaction started message
-    function sendTransactionStartedMessage(callback){
+    function sendTransactionStartedMessage(transaction, callback){
 
     }
 }
@@ -781,8 +789,69 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
 //5. set the accept_request boolean that corresponds to the user_id to false
 //6. update transaction in transaction database
 //7. remove transaction from active_transactions
-function declineTransactionRequest(){
+//8. message user that initiated request that their transaction has been declined
+function declineTransactionRequest(user_id, password, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var transaction = active_transactions.get(transaction_id);
+        if(transaction == null || transaction == undefined){
+            error_handler("unable to find transaction with transaction_id: " + transaction_id);
+            return;
+        }
+        try {
+            transaction.declineRequest(user_id);
+            //throws error if user with the user_id has already accepted request or if user_id
+            //doesn't match either user_id of the transactions
+            //verify that the other user has already accepted_request if not throw error
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
+        //TODO: update listing in database
+        updateTransaction(transaction, function(){
+            //send message to user that initiated request that request was declined
+            sendTransactionDeclinedMessage(transaction, function(){
+                //remove transaction from active_transactions
+                active_transactions.remove(transaction._id);
+                callback();
+            }, error_handler);
+            
+        });
 
+
+    }, error_handler);
+
+    function updateTransaction(transaction, callback){
+        MongoClient.connect(url, function (err, db) {
+            if (err) {
+                error_handler('Unable to connect to the mongoDB server. Error:' + err);
+                return;
+            }
+            var collection_transactions = db.collection('transactions');
+            collection_transactions.update({_id: transaction._id}, transaction, function (err, count, status) {
+                if(err){error_handler(err.message);}
+                else{
+                    if(callback != undefined && callback != null){callback();}
+                }
+            });
+        });
+    }
+    
+    //TODO: implement sending transaction started message
+    function sendTransactionDeclinedMessage(transaction, callback, error_handler){
+        if(transaction.user_id_buy == user_id){
+            //TODO: send message to user_id_sell;
+            callback();
+        }
+        else if(transaction.user_id_sell == user_id){
+            //TODO: send message to user_id_buy
+            callback();
+        }
+        else{
+            error_handler("sendTransactionDeclinedMessage: +" +
+                "user_id doesn't match either user_id of the transaction, this error should've been caught earlier");
+            return;
+        }
+    }
 }
 
 //1. authenticate, same as above
@@ -828,6 +897,10 @@ function getActiveUsers(){
 
 function getActiveListings(){
     return active_listings;
+}
+
+function getActiveTransactions(){
+    return active_transactions;
 }
 
 function validateEmail(email) {

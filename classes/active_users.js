@@ -44,4 +44,8 @@ ActiveUsers.prototype = {
         }
         return users_arr;
     },
+    //clears the active_users, for testing purposes
+    clear: function(){
+        this.users = {};
+    },
 }
