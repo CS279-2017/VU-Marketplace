@@ -178,7 +178,7 @@ describe("User", function() {
                     app.login(username, password, callback3, error_handler);
                     function callback3(_id) {
                         app.getActiveUsers().get(_id).setVenmoId("some_venmo_id");
-                        app.logout(username, password, function(){
+                        app.logout(_id, password, function(){
                             console.log(app.getActiveUsers());
                             app.login(username, password, function(_id){
                                 assert(app.getActiveUsers().get(_id).venmo_id == "some_venmo_id");

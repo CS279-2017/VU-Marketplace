@@ -126,7 +126,14 @@ app.post('/', function (req, res) {
         logout(username, password, callback, error_handler);
     }
     else if(req.body.command == 'make_listing'){
-        
+        var json = req.body.json;
+        var username = json.user_id;
+        var password = json.password;
+        var email_address = json.email_address
+        var error_handler = function(){
+            console.log(e.message);
+        }
+        makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
     }
     else if(req.body.command == 'remove_listing'){
         
@@ -159,7 +166,6 @@ var server = app.listen(3000, function () {
     active_users = new ActiveUsers();
 
     try {
-        createUniqueIndex();
         // registerEmailAddress("bowen.jin@vanderbilt.edu", function () {
         //     console.log("Email address registration complete");
         // }, function(error){
@@ -182,15 +188,6 @@ var server = app.listen(3000, function () {
         console.log(e.message);
     }
 });
-
-function createUniqueIndex(callback) {
-    MongoClient.connect(url, function (err, db) {
-        if (err) {
-            error_handler('Unable to connect to the mongoDB server. Error:' + err);
-            return;
-        }
-    });
-}
 
 //THE BELOW METHODS ARE API METHODS THAT USERS CALL ON THE SERVER
 
@@ -488,23 +485,23 @@ function login(username, password, callback, error_handler){
     });
 }
 
-function logout(username, password, callback, error_handler){
+function logout(user_id, password, callback, error_handler){
     console.log("logout called");
     //verify credentials of user calling logout
     MongoClient.connect(url, function (err, db) {
         if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
         var collection = db.collection('users');
-        collection.find({username: username, password: password}).toArray(function(err, docs) {
+        collection.find({_id: user_id, password: password}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 //TODO:
                 var user = docs[0];
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                console.log("user Object:");
-                console.log(user);
+                // console.log("user Object:");
+                // console.log(user);
                 try {
-                    var user_id = user._id;
-                    console.log("active_user inside logout:")
-                    console.log(active_users);
+                    // var user_id = user._id;
+                    // console.log("active_user inside logout:")
+                    // console.log(active_users);
                     //this saves the user data to the database before logging out
                     collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
                         if(err){error_handler(err);}
@@ -525,7 +522,7 @@ function logout(username, password, callback, error_handler){
             else{
                 //TODO:
                 //if not found: alert user that login failed, because incorrect username/password
-                error_handler("invalid username/password");
+                error_handler("invalid user_id/password");
             }
         });
     });
@@ -700,4 +697,8 @@ function validateUsername(username){
 function validatePassword(password){
     //must be atleast 6 characters long
     return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(password);
+}
+
+function sendErrorMessageToClient(){
+
 }
