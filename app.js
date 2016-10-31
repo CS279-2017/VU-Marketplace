@@ -620,6 +620,7 @@ function makeListing(user_id, password, title, description, location, expiration
 //2. get listing from active_listings using listing_id, if not found pass message to error handler
 //3. if user_id of listing matches user_id, then remove listing from active_listings
 //4. remove listing_id from user's current listings
+//5. add listing_id to user's previous_listings
 //5. notify all that a listing has been removed
 function removeListing(user_id, password, listing_id, callback, error_handler){
     authenticate(user_id, password, function(user){
@@ -627,6 +628,7 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
         if(listing.user_id == user_id){
             active_listings.remove(listing_id);
             user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
+            user.addPreviousListingId(listing_id);
             if(callback != undefined){
                 callback(listing_id);
             }

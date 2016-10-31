@@ -26,7 +26,7 @@ describe("User", function() {
                 function callback2(message) {
                     // console.log(message);
                     i++;
-                    if(i == 26){
+                    if(i == 25){
                         MongoClient.connect(url, function (err, db) {
                             if (err) {
                                 error_handler('Unable to connect to the mongoDB server. Error:' +  err);
@@ -147,7 +147,7 @@ describe("User", function() {
                     app.login(username, password, callback, error_handler);
                     function callback() {
                         i++;
-                        if(i == 26){
+                        if(i == 25){
                             console.log(app.getActiveUsers());
                             done();
                         }
@@ -204,29 +204,29 @@ describe("Listing", function(){
                 make26Listings();
             });
             function make26Listings(){
-                            var j = 0;
-                            var active_users = app.getActiveUsers()
-                            var all_users = active_users.getAll();
-                            // console.log("active_users: ");
-                            // console.log(active_users);
-                            // console.log("all_users: ");
-                            // console.log(all_users);
-                            for (var i in all_users) {
-                                var user = all_users[i];
-                                console.log("_id: "+ user._id + " password: " + user.password);
-                                app.makeListing(user._id, user.password, "some title", "some description", "some location", 123456, 5.00, true, callback, error_handler)
-                            }
-                            function callback() {
-                                j++;
-                                console.log("listing j = " + j);
-                                if (j == 26){
-                                    console.log("print activeListings");
+                var j = 0;
+                var active_users = app.getActiveUsers()
+                var all_users = active_users.getAll();
+                // console.log("active_users: ");
+                // console.log(active_users);
+                // console.log("all_users: ");
+                // console.log(all_users);
+                for (var i in all_users) {
+                    var user = all_users[i];
+                    console.log("_id: "+ user._id + " password: " + user.password);
+                    app.makeListing(user._id, user.password, "some title", "some description", "some location", 123456, 5.00, true, callback, error_handler)
+                }
+                function callback() {
+                    j++;
+                    console.log("listing j = " + j);
+                    if (j == 25) {
+                        console.log("print activeListings");
                         var active_listings = app.getActiveListings();
                         assert(active_listings.size(), 26);
                         done();
                     }
-                };
-            }
+                }
+            };
         });
         
         it("make 26 listings, 1 for each user then delete 13", function(done){
@@ -244,12 +244,11 @@ describe("Listing", function(){
                 // console.log("all_users: ");
                 // console.log(all_users);
                 for (var index in all_users) {
-                    console.log("all users lenght: " + all_users.length);
+                    console.log("all users length: " + all_users.length);
                     var user = all_users[index];
                     app.makeListing(user._id, user.password, "some title", "some description", "some location", 123456, 5.00, true, callback, error_handler)
                 }
                 function callback() {
-                    console.log("callback inside 'make 26 listings, 1 for each user then delete 13'")
                     z++;
                     console.log("listing z = " + z);
                     if (z == 26){
@@ -257,38 +256,54 @@ describe("Listing", function(){
                         var active_listings = app.getActiveListings();
                         assert(active_listings.size(), 26);
                         delete13Listings(function(){
-                            console.log("delete13Listings callback inside 'make 26 listings, 1 for each user then delete 13'");
                             assert(active_listings.size(), 13);
                             var listing_count = 0;
-                            for(var user_id in active_users){
-                                if(active_users[user_id].getCurrentListingsIds().length == 1){
+                            var all_users = active_users.getAll();
+                            for(var i in all_users){
+                                if(all_users[i].getCurrentListingsIds().length == 1){
                                     listing_count++;
                                 }
-                                console.log("active_users: ");
-                                console.log(active_users);
+                                // console.log("active_users: ");
+                                // console.log(active_users);
                             }
                             assert(listing_count, 13);
+                            console.log("assert(list_count, 13) = " + (listing_count == 13));
+                            console.log("about to call done");
                             done();
-                        });
+                        }, error_handler);
 
                     }
                 };
 
-                function delete13Listings(callback){
-                    var all_listings = app.getActiveListings();
+                function delete13Listings(callback, error_handler){
+                    console.log("delete13Listings called");
+                    var all_listings = app.getActiveListings().getAll();
+                    console.log("all_listings.size() = " + all_listings.length);
+                    var index = 0;
                     for (var i in all_listings) {
-                        var listing = all_listings[i];
-                        app.removeListing(listing.user_id, active_users.get(listing.user_id).password, listing._id, callback, error_handler);
+                        console.log(i);
+                        var listing = all_listings[i]
+                        var user = active_users.get(listing.user_id);
+                        if(user == undefined){
+                            error_handler("user with user_id " + listing.user_id + " wasn't found in active_users");
+                        }
+                        app.removeListing(listing.user_id, user.password, listing._id, callback0, error_handler);
+                    }
+                    function callback0(){
+                        index++;
+                        console.log("callback 0 index = " + index);
+                        if(index == 13){
+                            callback();
+                        }
                     }
                 }
             }
         });
-
+        function error_handler(error){
+            console.log(error);
+        }
 
     });
-    function error_handler(error){
-        console.log(error);
-    }
 });
 
 describe("Transaction", function(){
@@ -318,6 +333,7 @@ describe("Transaction", function(){
 function getAllPossibleStrings(length){
     var possibleStrings = [];
     recursive("", length);
+    console.log("possibleStrings length: " + possibleStrings.length);
     return possibleStrings;
     function recursive(string, length){
         if(length == 0){
@@ -417,7 +433,7 @@ function register26EmailAddressesAndLogin(callback){
             function callback3(){
                 i++;
                 console.log("callback3 called i value is " + i);
-                if(i == 25){
+                if(i == 26){
                     console.log("callback called");
                     callback();
                 }
