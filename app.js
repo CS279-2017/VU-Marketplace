@@ -559,11 +559,11 @@ function makeListing(user_id, password, title, description, location, expiration
                 error_handler('Unable to connect to the mongoDB server. Error:' + err);
                 return;
             }
-            var collection_transactions = db.collection('transactions');
-            collection_transactions.insert(new_listing, function (err, count, status) {
+            var collection_listings = db.collection('listings');
+            collection_listings.insert(new_listing, function (err, count, status) {
                 if(err){error_handler(err.message);}
                 else{
-                    collection_transactions.find(new_listing).toArray(function(err, docs){
+                    collection_listings.find(new_listing).toArray(function(err, docs){
                         if(docs.length == 1){
                             new_listing.initFromDatabase(docs[0]);
                             try {
@@ -572,7 +572,7 @@ function makeListing(user_id, password, title, description, location, expiration
                             if(callback != undefined){ callback(new_listing._id);}
                         }
                         else{
-                            error_handler("more than 1 transaction inserted into db");
+                            error_handler("more than 1 listing inserted into db");
                             return;
                         }
                     });
@@ -603,10 +603,38 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
 //called on a user (using user_id) and a listing (using listing_id)
 //1. authenticate, if successful proceed; else return message to error_handler ("invalid authentication info")
 //2. get listing from active_listings, if null then return message to error_handler
-//3. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
-//4. send message to user to made the listing to accept or decline listing
-function initiateTransaction(user_id, listing_id){
-    
+//3. check to make sure that the user_id on listing isn't the user_id intiating the transaction (can't have transaction with self)
+//4. if transaction is of type buy then user_id is user_id_sell else user_id_buy
+//4. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
+//5. send message to user to made the listing to accept or decline listing
+function initiateTransaction(user_id, listing_id, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var new_transaction = createTransactionFromListing(user_id, listing_id);
+
+    },error_handler)
+
+    function createTransactionFromListing(user_id, listing_id){
+        var listing = active_listings.get(listing_id);
+        if(listing == undefined){
+            error_handler("initiateTransaction: no listing found with listing_id "+listing_id);
+            return;
+        }
+        var user_id_buy;
+        var user_id_sell;
+        if(listing.buy == true){
+            user_id_sell = user_id;
+            user_id_buy = listing.user_id;
+        }
+        else{
+            user_id_sell = listing.user_id;
+            user_id_buy = user_id;
+        }
+        return new Transaction(user_id_buy, user_id_sell, listing_id);
+    }
+
+    function addTransactionToDatabase(new_transaction){
+
+    }
 }
 
 
