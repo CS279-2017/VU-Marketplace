@@ -123,31 +123,6 @@ User.prototype = {
     makeTransaction:function(listing){
         //TODO:
         return listing.makeTransaction(this._id);
-        //make create a transaction and add it to activeTransactions
-        // var user_buy = null;
-        // var user_sell = null;
-        // if(this == listing.user){
-        //     //user cannot make a transaction with his or her own listing
-        //     throw user.username + " cannot make a transaction from his/her own listing";
-        // }
-        // else{
-        //     if(listing.buy == true){
-        //         user_buy = listing.user;
-        //         user_sell = this;
-        //     }
-        //     else if(listing.buy == false){
-        //         user_buy = this;
-        //         user_sell = listing.user;
-        //     }
-        //     else{
-        //         throw "buy parameter of listing with id " + listing.id + "must be true or false"
-        //     }
-        // }
-        // var transaction = new Transaction(listing.id, user_buy, user_sell, listing);
-        // listing.transaction_id = transaction.id;
-        // return transaction;
-        //update transaction_id in listing with new transaction_id
-        //note we only store successful transactions, thus we delay pushing transaction to database until it has completed
 
     }
 }

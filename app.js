@@ -641,6 +641,8 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
 
 
 //makes a transaction from a listing and sends a transaction_request to the owner of the listing
+//adds transaction to the current_Transaction of initator
+
 function initiateTransactionRequest(user_id, listing_id, callback, error_handler){
     makeTransaction(user_id, listing_id, function(transaction_id){
         var listing = active_listings[listing_id]; //note the listing still exists since transaction hasn't been accepted
@@ -662,12 +664,15 @@ function initiateTransactionRequest(user_id, listing_id, callback, error_handler
 //3. check to make sure that the user_id on listing isn't the user_id intiating the transaction (can't have transaction with self)
 //4. if transaction is of type buy then user_id is user_id_sell else user_id_buy
 //5. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
+    //6. add the transaction_id of new transaction to the user who initiated
     function makeTransaction(user_id, listing_id, callback, error_handler){
         authenticate(user_id, password, function(user){
             var new_transaction = createTransactionFromListing(user_id, listing_id);
             addTransactionToDatabase(new_transaction, function(new_transaction){
                 try {
                     active_transactions.add(new_transaction);
+                    user.addCurrentTransactionId(transaction_id); //adds transaction_id to user that initiates
+                    //user object is returned by authenticate
                 }catch(e){error_handler(e.message)};
                 if(callback != undefined && callback != null){
                     callback(new_transaction._id);
@@ -733,8 +738,8 @@ function initiateTransactionRequest(user_id, listing_id, callback, error_handler
 //6. add _id of transaction to transaction_id of listing
 //7. update listing in database
 //8. remove listing from active_listings
-//9. send a message to both users that transaction has begun
-//10. add transaction to both user's current transactions
+//9. adds transaction to accepting user's current transactions (the initiating user already has the transaction)
+//10. send a message to both users that transaction has begun
 function acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
@@ -752,10 +757,12 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             return;
         }
         var listing = active_listings[transaction.listing_id];
-        listing.transaction_id = transaction_id;
+        listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
         //TODO: update listing in database
         updateListings(listing, function(){
             active_listings.remove(transaction.listing_id);
+            //add transaction to current transaction of accepting user, user object returned by authenticate
+            user.addCurrentTransactionId(transaction_id);
             //send message to both users that transaction has begun
             sendTransactionStartedMessage(transaction, function(){
                 callback();
@@ -792,7 +799,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
 //6. update transaction in transaction database
 //7. remove transaction from active_transactions
 //8. message user that initiated request that their transaction has been declined
-function declineTransactionRequest(user_id, password, callback, error_handler){
+function declineTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == null || transaction == undefined){
@@ -812,6 +819,15 @@ function declineTransactionRequest(user_id, password, callback, error_handler){
         updateTransaction(transaction, function(){
             //send message to user that initiated request that request was declined
             sendTransactionDeclinedMessage(transaction, function(){
+                //remove transaction_id from initiating user (transaction_id was never added to declining user)
+                var user_buy = active_users.get(transaction.user_id_buy);
+                var user_sell = active_users.get(transaction.user_id_sell);
+                if(transaction.buy == true){
+                    user_sell.removeCurrentTransactionId(transaction_id);
+                }
+                else{
+                    user_buy.removeCurrentTransactionId(transaction_id);
+                }
                 //remove transaction from active_transactions
                 active_transactions.remove(transaction._id);
                 callback();

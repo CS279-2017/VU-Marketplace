@@ -33,8 +33,18 @@ function Transaction(user_id_buy, user_id_sell, listing_id){
 
 Transaction.prototype = {
     constructor: Transaction,
-    initFromDatabase: function(){
-        
+    initFromDatabase: function(transaction){
+        this._id = transaction._id
+        this.title = transaction.title;
+        this.description = transaction.description;
+        this.user_id_buy = transaction.user_id_buy;
+        this.user_id_sell = transaction.user_id_sell; //_id of Seller
+        this.listing_id = transaction.listing_id; //listing_id
+        this.conversation = new Conversation();
+        this.user_buy_accept_request = transaction.user_buy_accept_request;
+        this.user_sell_accept_request = transaction.user_sell_accept_request;
+        this.user_buy_confirm_met_up = transaction.user_buy_confirm_met_up;
+        this.user_sell_confirm_met_up =  transaction.user_sell_confirm_met_up;
     },
     sendMessage: function(text, username){
         //sends a message to the current conversation
@@ -48,10 +58,26 @@ Transaction.prototype = {
     },
     //TODO: the below modifications should be done atomically so as the avoid race conditions
     //initiates for the user with user_id (checks both user_id_buyer and user_id_seller to find which initiate to change)
+    //throws error if user with the user_id has already accepted request or if user_id
+    //doesn't match either user_id of the transactions
+    //verify that the other user has already accepted_request if not throw error
     acceptRequest: function(user_id){
         //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
+        if(this.buy == true){
+            if(this.user_buy_id != undefined && this.user_buy_id != null){
+                throw "transaction with id " + this._id
+            }
+            this.user_buy_id = user_id;
+        }
+        else{
+           this.user_sell_id = user_id;
+        }
 
     },
+
+    //throws error if user with the user_id has already accepted request or if user_id
+    //doesn't match either user_id of the transactions
+    //verify that the other user has already accepted_request if not throw error
     declineRequest: function(user_id){
         //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
     },

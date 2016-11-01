@@ -228,7 +228,8 @@ describe("Listing", function(){
                 }
             };
         });
-        
+
+        //TODO: this test sometimes passes sometimes doesn't, gets stuck on z = 25
         it("make 26 listings, 1 for each user then delete 13", function(done){
             console.log("register 26 email addresses called");
             register26EmailAddressesAndLogin(function() {
@@ -271,7 +272,6 @@ describe("Listing", function(){
                             console.log("about to call done");
                             done();
                         }, error_handler);
-
                     }
                 };
 
