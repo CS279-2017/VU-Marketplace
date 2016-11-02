@@ -7,6 +7,11 @@ var base_url = "http://localhost:3000/"
 var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://localhost:27017/mealplanappserver';
 
+
+function error_handler(error){
+    console.log(error);
+}
+
 describe.skip("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
@@ -296,18 +301,29 @@ describe.skip("Listing", function(){
                 }
             }
         });
-        function error_handler(error){
-            console.log(error);
-        }
-
     });
 });
 
 describe.skip("Transaction", function(){
     describe("initiateTransaction", function(){
-        // it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function(){
-        //
-        // });
+        it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function(){
+            var active_users = app.getActiveUsers();
+            var active_listings = app.getActiveListings();
+            var active_transactions = app.getActiveTransactions();
+            register26EmailAddressesAndLogin(function(user_id_arr){
+                var user_id1 = user_id_arr[0];
+                var user_id2 = user_id_arr[1];
+                var user1 = active_users.get(user_id1);
+                var user2 = active_users.get(user_id2);
+                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function(listing_id){
+                    var listing = active_listings.get(listing_id);
+                    console.log("User 1 made a listing: ");
+                    console.log(listing);
+                    app.makeTransactionRequest(user_id2, )
+                }, error_handler);
+                
+            })
+        });
         //
         // it("register 2 user/ login both/ user 1 makes listing/ user 1 makes transaction/ throw error, can't accept own transaction", function(){
         //
@@ -462,8 +478,40 @@ function register26EmailAddressesAndLogin(callback){
         }
 }
 
-function error_handler(err){
-    console.log(err)
+function registerTwoEmailAddresses(callback){
+    console.log("registerTwoEmailAddresses called");
+    var user_id_arr = [];
+    dropDatabases(callback0, error_handler);
+        function callback0(){
+            console.log("dropDatabases callback0 called")
+            app.registerEmail('someemail1' + "@vanderbilt.edu", callback1, error_handler);
+            app.registerEmail('someemail2' + "@vanderbilt.edu", callback1, error_handler);
+
+        function callback1(verification_code, email_address){
+            var username1 = "bowenjin1";
+            var username2 = "bowenjin2";
+            app.registerVerificationCode(verification_code, username1, "chocho513", "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username2, "chocho513", "chocho513", email_address, callback2, error_handler);
+
+        }
+        function callback2(username, password) {
+            // users.push({username: username, password: password, email_address: email_address});
+            console.log("attempting to login as " + username + " with password " + password);
+            app.login(username, password, callback3, error_handler);
+        }
+        function callback3(user_id){
+            user_id_arr.push(user_id)
+            i++;
+            console.log("callback3 called i value is " + i);
+            if(i == 2){
+                console.log("callback called");
+                callback(user_id_arr);
+            }
+        }
+        function error_handler(error){
+            console.log(error);
+        }
+    }
 }
 
 // describe('Array', function() {

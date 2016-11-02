@@ -33,9 +33,14 @@ exports.login = login;
 exports.logout = logout;
 exports.makeListing = makeListing;
 exports.removeListing = removeListing;
+exports.makeTransactionRequest = makeTransactionRequest;
+exports.acceptTransactionRequest = acceptTransactionRequest;
+exports.declineTransactionRequest = declineTransactionRequest;
+
 exports.getActiveUsers = getActiveUsers;
 exports.getActiveListings = getActiveListings;
 exports.getActiveTransactions = getActiveTransactions;
+
 
 // create reusable transporter object using the default SMTP transport
 //TODO: currently using gmail, switch to mailgun for more sends per day
@@ -154,13 +159,15 @@ io.on('connection', function (socket) {
             console.log(e.message);
         }
         function callback(listing_id){
-
+            //TODO: notify all users that a new listing has been made
         }
         makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
     });
 
     socket.on('remove_listing', function(json){
-        var callback = function(){};
+        var callback = function(){
+            //TODO: notify all users that a new listing has been made
+        };
         //TODO: write proper error_handler
         var error_handler = function() {
             console.log(e.message);
@@ -173,7 +180,7 @@ io.on('connection', function (socket) {
     //1. make the transaction
     //2. send transaction_request to user who owns the listing
     //3. await response from user
-   socket.on('initiate_transaction_request', function(){
+   socket.on('make_transaction_request', function(){
         var json = req.body.json;
         var user_id = json.user_id;
         var password = json.password;
@@ -181,9 +188,9 @@ io.on('connection', function (socket) {
             console.log(e.message);
         }
         function callback(){
-
+            //TODO: notify user that owns listing that a user has requested a transaction
         }
-        initiateTransactionRequest(user_id, password, callback, error_handler);
+        makeTransactionRequest(user_id, password, callback, error_handler);
     });
 
     socket.on('accept_transaction_request', function(){
@@ -627,14 +634,16 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
 //makes a transaction from a listing and sends a transaction_request to the owner of the listing
 //adds transaction to the current_Transaction of initator
 
-function initiateTransactionRequest(user_id, listing_id, callback, error_handler){
-    makeTransaction(user_id, listing_id, function(transaction_id){
-        var listing = active_listings[listing_id]; //note the listing still exists since transaction hasn't been accepted
-        var user_id_request_recipient = listing.user_id;
-        sendTransactionRequest(user_id_request_recipient, function(){
-            callback();
-        }, error_handler);
-    }, error_handler)
+function makeTransactionRequest(user_id, password, listing_id, callback, error_handler){
+    authenticate(user_id, password, function(user) {
+        makeTransaction(user_id, listing_id, function (transaction_id) {
+            var listing = active_listings[listing_id]; //note the listing still exists since transaction hasn't been accepted
+            var user_id_request_recipient = listing.user_id;
+            sendTransactionRequest(user_id_request_recipient, function () {
+                callback();
+            }, error_handler);
+        }, error_handler)
+    }, error_handler);
 
     //sends a transaction request to the user_id
     //TODO: implement this method
@@ -650,19 +659,17 @@ function initiateTransactionRequest(user_id, listing_id, callback, error_handler
 //5. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
     //6. add the transaction_id of new transaction to the user who initiated
     function makeTransaction(user_id, listing_id, callback, error_handler){
-        authenticate(user_id, password, function(user){
-            var new_transaction = createTransactionFromListing(user_id, listing_id);
-            addTransactionToDatabase(new_transaction, function(new_transaction){
-                try {
-                    active_transactions.add(new_transaction);
-                    user.addCurrentTransactionId(transaction_id); //adds transaction_id to user that initiates
-                    //user object is returned by authenticate
-                }catch(e){error_handler(e.message)};
-                if(callback != undefined && callback != null){
-                    callback(new_transaction._id);
-                }
-            });
-        },error_handler)
+        var new_transaction = createTransactionFromListing(user_id, listing_id);
+        addTransactionToDatabase(new_transaction, function(new_transaction){
+            try {
+                active_transactions.add(new_transaction);
+                user.addCurrentTransactionId(transaction_id); //adds transaction_id to user that initiates
+                //user object is returned by authenticate
+            }catch(e){error_handler(e.message)};
+            if(callback != undefined && callback != null){
+                callback(new_transaction._id);
+            }
+        });
 
         function createTransactionFromListing(user_id, listing_id){
             var listing = active_listings.get(listing_id);
