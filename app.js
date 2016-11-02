@@ -82,6 +82,122 @@ io.on('connection', function (socket) {
         console.log('my other event triggered');
         console.log(data);
     });
+
+    socket.on('register_email_address', function(json) {
+        var email_address = json.email_address;
+        var callback = function () {
+        };
+        //TODO: write proper error_handler
+        var error_handler = function () {
+            console.log(e.message);
+        }
+        registerEmailAddress(email_address, callback, error_handler);
+    });
+
+    socket.on('register_verification_code', function(json){
+        var verification_code = json.verification_code;
+        var username = json.username;
+        var password = json.password;
+        var confirm_password = json.confirm_password;
+        var email_address = json.email_address
+
+        var callback = function(){};
+        //TODO: write proper error_handler
+        var error_handler = function() {
+            console.log(e.message);
+        }
+        registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler);
+    });
+
+    socket.on('login', function(json){
+        var username = json.username;
+        var password = json.password;
+        var email_address = json.email_address
+
+        var callback = function(user_id){
+            //TODO: send user_id back to user
+        };
+        //TODO: write proper error_handler
+        var error_handler = function() {
+            console.log(e.message);
+        }
+        login(username, password, callback, error_handler);
+    });
+
+    socket.on('logout', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+
+        function callback(){
+
+        }
+        //TODO: write proper error_handler
+        function error_handler(){
+            console.log(e.message);
+        }
+        logout(user_id, password, callback, error_handler);
+    });
+
+    socket.on('make_listing', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var title = json.title;
+        var description = json.description;
+        var location = json.location;
+        var expiration_time = json.expiration_time;
+        var price = json.price;
+        var buy = json.buy;
+        function error_handler(){
+            console.log(e.message);
+        }
+        function callback(listing_id){
+
+        }
+        makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
+    });
+
+    socket.on('remove_listing', function(json){
+        var callback = function(){};
+        //TODO: write proper error_handler
+        var error_handler = function() {
+            console.log(e.message);
+        }
+        var user_id = json.user_id ;
+        var password = json.password
+        removeListing(user_id, password, listing_id, callback, error_handler)
+    });
+    //initiate_transaction_request:
+    //1. make the transaction
+    //2. send transaction_request to user who owns the listing
+    //3. await response from user
+   socket.on('initiate_transaction_request', function(){
+        var json = req.body.json;
+        var user_id = json.user_id;
+        var password = json.password;
+        function error_handler(){
+            console.log(e.message);
+        }
+        function callback(){
+
+        }
+        initiateTransactionRequest(user_id, password, callback, error_handler)
+    }
+
+    socket.on('accept_transaction_request', function(){
+
+    });
+
+    socket.on('decline_transaction_request', function(){
+
+    });
+
+   socket.on('confirm_transaction', function(){
+
+   });
+
+   socket.on('reject_transaction', function(){
+
+   });
 });
 
 app.get('/', function (req, res) {
