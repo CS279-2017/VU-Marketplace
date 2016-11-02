@@ -319,7 +319,9 @@ describe.skip("Transaction", function(){
                     var listing = active_listings.get(listing_id);
                     console.log("User 1 made a listing: ");
                     console.log(listing);
-                    app.makeTransactionRequest(user_id2, )
+                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function(){
+                        
+                    }, error_handler);
                 }, error_handler);
                 
             })

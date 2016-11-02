@@ -633,24 +633,13 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
 
 //makes a transaction from a listing and sends a transaction_request to the owner of the listing
 //adds transaction to the current_Transaction of initator
-
+//note we handle sending transaction request part in the router, since router has access to socket
 function makeTransactionRequest(user_id, password, listing_id, callback, error_handler){
     authenticate(user_id, password, function(user) {
         makeTransaction(user_id, listing_id, function (transaction_id) {
-            var listing = active_listings[listing_id]; //note the listing still exists since transaction hasn't been accepted
-            var user_id_request_recipient = listing.user_id;
-            sendTransactionRequest(user_id_request_recipient, function () {
-                callback();
-            }, error_handler);
+            callback();
         }, error_handler)
     }, error_handler);
-
-    //sends a transaction request to the user_id
-    //TODO: implement this method
-    function sendTransactionRequest(user_id, callback){
-
-    }
-
     //called on a user (using user_id) and a listing (using listing_id)
 //1. authenticate, if successful proceed; else return message to error_handler ("invalid authentication info")
 //2. get listing from active_listings, if null then return message to error_handler
@@ -762,9 +751,9 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             //add transaction to current transaction of accepting user, user object returned by authenticate
             user.addCurrentTransactionId(transaction_id);
             //send message to both users that transaction has begun
-            sendTransactionStartedMessage(transaction, function(){
+            // sendTransactionStartedMessage(transaction, function(){
                 callback();
-            }, error_handler);
+            // }, error_handler);
         });
 
 
@@ -811,20 +800,18 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
         //TODO: update transaction in database before deleting it so we have a record of the failed transaction
         updateTransaction(transaction, function(){
             //send message to user that initiated request that request was declined
-            sendTransactionDeclinedMessage(transaction, function(){
-                //remove transaction_id from initiating user (transaction_id was never added to declining user)
-                var user_buy = active_users.get(transaction.user_id_buy);
-                var user_sell = active_users.get(transaction.user_id_sell);
-                if(transaction.buy == true){
-                    user_sell.removeCurrentTransactionId(transaction_id);
-                }
-                else{
-                    user_buy.removeCurrentTransactionId(transaction_id);
-                }
-                //remove transaction from active_transactions
-                active_transactions.remove(transaction._id);
-                callback();
-            }, error_handler);
+            // remove transaction_id from initiating user (transaction_id was never added to declining user)
+            var user_buy = active_users.get(transaction.user_id_buy);
+            var user_sell = active_users.get(transaction.user_id_sell);
+            if(transaction.buy == true){
+                user_sell.removeCurrentTransactionId(transaction_id);
+            }
+            else{
+                user_buy.removeCurrentTransactionId(transaction_id);
+            }
+            //remove transaction from active_transactions
+            active_transactions.remove(transaction._id);
+            callback();
             
         }, error_handler);
 
@@ -850,53 +837,53 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
 
 
 //TODO: implement sending transaction started message
-function sendTransactionDeclinedMessage(transaction, callback, error_handler){
-    if(transaction.buy == true){
-        //TODO: send message to user_id_sell;
-        callback();
-    }
-    else if(transaction.buy == false){
-        //TODO: send message to user_id_buy
-        callback();
-    }
-    else{
-        error_handler("sendTransactionDeclinedMessage: +" +
-            "user_id doesn't match either user_id of the transaction, this error should've been caught earlier");
-        return;
-    }
-
-}
+// function sendTransactionDeclinedMessage(transaction, callback, error_handler){
+//     if(transaction.buy == true){
+//         //TODO: send message to user_id_sell;
+//         callback();
+//     }
+//     else if(transaction.buy == false){
+//         //TODO: send message to user_id_buy
+//         callback();
+//     }
+//     else{
+//         error_handler("sendTransactionDeclinedMessage: +" +
+//             "user_id doesn't match either user_id of the transaction, this error should've been caught earlier");
+//         return;
+//     }
+//
+// }
 
 //TODO: implement sending transaction started message
 //TODO: send a message to all the active transactions with the same listing_id to cancel
-function sendTransactionStartedMessage(transaction, callback, error_handler){
-    var other_transactions_with_same_listing_id = active_transactions.getTransactionsForListingId(transaction.listing_id);
-    for(var i in other_transactions_with_same_listing_id){
-        var other_transaction = other_transactions_with_same_listing_id[i];
-        try {
-            other_transaction.declineRequest();
-        }catch(error){
-            error_handler(error.message);
-        }
-        sendTransactionDeclinedMessage(other_transaction, function(){
-            console.log("declined transaction with id "+other_transaction._id);
-        }, error_handler)
-    }
-    //TODO: send message to both users of transaction that transaction has been started
-    sendTransactionCompletedMessages(transaction, function(){
-        callback();
-    },error_handler)
-}
+// function sendTransactionStartedMessage(transaction, callback, error_handler){
+//     var other_transactions_with_same_listing_id = active_transactions.getTransactionsForListingId(transaction.listing_id);
+//     for(var i in other_transactions_with_same_listing_id){
+//         var other_transaction = other_transactions_with_same_listing_id[i];
+//         try {
+//             other_transaction.declineRequest();
+//         }catch(error){
+//             error_handler(error.message);
+//         }
+//         sendTransactionDeclinedMessage(other_transaction, function(){
+//             console.log("declined transaction with id "+other_transaction._id);
+//         }, error_handler)
+//     }
+//     //TODO: send message to both users of transaction that transaction has been started
+//     sendTransactionCompletedMessages(transaction, function(){
+//         callback();
+//     },error_handler)
+// }
 
-//TODO: sends a message to both users of the transaction that the transaction has completed
-function sendTransactionCompletedMessages(transaction, callback, error_handler){
-
-}
-
-//TODO: send message to both users of transaction and state which user rejected transaction
-function sendTransactionRejectedMessage(transaction, callback, error_handler){
-    
-}
+// //TODO: sends a message to both users of the transaction that the transaction has completed
+// function sendTransactionCompletedMessages(transaction, callback, error_handler){
+//
+// }
+//
+// //TODO: send message to both users of transaction and state which user rejected transaction
+// function sendTransactionRejectedMessage(transaction, callback, error_handler){
+//
+// }
 
 //1. authenticate, same as above
 //2. get transaction, same as above
@@ -921,11 +908,12 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         //TODO: watch out for situation where both users confirm at the same time
         if(transaction.isConfirmed() == true){
             //TODO: sendTransactionCompleted Message
-            sendTransactionCompletedMessages(transaction, function(){
+            // sendTransactionCompletedMessages(transaction, function(){
                 updateTransaction(transaction, function(){
                     active_transactions.remove(transaction_id);
+                    callback();
                 }, error_handler)
-            }, error_handler);
+            // }, error_handler);
         }
     }, error_handler);
 }
@@ -947,11 +935,11 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
             error_handler(e.message);
             return;
         }
-        sendTransactionRejectedMessage(transaction, function(){
+        // sendTransactionRejectedMessage(transaction, function(){
             updateTransaction(transaction, function(){
                 active_transactions.remove(transaction_id);
             }, error_handler)
-        }, error_handler)
+        // }, error_handler)
     }, error_handler)
 }
 
