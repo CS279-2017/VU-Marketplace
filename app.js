@@ -892,11 +892,14 @@ function sendTransactionStartedMessage(transaction, callback, error_handler){
         }, error_handler)
     }
     //TODO: send message to both users of transaction that transaction has been started
+    sendTransactionCompletedMessages(transaction, function(){
+        callback();
+    },error_handler)
 }
 
 //TODO: sends a message to both users of the transaction that the transaction has completed
 function sendTransactionCompletedMessages(transaction, callback, error_handler){
-
+    
 }
 //1. authenticate, same as above
 //2. get transaction, same as above
@@ -932,8 +935,19 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
 //2. get transaction, same as above
 //3. reject the transaction (call reject on the transaction), passing in user_id
 //4. check if transaction has completed, if so run appropriate methods
-function rejectTransaction(){
-    
+function rejectTransaction(user_id, password, transaction_id, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var transaction = active_transactions.get(transaction_id);
+        if(transaction == undefined){
+            error_handler("transaction with id " + transaction_id + " was not found");
+            return;
+        }
+        try{
+            transaction.reject(user_id)
+        }catch(e){
+            
+        }
+    })
 }
 
 
