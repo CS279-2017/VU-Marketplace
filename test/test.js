@@ -7,10 +7,7 @@ var base_url = "http://localhost:3000/"
 var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://localhost:27017/mealplanappserver';
 
-
-//every it function must be passed in a done
-
-describe("User", function() {
+describe.skip("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
         it("register 26 users", function(done){
@@ -194,7 +191,7 @@ describe("User", function() {
     });
 });
 
-describe("Listing", function(){
+describe.skip("Listing", function(){
     describe("Make Listing", function(){
 
 
@@ -306,7 +303,7 @@ describe("Listing", function(){
     });
 });
 
-describe("Transaction", function(){
+describe.skip("Transaction", function(){
     describe("initiateTransaction", function(){
         // it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function(){
         //
@@ -328,6 +325,27 @@ describe("Transaction", function(){
 
 
     });
+});
+
+describe("Socket.io", function (){
+   it("connecting, sending a message back and forth, then disconnect", function(done){
+       var socket = require('socket.io-client')(base_url);
+       socket.on('connect', function(){
+           console.log("client has connected");
+       });
+       socket.on('event', function(data){
+           console.log("event received on client side");
+           console.log(data);
+           console.log("triggering my other event from client side");
+           socket.emit('my other event', { data: 'client data' });
+           assert(data.data == 'server data');
+           socket.disconnect();
+       });
+       socket.on('disconnect', function(){
+           console.log("client has disconnected");
+           done();
+       });
+   })
 });
 
 function getAllPossibleStrings(length){

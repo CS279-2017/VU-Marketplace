@@ -1,6 +1,15 @@
-var express = require('express');
+var http = require('http');
 var bodyParser = require('body-parser');
 var nodemailer = require('nodemailer');
+var app = require('express')();
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
+
+//We need to work with "MongoClient" interface in order to connect to a mongodb server.
+var MongoClient = require('mongodb').MongoClient;
+// Connection URL. This is where your mongodb server is running.
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// // Use connect method to connect to the Server
 
 //import classes
 var User = require("./classes/user.js");
@@ -13,28 +22,7 @@ var ActiveUsers = require("./classes/active_users.js");
 var ActiveListings = require("./classes/active_listings.js");
 var ActiveTransactions = require("./classes/active_transactions.js");
 
-// create reusable transporter object using the default SMTP transport
-//TODO: currently using gmail, switch to mailgun for more sends per day
-var transporter = nodemailer.createTransport({
-    //service: 'Gmail',
-    service: 'SendGrid',
-    auth: {
-        // user: 'mealplanapp@gmail.com', // Your email id
-        // pass: 'chocho513' // Your password
-        user: 'mealplanapp',
-        pass: 'chocho513'
-    }
-});
-
-
-//We need to work with "MongoClient" interface in order to connect to a mongodb server.
-var MongoClient = require('mongodb').MongoClient;
-// Connection URL. This is where your mongodb server is running.
-var url = 'mongodb://localhost:27017/mealplanappserver';
-// // Use connect method to connect to the Server
-
-var app = express();
-
+//methods that are exported in module
 var exports = module.exports = {};
 exports.closeServer = function(){
     server.close();
@@ -49,15 +37,52 @@ exports.getActiveUsers = getActiveUsers;
 exports.getActiveListings = getActiveListings;
 exports.getActiveTransactions = getActiveTransactions;
 
+// create reusable transporter object using the default SMTP transport
+//TODO: currently using gmail, switch to mailgun for more sends per day
+var transporter = nodemailer.createTransport({
+    //service: 'Gmail',
+    service: 'SendGrid',
+    auth: {
+        // user: 'mealplanapp@gmail.com', // Your email id
+        // pass: 'chocho513' // Your password
+        user: 'mealplanapp',
+        pass: 'chocho513'
+    }
+});
+
 var active_listings = null;
 var active_users = null;
 var active_transactions = null;
 
-var app = express();
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(bodyParser.json());
+
+server.listen(3000, function () {
+    console.log('Example app listening on port 3000!');
+    //TODO: whenever active_listing, active_transactions, or active_users is changed i.e add/remove is called,
+    // TODO: all users must be notified of this change
+    active_listings = new ActiveListings();
+    active_transactions = new ActiveTransactions();
+    active_users = new ActiveUsers();
+
+    try {
+
+    }catch(e){
+        console.log(e.message);
+    }
+});
+
+
+io.on('connection', function (socket) {
+    console.log("user has connected!");
+    socket.emit('event', { data: 'server data' });
+    socket.on('my other event', function (data) {
+        console.log('my other event triggered');
+        console.log(data);
+    });
+});
 
 app.get('/', function (req, res) {
     res.send('Hello World!');
@@ -185,39 +210,6 @@ app.post('/', function (req, res) {
 
     }
     // res.send('POST request to the homepage');
-});
-
-
-var server = app.listen(3000, function () {
-    console.log('Example app listening on port 3000!');
-    //TODO: whenever active_listing, active_transactions, or active_users is changed i.e add/remove is called, 
-    // TODO: all users must be notified of this change
-    active_listings = new ActiveListings();
-    active_transactions = new ActiveTransactions();
-    active_users = new ActiveUsers();
-
-    try {
-        // registerEmailAddress("bowen.jin@vanderbilt.edu", function () {
-        //     console.log("Email address registration complete");
-        // }, function(error){
-        //     console.log(error);
-        // }
-        // );
-        // registerVerificationCode('One6Tl', "bowenjin", "chocho513", "chocho513", "bowen.jin@vanderbilt.edu", function(){
-        //     console.log("Verification code registration complete, now trying to login");
-        //     login("bowenjin", "chocho513");
-        // },
-        // function(error){
-        //    console.log(error);
-        // });
-        // login("bowenjin", "chocho513", function(){
-        //     logout("bowenjin", "chocho513");
-        // },function(error){
-        //     console.log(error);
-        // });
-    }catch(e){
-        console.log(e.message);
-    }
 });
 
 //THE BELOW METHODS ARE API METHODS THAT USERS CALL ON THE SERVER
@@ -928,7 +920,7 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
             return;
         }
         //TODO: watch out for situation where both users confirm at the same time
-        if(transaction.bothUsersHaveConfirmed() == true){
+        if(transaction.isConfirmed() == true){
             //TODO: sendTransactionCompleted Message
             sendTransactionCompletedMessages(transaction, function(){
                 updateTransaction(transaction, function(){
@@ -965,12 +957,12 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
 }
 
 
-
 // function recoverUsername(email_address){
 //     //TODO: implement details below
 //     //query User database for user with the given email address
 //     //send email containing username to the email address
 // }
+
 
 function resetPassword(email_address){
     //send message back to client saying "if valid email address then you will receive a reset password at this link"

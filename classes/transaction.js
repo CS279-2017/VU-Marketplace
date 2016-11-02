@@ -144,7 +144,7 @@ var Transaction = function() {
             return accepted && notRejected && notConfirmed;
         },
         //TODO: watch out for when both users confirm at the same time.
-        bothUsersHaveConfirmed: function () {
+        isConfirmed: function () {
             //TODO: if both confirm_met_up are true then return true;
             if (this.user_buy_confirm_met_up == true && this.user_sell_confirm_met_up == true) {
                 return true;
