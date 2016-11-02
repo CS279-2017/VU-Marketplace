@@ -39,7 +39,7 @@ var Transaction = function() {
         //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
     }
 
-    function verifyTransactionIsActiveThenSetAcceptRequest(value) {
+    function verifyTransactionNotActivatedThenSetAcceptRequest(user_id, value) {
         if (this.user_buy_accept_request == null && this.user_sell_accept_request != null) {
             if (this.user_id_buy == user_id) {
                 this.user_buy_accept_request = value;
@@ -62,6 +62,24 @@ var Transaction = function() {
         else {
             throw "transaction with id " + this._id + "has already been accepted or declined"
             return;
+        }
+    }
+
+    function verifyTransactionActiveThenSetConfirmed(user_id, value){
+        if(this.isActive()){
+            if(this.user_id_buy == user_id){
+                this.user_buy_confirm_met_up = value;
+            }
+            else if(this.user_id_sell == user_id){
+                this.user_sell_confirm_met_up = value;
+            }
+            else{
+                throw "the user id " + user_id + " that is attempting to confirm the transaction with id " + this._id +
+                "doesn't match buyer id or seller id";
+            }
+        }
+        else{
+            throw "tried to confirm transaction with id " + this._id + " but transaction is not active";
         }
     }
 
@@ -99,31 +117,31 @@ var Transaction = function() {
         //2. verify that one of the user_accept_requests is null and set that to true
         acceptRequest: function (user_id) {
             //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
-            verifyTransactionIsActiveThenSetAcceptRequest(true)
+            verifyTransactionNotActivatedThenSetAcceptRequest(user_id, true)
         },
 
         //throws error if transaction has already been accepted or declined
         declineRequest: function (user_id) {
             //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
-            verifyTransactionIsActiveThenSetAcceptRequest(false);
+            verifyTransactionNotActivatedThenSetAcceptRequest(user_id, false);
         },
 
         confirm: function (user_id) {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
-            //TODO: set the confirm to true for the appropriate
-
+            //TODO: set the confirm to true for the appropriate user
+            verifyTransactionActiveThenSetConfirmed(user_id, true);
         },
         reject: function (user_id) {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
-            //TODO: set the confirm to false for the appropriate_user
+            //TODO: set the confirm to false for the appropriate user
+            verifyTransactionActiveThenSetConfirmed(user_id, false);
         },
         //returns whether transaction has been initiated
-        hasAccepted: function () {
-            //TODO: if both initiated boolean values are true then has started
-            if (this.accepted == true) {
-                return true;
-            }
-            return false;
+        isActive: function () {
+            var accepted = this.user_buy_accept_request && this.user_sell_accept_request
+            var notRejected =  this.user_buy_confirm_met_up != false && this.user_sell_confirm_met_up != false;
+            var notConfirmed = !(this.user_buy_confirm_met_up == true && this.user_sell_confirm_met_up == true);
+            return accepted && notRejected && notConfirmed;
         },
         //TODO: watch out for when both users confirm at the same time.
         bothUsersHaveConfirmed: function () {

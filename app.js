@@ -835,12 +835,12 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
                 callback();
             }, error_handler);
             
-        });
+        }, error_handler);
 
 
     }, error_handler);
 
-    function updateTransaction(transaction, callback){
+    function updateTransaction(transaction, callback, error_handler){
         MongoClient.connect(url, function (err, db) {
             if (err) {
                 error_handler('Unable to connect to the mongoDB server. Error:' + err);
@@ -899,8 +899,14 @@ function sendTransactionStartedMessage(transaction, callback, error_handler){
 
 //TODO: sends a message to both users of the transaction that the transaction has completed
 function sendTransactionCompletedMessages(transaction, callback, error_handler){
+
+}
+
+//TODO: send message to both users of transaction and state which user rejected transaction
+function sendTransactionRejectedMessage(transaction, callback, error_handler){
     
 }
+
 //1. authenticate, same as above
 //2. get transaction, same as above
 //3. confirm the transaction (call confirm on the transaction), passing in user_id
@@ -918,15 +924,17 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
             //confirms user_id has agreed to continue with the transaction
             transaction.confirm(user_id);
         }catch(e){
-            
+            error_handler(e.message);
+            return;
         }
         //TODO: watch out for situation where both users confirm at the same time
         if(transaction.bothUsersHaveConfirmed() == true){
             //TODO: sendTransactionCompleted Message
             sendTransactionCompletedMessages(transaction, function(){
-                
+                updateTransaction(transaction, function(){
+                    active_transactions.remove(transaction_id);
+                }, error_handler)
             }, error_handler);
-            active_transactions.remove()
         }
     }, error_handler);
 }
@@ -945,9 +953,15 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
         try{
             transaction.reject(user_id)
         }catch(e){
-            
+            error_handler(e.message);
+            return;
         }
-    })
+        sendTransactionRejectedMessage(transaction, function(){
+            updateTransaction(transaction, function(){
+                active_transactions.remove(transaction_id);
+            }, error_handler)
+        }, error_handler)
+    }, error_handler)
 }
 
 
