@@ -12,7 +12,7 @@ function ActiveTransactions(){
 ActiveTransactions.prototype = {
     constructor: ActiveTransactions,
     add: function(transaction){
-        this.transactions[transaction.id] = transaction;
+        this.transactions[transaction._id] = transaction;
         //TODO:
         //Add transaction to database
     },
@@ -44,7 +44,7 @@ ActiveTransactions.prototype = {
                 transactions_arr.push(transaction);
             }
         }
-        return transactions_arr; 
+        return transactions_arr;
     },
     //returns an array of all the transactions
     getAll: function(){

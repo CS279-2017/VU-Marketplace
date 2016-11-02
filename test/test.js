@@ -254,7 +254,7 @@ describe.skip("Listing", function(){
                 function callback() {
                     z++;
                     console.log("listing z = " + z);
-                    if (z == 26){
+                    if (z == 26 || z == 25){
                         console.log("print activeListings");
                         var active_listings = app.getActiveListings();
                         assert(active_listings.size(), 26);
@@ -304,13 +304,13 @@ describe.skip("Listing", function(){
     });
 });
 
-describe.skip("Transaction", function(){
+describe("Transaction", function(){
     describe("initiateTransaction", function(){
-        it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function(){
+        it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function(done){
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
             var active_transactions = app.getActiveTransactions();
-            register26EmailAddressesAndLogin(function(user_id_arr){
+            registerTwoEmailAddresses(function(user_id_arr){
                 var user_id1 = user_id_arr[0];
                 var user_id2 = user_id_arr[1];
                 var user1 = active_users.get(user_id1);
@@ -319,8 +319,12 @@ describe.skip("Transaction", function(){
                     var listing = active_listings.get(listing_id);
                     console.log("User 1 made a listing: ");
                     console.log(listing);
-                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function(){
-                        
+                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function(transaction_id){
+                        app.acceptTransactionRequest(user1._id, user1.password, transaction_id, function(){
+                            var transaction = active_transactions.get(transaction_id);
+                            console.log(transaction);
+                            done();
+                        }, error_handler);
                     }, error_handler);
                 }, error_handler);
                 
@@ -345,7 +349,7 @@ describe.skip("Transaction", function(){
     });
 });
 
-describe("Socket.io", function (){
+describe.skip("Socket.io", function (){
    it("connecting, sending a message back and forth, then disconnect", function(done){
        var socket = require('socket.io-client')(base_url);
        socket.on('connect', function(){
@@ -482,6 +486,7 @@ function register26EmailAddressesAndLogin(callback){
 
 function registerTwoEmailAddresses(callback){
     console.log("registerTwoEmailAddresses called");
+    var i = 0;
     var user_id_arr = [];
     dropDatabases(callback0, error_handler);
         function callback0(){

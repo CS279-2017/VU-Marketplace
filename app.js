@@ -124,6 +124,7 @@ io.on('connection', function (socket) {
 
         var callback = function(user_id){
             //TODO: send user_id back to user
+            //TODO: notify necessary clients that a user has logged in
         };
         //TODO: write proper error_handler
         var error_handler = function() {
@@ -137,7 +138,7 @@ io.on('connection', function (socket) {
         var password = json.password;
 
         function callback(){
-
+            //TODO: notify necessary clients that a sure has logged out
         }
         //TODO: write proper error_handler
         function error_handler(){
@@ -289,7 +290,7 @@ function registerEmailAddress(email_address, callback, error_handler){
                     collection.update({email_address: email_address}, email, {upsert: true}, function (err, result) {
                         if (err) {
                             if(err.message.indexOf('duplicate key error') >= 0){
-                                error_handler('username has been taken, cannot register ' + user.username);
+                                error_handler('email_address has been taken, cannot register ' + email_address);
                             }
                             else {
                                 error_handler(err);
@@ -440,24 +441,25 @@ function registerVerificationCode(verification_code, username, password, confirm
                     //adding unique index on usernames makes sure no duplicate usernames will be inserted
                     //TODO: add something that translates the duplicate error into a more user friendly message
                     collection_users.createIndex({username: 1}, {unique: true}, function(){
-                        console.log("updated registered to true");
-                        collection_users.insert(user, function (err, result) {
-                            if (err) {
-                                if(err.message.indexOf('duplicate key error') >= 0){
-                                    error_handler('username has been taken, cannot register ' + user.username);
-                                }
-                                else{
-                                    error_handler(err);
-                                }
-                                return;
-                            } else {
-                                console.log('Inserted ' + user.username + ' into user database');
+                        collection_users.createIndex({email_address: 1}, {unique: true}, function(){
+                            collection_users.insert(user, function (err, result) {
+                                if (err) {
+                                    if(err.message.indexOf('duplicate key error') >= 0){
+                                        error_handler('username has been taken, cannot register ' + user.username);
+                                    }
+                                    else{
+                                        error_handler(err);
+                                    }
+                                    return;
+                                } else {
+                                    console.log('Inserted ' + user.username + ' into user database');
 
-                            }
-                            callback(); //return username, password, and email_address of user that's been registered for testing purposes
+                                }
+                                db.close(); //we close the db in the callback of the last database operation is performed
+                                callback(); //return username, password, and email_address of user that's been registered for testing purposes
+                            });
                         });
-                        db.close(); //we close the db in the callback of the last database operation is performed
-                    })
+                    });
                 });
             }
         }
@@ -637,7 +639,7 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
 function makeTransactionRequest(user_id, password, listing_id, callback, error_handler){
     authenticate(user_id, password, function(user) {
         makeTransaction(user_id, listing_id, function (transaction_id) {
-            callback();
+            callback(transaction_id); //pass listing_id back for testing purposes (so owner of listing can accept)
         }, error_handler)
     }, error_handler);
     //called on a user (using user_id) and a listing (using listing_id)
@@ -651,8 +653,11 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
         var new_transaction = createTransactionFromListing(user_id, listing_id);
         addTransactionToDatabase(new_transaction, function(new_transaction){
             try {
+                console.log("adding to active_transactions");
                 active_transactions.add(new_transaction);
-                user.addCurrentTransactionId(transaction_id); //adds transaction_id to user that initiates
+                var user = active_users.get(user_id);
+                user.addCurrentTransactionId(new_transaction._id); //adds transaction_id to user that initiates
+                console.log(active_transactions.getAll());
                 //user object is returned by authenticate
             }catch(e){error_handler(e.message)};
             if(callback != undefined && callback != null){
@@ -689,7 +694,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 collection_transactions.insert(new_transaction, function (err, count, status) {
                     if(err){error_handler(err.message);}
                     else{
-                        collection_transactions.find(new_listing).toArray(function(err, docs){
+                        collection_transactions.find(new_transaction).toArray(function(err, docs){
                             if(docs.length == 1){
                                 new_transaction.initFromDatabase(docs[0]);
                                 if(callback != undefined){ callback(new_transaction);}
@@ -724,6 +729,8 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
 function acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
+        console.log(active_transactions.getAll());
+        console.log(transaction);
         if(transaction == null || transaction == undefined){
             error_handler("unable to find transaction with transaction_id: " + transaction_id);
             return;

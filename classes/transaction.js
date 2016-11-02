@@ -1,3 +1,5 @@
+var Conversation = require("./conversation.js");
+
 //Transactions Database Schema:
 //{_id, title, description, user_id_buy, user_id_sell, listing_id, conversation, user_buy_will_initiate, ...
 //...user_sell_will_initiate, user_buy_confirm_met_up, user_sell_confirm_met_up}
