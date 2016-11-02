@@ -876,8 +876,10 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
 //2. get transaction, same as above
 //3. confirm the transaction (call confirm on the transaction), passing in user_id
 //4. check if the transaction ahs completed, if so run appropriate methods
-function confirmTransaction(){
-    
+function confirmTransaction(user_id, password, transaction_id, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var transaction = active_transactions.get(transaction_id);
+    }, error_handler);
 }
 
 //1. authenticate, same as above

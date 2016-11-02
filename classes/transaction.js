@@ -7,7 +7,8 @@ module.exports = Transaction;
 //transaction is saved to database when it has been terminated
 //note create the transaction before deleting a listing
 //note if we had to recreate transaction object from database, we would need a parameter for conversation as well
-function Transaction(user_id_buy, user_id_sell, listing_id){
+//should users be able to offer their own lower price?
+function Transaction(user_id_buy, user_id_sell, listing){
     //this._id (this is assigned when transaction retrieved from database)
     //TODO: should user references be references or ids? ids are easier to save on database
     //TODO: transaction is automatically converted to JSON by JSON.stringify
@@ -20,29 +21,32 @@ function Transaction(user_id_buy, user_id_sell, listing_id){
     }
     this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
     this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
+    this.price = listing.price
     this.user_id_buy = user_id_buy; //_id of User
     this.user_id_sell = user_id_sell; //_id of Seller
-    this.listing_id = listing_id; //listing_id
+    this.listing_id = listing._id; //listing_id
     this.conversation = new Conversation();
-    this.user_buy_accept_request = null; //whether buyer agrees to begin transaction, true = yes, false = no, null = not responded yet
-    this.user_sell_accept_request = null; //whether seller agrees to begin transaction, true = yes, false = no, null = not responded yet
+    this.accepted = null; //whether the listing owner agrees to begin transaction, true = yes, false = no, null = not responded yet
     this.user_buy_confirm_met_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
     this.user_sell_confirm_met_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
     //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
 }
 
+//TODO: what if there are multiple transaction requests on the same listing?
 Transaction.prototype = {
     constructor: Transaction,
     initFromDatabase: function(transaction){
         this._id = transaction._id
         this.title = transaction.title;
         this.description = transaction.description;
+        this.price = transaction.price
         this.user_id_buy = transaction.user_id_buy;
         this.user_id_sell = transaction.user_id_sell; //_id of Seller
         this.listing_id = transaction.listing_id; //listing_id
-        this.conversation = new Conversation();
-        this.user_buy_accept_request = transaction.user_buy_accept_request;
-        this.user_sell_accept_request = transaction.user_sell_accept_request;
+        this.conversation = transaction.conversation;
+        this.accepted = transaction.accepted;
+        // this.user_buy_accept_request = transaction.user_buy_accept_request;
+        // this.user_sell_accept_request = transaction.user_sell_accept_request;
         this.user_buy_confirm_met_up = transaction.user_buy_confirm_met_up;
         this.user_sell_confirm_met_up =  transaction.user_sell_confirm_met_up;
     },
@@ -65,14 +69,19 @@ Transaction.prototype = {
         //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
         if(this.buy == true){
             if(this.user_buy_id != undefined && this.user_buy_id != null){
-                throw "transaction with id " + this._id
+                throw "transaction with id " + this._id + "has already been accepted"
+                return;
             }
             this.user_buy_id = user_id;
         }
         else{
+            if(this.user_sell_id != undefined && this.user_sell_id != null){
+                throw "transaction with id " + this._id + "has already been accepted"
+                return;
+            }
            this.user_sell_id = user_id;
         }
-
+        this.accepted = true;
     },
 
     //throws error if user with the user_id has already accepted request or if user_id
@@ -80,6 +89,21 @@ Transaction.prototype = {
     //verify that the other user has already accepted_request if not throw error
     declineRequest: function(user_id){
         //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
+        if(this.buy == true){
+            if(this.user_buy_id != undefined && this.user_buy_id != null){
+                throw "transaction with id " + this._id + "has already been accepted"
+                return;
+            }
+            this.user_buy_id = user_id;
+        }
+        else{
+            if(this.user_sell_id != undefined && this.user_sell_id != null){
+                throw "transaction with id " + this._id + "has already been accepted"
+                return;
+            }
+            this.user_sell_id = user_id;
+        }
+        this.accepted = false;
     },
     
     confirm: function(user_id){
