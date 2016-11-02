@@ -74,6 +74,9 @@ server.listen(3000, function () {
     }
 });
 
+app.get('/', function (req, res) {
+    res.send('Hello World!');
+});
 
 io.on('connection', function (socket) {
     console.log("user has connected!");
@@ -162,8 +165,8 @@ io.on('connection', function (socket) {
         var error_handler = function() {
             console.log(e.message);
         }
-        var user_id = json.user_id ;
-        var password = json.password
+        var user_id = json.user_id;
+        var password = json.password;
         removeListing(user_id, password, listing_id, callback, error_handler)
     });
     //initiate_transaction_request:
@@ -180,8 +183,8 @@ io.on('connection', function (socket) {
         function callback(){
 
         }
-        initiateTransactionRequest(user_id, password, callback, error_handler)
-    }
+        initiateTransactionRequest(user_id, password, callback, error_handler);
+    });
 
     socket.on('accept_transaction_request', function(){
 
@@ -200,133 +203,6 @@ io.on('connection', function (socket) {
    });
 });
 
-app.get('/', function (req, res) {
-    res.send('Hello World!');
-});
-
-app.post('/', function (req, res) {
-    //TODO: clean req body to make sure doesn't contain any SQL injection or other threats
-    //TODO: also make sure that somebody isn't spamming the server
-    //Router Method Header: register_email_address(email_address)
-    //verifies email address and sends the verification code
-    //note the below function calls are all asynchronous and thus cannot use exceptions, because by the time the
-    //exception is triggered by the asynchronous function, the original try, catch block will be out of scope
-    if(req.body.command == 'register_email_address'){
-        var json = req.body.json;
-        var email_address = json.email_address;
-        var callback = function(){};
-        //TODO: write proper error_handler
-        var error_handler = function(){
-            console.log(e.message);
-        }
-        registerEmailAddress(email_address, callback, error_handler);
-    }
-
-    //Router Method Header: register_verification_code(verification_code, username, password, confirm_password, email_address)
-    //once verifictation code has been received, user enters the code along with other account info to create new account
-    else if(req.body.command == 'register_verification_code'){
-        var json = req.body.json;
-        var verification_code = json.verification_code;
-        var username = json.username;
-        var password = json.password;
-        var confirm_password = json.confirm_password;
-        var email_address = json.email_address
-
-        var callback = function(){};
-        //TODO: write proper error_handler
-        var error_handler = function() {
-            console.log(e.message);
-        }
-        registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler);
-    }
-
-        //Router Method Header: login(username, password)
-        //logs user in, creates user object from an entry in the database and then adds the user object to the active_users object
-        //sends the user a key that identifies their login instance, attach the key to the user object that was added to
-        //active_users, that way in the future we can authenticate without querying database
-    else if(req.body.command == 'login'){
-        var json = req.body.json;
-        var username = json.username;
-        var password = json.password;
-        var email_address = json.email_address
-
-        var callback = function(){};
-        //TODO: write proper error_handler
-        var error_handler = function() {
-            console.log(e.message);
-        }
-        login(username, password, callback, error_handler);
-
-    }
-    //Router Method Header: logout(user_id, password)
-    //logs user out, if username and password are correct, remove the user from active_users
-    else if(req.body.command == 'logout'){
-        var json = req.body.json;
-        var user_id = json.user_id;
-        var password = json.password;
-
-        function callback(){
-
-        }
-        //TODO: write proper error_handler
-        function error_handler(){
-            console.log(e.message);
-        }
-        logout(user_id, password, callback, error_handler);
-    }
-
-        //Router Method Header: make_listing(user_id, password, title, description, location, expiration_time, price, buy)
-    else if(req.body.command == 'make_listing'){
-        var json = req.body.json;
-        var user_id = json.user_id;
-        var password = json.password;
-        var title = json.title;
-        var description = json.description;
-        var location = json.location;
-        var expiration_time = json.expiration_time;
-        var price = json.price;
-        var buy = json.buy;
-        function error_handler(){
-            console.log(e.message);
-        }
-        function callback(listing_id){
-
-        }
-        makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
-    }
-    else if(req.body.command == 'remove_listing'){
-        
-    }
-    //initiate_transaction_request:
-    //1. make the transaction
-    //2. send transaction_request to user who owns the listing
-    //3. await response from user
-    else if(req.body.command == 'initiate_transaction_request'){
-        var json = req.body.json;
-        var user_id = json.user_id;
-        var password = json.password;
-        function error_handler(){
-            console.log(e.message);
-        }
-        function callback(){
-
-        }
-        initiateTransactionRequest(user_id, password, callback, error_handler)
-    }
-    else if(req.body.command == 'accept_transaction_request'){
-        
-    }
-    else if(req.body.command == 'decline_transaction_request'){
-
-    }
-    else if(req.body.command == 'confirm_transaction'){
-
-    }
-    else if(req.body.command == 'reject_transaction'){
-
-    }
-    // res.send('POST request to the homepage');
-});
 
 //THE BELOW METHODS ARE API METHODS THAT USERS CALL ON THE SERVER
 
