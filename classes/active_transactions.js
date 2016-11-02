@@ -12,29 +12,39 @@ function ActiveTransactions(){
 ActiveTransactions.prototype = {
     constructor: ActiveTransactions,
     add: function(transaction){
-        active_transactions[transaction.id] = transaction;
+        this.transactions[transaction.id] = transaction;
         //TODO:
         //Add transaction to database
     },
     remove: function(transaction_id){
-        delete active_transactions[transaction_id];
+        delete this.transactions[transaction_id];
         //TODO:
         //update transaction in database to make inactive
     },
     get: function (transaction_id){
-        return active_transactions[transaction_id];
+        return this.transactions[transaction_id];
     }
     ,
     //gets all transactions involving a user with a given user_id 
     getTransactionsForUser: function(user_id){
         var transactions_arr = [];
-        for(transaction_id in active_transactions){
-            var transaction = active_transactions[transaction_id];
+        for(transaction_id in this.transactions){
+            var transaction = this.transactions[transaction_id];
             if(user_id == transaction.user_id_buy || user_id == transaction.user_id_sell){
                 transactions_arr.push(transaction);
             }
         }
         return transactions_arr;
+    },
+    getTransactionsForListingId: function(listing_id){
+        var transactions_arr = [];
+        for(transaction_id in this.transactions){
+            var transaction = this.transactions[transaction_id];
+            if(transaction.listing_id == listing_id){
+                transactions_arr.push(transaction);
+            }
+        }
+        return transactions_arr; 
     },
     //returns an array of all the transactions
     getAll: function(){

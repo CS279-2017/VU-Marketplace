@@ -61,47 +61,22 @@ Transaction.prototype = {
         this.conversation.send_message(message);
     },
     //TODO: the below modifications should be done atomically so as the avoid race conditions
-    //initiates for the user with user_id (checks both user_id_buyer and user_id_seller to find which initiate to change)
-    //throws error if user with the user_id has already accepted request or if user_id
-    //doesn't match either user_id of the transactions
-    //verify that the other user has already accepted_request if not throw error
-    acceptRequest: function(user_id){
+    //both buy and sell user_id are defined at transaction creation
+    acceptRequest: function(){
         //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
-        if(this.buy == true){
-            if(this.user_buy_id != undefined && this.user_buy_id != null){
-                throw "transaction with id " + this._id + "has already been accepted"
-                return;
-            }
-            this.user_buy_id = user_id;
-        }
-        else{
-            if(this.user_sell_id != undefined && this.user_sell_id != null){
-                throw "transaction with id " + this._id + "has already been accepted"
-                return;
-            }
-           this.user_sell_id = user_id;
+        if(this.accepted != null){
+            throw "transaction with id " + this._id + "has already been accepted or declined"
+            return;
         }
         this.accepted = true;
     },
 
-    //throws error if user with the user_id has already accepted request or if user_id
-    //doesn't match either user_id of the transactions
-    //verify that the other user has already accepted_request if not throw error
-    declineRequest: function(user_id){
+    //throws error if transaction has already been accepted or declined
+    declineRequest: function(){
         //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
-        if(this.buy == true){
-            if(this.user_buy_id != undefined && this.user_buy_id != null){
-                throw "transaction with id " + this._id + "has already been accepted"
-                return;
-            }
-            this.user_buy_id = user_id;
-        }
-        else{
-            if(this.user_sell_id != undefined && this.user_sell_id != null){
-                throw "transaction with id " + this._id + "has already been accepted"
-                return;
-            }
-            this.user_sell_id = user_id;
+        if(this.accepted != null){
+            throw "transaction with id " + this._id + "has already been accepted or declined"
+            return;
         }
         this.accepted = false;
     },
@@ -116,10 +91,19 @@ Transaction.prototype = {
         //TODO: set the confirm to false for the appropriate_user
     },
     //returns whether transaction has been initiated
-    hasInitated: function(){
+    hasAccepted: function(){
         //TODO: if both initiated boolean values are true then has started
+        if(this.accepted == true){
+            return true;
+        }
+        return false;
     },
-    hasCompleted: function(){
+    //TODO: watch out for when both users confirm at the same time. 
+    bothUsersHaveConfirmed: function(){
         //TODO: if both confirm_met_up are true then return true;
+        if(this.user_buy_confirm_met_up == true && this.user_sell_confirm_met_up == true){
+            return true;
+        }
+        return false;
     },
 }
