@@ -47,12 +47,14 @@ var Transaction = function() {
         console.log("this: ");
         console.log(this);
         if (this.user_buy_accept_request == null && this.user_sell_accept_request != null) {
-            if (this.user_id_buy == user_id) {
+            if (this.user_id_buy.toString() == user_id.toString()) {
                 this.user_buy_accept_request = value;
             }
             else {
-                // console.log((this.user_id_buy).charCodeAt(0));
-                // console.log(user_id.charCodeAt(0));
+                console.log(this.user_id_buy);
+                console.log(typeof this.user_id_buy.toString());
+                console.log(user_id.toString());
+                console.log(typeof user_id);
                 // console.log(this.user_id_buy === user_id);
                 throw {message: "the user_id " + this.user_id_buy + " associated with this transaction doesn't match the user id of the" +
                 " user that is accepting the transaction " + user_id}

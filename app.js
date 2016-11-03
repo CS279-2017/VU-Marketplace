@@ -744,7 +744,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             error_handler(e.message);
             return;
         }
-        var listing = active_listings[transaction.listing_id];
+        var listing = active_listings.get(transaction.listing_id);
         //throws error if transaction_id has already been set
         //or listing has already been deleted, means listing has already been accepted
         if(listing == undefined || listing.transaction_id != null){
