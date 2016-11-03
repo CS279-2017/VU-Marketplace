@@ -9,6 +9,7 @@ var Conversation = require("./conversation.js");
 //note if we had to recreate transaction object from database, we would need a parameter for conversation as well
 //should users be able to offer their own lower price?
 var Transaction = function() {
+    //pass in listing from which the transaction is made
     function Transaction(user_id_buy, user_id_sell, listing) {
         //this._id (this is assigned when transaction retrieved from database)
         //TODO: should user references be references or ids? ids are easier to save on database
@@ -42,13 +43,19 @@ var Transaction = function() {
     }
 
     function verifyTransactionNotActivatedThenSetAcceptRequest(user_id, value) {
+        console.log("verifyTransactionNotActivated");
+        console.log("this: ");
+        console.log(this);
         if (this.user_buy_accept_request == null && this.user_sell_accept_request != null) {
             if (this.user_id_buy == user_id) {
                 this.user_buy_accept_request = value;
             }
             else {
+                console.log((this.user_id_buy).charCodeAt(0));
+                console.log(user_id.charCodeAt(0));
+                console.log(this.user_id_buy === user_id);
                 throw "the user_id " + this.user_id_buy + " associated with this transaction doesn't match the user id of the" +
-                " user that is accepting the tranasction " + user_id
+                " user that is accepting the transaction " + user_id
             }
         }
 
@@ -57,8 +64,8 @@ var Transaction = function() {
                 this.user_sell_accept_request = value;
             }
             else {
-                throw "the user_id " + this.user_id_buy + " associated with this transaction doesn't match the user id of the" +
-                " user that is accepting the transaction " + user_id
+                throw "the user_id " + this.user_id_sell + " associated with this transaction doesn't match the user id of the" +
+                " user that is accepting the transaction which is" + user_id
             }
         }
         else {
@@ -119,24 +126,26 @@ var Transaction = function() {
         //2. verify that one of the user_accept_requests is null and set that to true
         acceptRequest: function (user_id) {
             //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
-            verifyTransactionNotActivatedThenSetAcceptRequest(user_id, true)
+            //we must use the call function in order to pass 'this' object to private function verifyTransactionNotActivated
+            verifyTransactionNotActivatedThenSetAcceptRequest.call(this, user_id, true)
         },
 
         //throws error if transaction has already been accepted or declined
         declineRequest: function (user_id) {
             //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
-            verifyTransactionNotActivatedThenSetAcceptRequest(user_id, false);
+            //we must use the call function in order to pass 'this' object to private function verifyTransactionNotActivated
+            verifyTransactionNotActivatedThenSetAcceptRequest.call(this, user_id, false);
         },
 
         confirm: function (user_id) {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
             //TODO: set the confirm to true for the appropriate user
-            verifyTransactionActiveThenSetConfirmed(user_id, true);
+            verifyTransactionActiveThenSetConfirmed.call(this, user_id, true);
         },
         reject: function (user_id) {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
             //TODO: set the confirm to false for the appropriate user
-            verifyTransactionActiveThenSetConfirmed(user_id, false);
+            verifyTransactionActiveThenSetConfirmed.call(this, user_id, false);
         },
         //returns whether transaction has been initiated
         isActive: function () {

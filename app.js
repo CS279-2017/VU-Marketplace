@@ -681,7 +681,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 user_id_sell = listing.user_id;
                 user_id_buy = user_id;
             }
-            return new Transaction(user_id_buy, user_id_sell, listing_id);
+            return new Transaction(user_id_buy, user_id_sell, listing);
         }
 
         function addTransactionToDatabase(new_transaction, callback){
@@ -741,7 +741,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             //doesn't match either user_id of the transactions
             //verify that the other user has already accepted_request if not throw error
         }catch(e){
-            error_handler(e.message);
+            error_handler(e);
             return;
         }
         var listing = active_listings[transaction.listing_id];
