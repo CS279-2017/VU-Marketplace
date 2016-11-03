@@ -19,7 +19,7 @@ var Transaction = function() {
         //if the above two are null or if listing is null/undefined then transaction fails, ie every transaction must be created
         //from an active listing
         if (listing == null || listing == undefined) {
-            throw "transaction cannot be created from a listing that is " + listing;
+            throw {message: "transaction cannot be created from a listing that is " + listing};
         }
         this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
         this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
@@ -51,11 +51,11 @@ var Transaction = function() {
                 this.user_buy_accept_request = value;
             }
             else {
-                console.log((this.user_id_buy).charCodeAt(0));
-                console.log(user_id.charCodeAt(0));
-                console.log(this.user_id_buy === user_id);
-                throw "the user_id " + this.user_id_buy + " associated with this transaction doesn't match the user id of the" +
-                " user that is accepting the transaction " + user_id
+                // console.log((this.user_id_buy).charCodeAt(0));
+                // console.log(user_id.charCodeAt(0));
+                // console.log(this.user_id_buy === user_id);
+                throw {message: "the user_id " + this.user_id_buy + " associated with this transaction doesn't match the user id of the" +
+                " user that is accepting the transaction " + user_id}
             }
         }
 
@@ -64,12 +64,12 @@ var Transaction = function() {
                 this.user_sell_accept_request = value;
             }
             else {
-                throw "the user_id " + this.user_id_sell + " associated with this transaction doesn't match the user id of the" +
-                " user that is accepting the transaction which is" + user_id
+                throw {message: "the user_id " + this.user_id_sell + " associated with this transaction doesn't match the user id of the" +
+                " user that is accepting the transaction which is" + user_id}
             }
         }
         else {
-            throw "transaction with id " + this._id + "has already been accepted or declined"
+            throw {message: "transaction with id " + this._id + "has already been accepted or declined"}
             return;
         }
     }
@@ -83,12 +83,12 @@ var Transaction = function() {
                 this.user_sell_confirm_met_up = value;
             }
             else{
-                throw "the user id " + user_id + " that is attempting to confirm the transaction with id " + this._id +
-                "doesn't match buyer id or seller id";
+                throw {message:"the user id " + user_id + " that is attempting to confirm the transaction with id " + this._id +
+                "doesn't match buyer id or seller id"};
             }
         }
         else{
-            throw "tried to confirm transaction with id " + this._id + " but transaction is not active";
+            throw {message: "tried to confirm transaction with id " + this._id + " but transaction is not active"};
         }
     }
 
@@ -114,7 +114,7 @@ var Transaction = function() {
             //sends a message to the current conversation
             //current_transaction cannot be null
             if (this.conversation == null) {
-                throw "tried to send message to null Conversation";
+                throw {message: "tried to send message to null Conversation"};
             }
             //(Message(text, username, time_sent)
             var message = new Message(text, username, new Date());

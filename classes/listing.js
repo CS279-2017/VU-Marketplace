@@ -32,7 +32,7 @@ var Listing = function() {
         makeTransaction: function (user_initiate_id) {
             //user_intitate_id is the id of the user that clicks on the listing i.e initiates the transaction
             if (_id == undefined) {
-                throw "error, the listing from which we are making a transaction has no id"
+                throw {message: "error, the listing from which we are making a transaction has no id"}
             }
             var user_buy_id = this.buy ? this.user_id : user_initiate_id;
             var user_sell_id = this.buy ? user_initiate_id : this.user_id;

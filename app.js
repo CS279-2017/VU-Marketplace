@@ -741,7 +741,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             //doesn't match either user_id of the transactions
             //verify that the other user has already accepted_request if not throw error
         }catch(e){
-            error_handler(e);
+            error_handler(e.message);
             return;
         }
         var listing = active_listings[transaction.listing_id];

@@ -70,7 +70,7 @@ User.prototype = {
     removeCurrentListingId: function(current_listing_id){
         var index = this.current_listings_ids.indexOf(current_listing_id);
         if(index <= -1){
-            throw "listing id " + current_listing_id + " does not exist in current listing ids of user with id " + _id;
+            throw {message: "listing id " + current_listing_id + " does not exist in current listing ids of user with id " + _id};
         }
         this.current_listings_ids.splice(index, 1);
     },
@@ -83,7 +83,7 @@ User.prototype = {
     removePreviousListingId: function(previous_listing_id){
         var index = this.previous_listing_ids.indexOf(previous_listing_id);
         if(index <= -1){
-            throw "listing id " + previous_listing_id + " does not exist in previous listings ids of user with id " + _id;
+            throw {message: "listing id " + previous_listing_id + " does not exist in previous listings ids of user with id " + _id};
         }
         this.previous_listing_ids.splice(index, 1);
     },
@@ -96,7 +96,7 @@ User.prototype = {
     removeCurrentTransactionId: function(current_transaction_id){
         var index = this.current_transactions_ids.indexOf(previous_listing_id);
         if(index <= -1){
-            throw "transaction id " + current_transaction_id + " does not exist in current transactions ids of user with id " + _id;
+            throw {message: "transaction id " + current_transaction_id + " does not exist in current transactions ids of user with id " + _id};
         }
         this.current_transactions_ids.splice(index, 1);
     },
@@ -109,7 +109,7 @@ User.prototype = {
     removePreviousTransactionId: function(previous_transaction_id){
         var index = this.previous_transactions_ids.indexOf(previous_transaction_id);
         if(index <= -1){
-            throw "transaction id " + previous_transaction_id+ " does not exist in previous transaction ids of user with id " + _id;
+            throw {message: "transaction id " + previous_transaction_id+ " does not exist in previous transaction ids of user with id " + _id};
         }
         this.previous_transactions_ids.splice(index, 1);
     },

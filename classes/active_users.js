@@ -15,7 +15,7 @@ ActiveUsers.prototype = {
             console.log(this.users[user._id].username + "has been added to ActiveUsers");
         }
         else{
-            throw "user is already logged in, can't login"
+            throw {message: "user is already logged in, can't login"}
         }
 
     },
@@ -29,11 +29,11 @@ ActiveUsers.prototype = {
                 console.log("user with username " + users[_id].username + " has been removed from ActiveUsers");
             }
             else{
-                throw "removing user with id " + _id  + " failed";
+                throw {message: "removing user with id " + _id  + " failed"};
             }
         }
         else{
-            throw "user is not logged in, can't logout"
+            throw {message: "user is not logged in, can't logout"}
         }
         //we don't delete from database, because database keeps track of all registered users
     },
