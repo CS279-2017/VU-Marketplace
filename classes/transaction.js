@@ -21,6 +21,11 @@ var Transaction = function() {
         if (listing == null || listing == undefined) {
             throw {message: "transaction cannot be created from a listing that is " + listing};
         }
+        if(user_buy_id.toString() == user_sell_id.toString()){
+            console.log(user_buy_id);
+            console.log(user_sell_id);
+            throw {message: "user with id " + user_buy_id + " tried to create a transaction with himself"};
+        }
         this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
         this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
         this.price = listing.price
@@ -78,10 +83,13 @@ var Transaction = function() {
 
     function verifyTransactionActiveThenSetConfirmed(user_id, value){
         if(this.isActive()){
-            if(this.buyer_user_id == user_id){
+            console.log("user_id: " + user_id);
+            console.log("seller_id " + this.seller_user_id);
+            console.log("buyer_id" + this.buyer_user_id);
+            if(this.buyer_user_id.toString() == user_id.toString()){
                 this.buyer_confirmed_meet_up = value;
             }
-            else if(this.seller_user_id == user_id){
+            else if(this.seller_user_id.toString() == user_id.toString()){
                 this.seller_confirmed_meet_up = value;
             }
             else{

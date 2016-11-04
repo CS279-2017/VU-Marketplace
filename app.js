@@ -36,6 +36,8 @@ exports.removeListing = removeListing;
 exports.makeTransactionRequest = makeTransactionRequest;
 exports.acceptTransactionRequest = acceptTransactionRequest;
 exports.declineTransactionRequest = declineTransactionRequest;
+exports.confirmTransaction = confirmTransaction;
+exports.rejectTransaction = rejectTransaction;
 
 exports.getActiveUsers = getActiveUsers;
 exports.getActiveListings = getActiveListings;
@@ -650,7 +652,12 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
 //5. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
     //6. add the transaction_id of new transaction to the user who initiated
     function makeTransaction(user_id, listing_id, callback, error_handler){
-        var new_transaction = createTransactionFromListing(user_id, listing_id);
+        try {
+            var new_transaction = createTransactionFromListing(user_id, listing_id);
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
         addTransactionToDatabase(new_transaction, function(new_transaction){
             try {
                 console.log("adding to active_transactions");
@@ -668,7 +675,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
         function createTransactionFromListing(user_id, listing_id){
             var listing = active_listings.get(listing_id);
             if(listing == undefined){
-                error_handler("makeTransaction: no listing found with listing_id "+listing_id);
+                error_handler({message: "makeTransaction: no listing found with listing_id "+listing_id});
                 return;
             }
             var user_buy_id;
@@ -808,13 +815,13 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
         updateTransaction(transaction, function(){
             //send message to user that initiated request that request was declined
             // remove transaction_id from initiating user (transaction_id was never added to declining user)
-            var user_buy = active_users.get(transaction.buyer_user_id);
-            var user_sell = active_users.get(transaction.seller_user_id);
-            if(transaction.buy == true){
-                user_sell.removeCurrentTransactionId(transaction_id);
+            var buyer = active_users.get(transaction.buyer_user_id);
+            var seller = active_users.get(transaction.seller_user_id);
+            if(transaction.buyer_accepted_request == true){
+                buyer.removeCurrentTransactionId(transaction_id);
             }
             else{
-                user_buy.removeCurrentTransactionId(transaction_id);
+                seller.removeCurrentTransactionId(transaction_id);
             }
             //remove transaction from active_transactions
             active_transactions.remove(transaction._id);
@@ -824,22 +831,6 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
 
 
     }, error_handler);
-
-    function updateTransaction(transaction, callback, error_handler){
-        MongoClient.connect(url, function (err, db) {
-            if (err) {
-                error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
-                return;
-            }
-            var collection_transactions = db.collection('transactions');
-            collection_transactions.update({_id: transaction._id}, transaction, function (err, count, status) {
-                if(err){error_handler(err.message);}
-                else{
-                    if(callback != undefined && callback != null){callback();}
-                }
-            });
-        });
-    }
 }
 
 
@@ -902,21 +893,32 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == undefined){
-            error_handler({message: "transaction with id " + transaction_id + " was not found"});
+            error_handler("transaction with id " + transaction_id + " was not found");
             return;
         }
         try {
             //confirms user_id has agreed to continue with the transaction
             transaction.confirm(user_id);
+            console.log(transaction);
         }catch(e){
             error_handler(e.message);
             return;
         }
         //TODO: watch out for situation where both users confirm at the same time
+        console.log("checking is Confirmed inside transaction");
+        console.log("isConfirmed() == " + transaction.isConfirmed());
         if(transaction.isConfirmed() == true){
             //TODO: sendTransactionCompleted Message
             // sendTransactionCompletedMessages(transaction, function(){
                 updateTransaction(transaction, function(){
+                    var user1 = active_users.get(transaction.buyer_user_id);
+                    var user2 = active_users.get(transaction.seller_user_id);
+                    if(user1 != undefined){
+                        user1.removeCurrentTransactionId(transaction_id);
+                    }
+                    if(user2 != undefined){
+                        user2.removeCurrentTransactionId(transaction_id);
+                    }
                     active_transactions.remove(transaction_id);
                     callback();
                 }, error_handler)
@@ -944,10 +946,34 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
         }
         // sendTransactionRejectedMessage(transaction, function(){
             updateTransaction(transaction, function(){
+                var user1 = active_users.get(transaction.buyer_user_id);
+                var user2 = active_users.get(transaction.seller_user_id);
+                if(user1 != undefined){
+                    user1.removeCurrentTransactionId(transaction_id);
+                }
+                if(user2 != undefined){
+                    user2.removeCurrentTransactionId(transaction_id);
+                }
                 active_transactions.remove(transaction_id);
             }, error_handler)
         // }, error_handler)
     }, error_handler)
+}
+
+function updateTransaction(transaction, callback, error_handler){
+    MongoClient.connect(url, function (err, db) {
+        if (err) {
+            error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
+            return;
+        }
+        var collection_transactions = db.collection('transactions');
+        collection_transactions.update({_id: transaction._id}, transaction, function (err, count, status) {
+            if(err){error_handler(err.message);}
+            else{
+                if(callback != undefined && callback != null){callback();}
+            }
+        });
+    });
 }
 
 

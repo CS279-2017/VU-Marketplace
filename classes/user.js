@@ -12,9 +12,9 @@ function User(username, password, email){
     this.email_address = email
     this.venmo_id = null;
     this.current_listings_ids = [];
-    this.previous_listings_ids = [];
+    // this.previous_listings_ids = []; Rather than storing a copy of previous, just look up in database
     this.current_transactions_ids = [];
-    this.previous_transactions_ids = [];
+    // this.previous_transactions_ids = []; Rather than storing a copy of previous, just look up in database
 
     this.current_location = null; // not saved onto db
     this.logged_in = null; //not saved onto db
@@ -70,7 +70,7 @@ User.prototype = {
     removeCurrentListingId: function(current_listing_id){
         var index = this.current_listings_ids.indexOf(current_listing_id);
         if(index <= -1){
-            throw {message: "listing id " + current_listing_id + " does not exist in current listing ids of user with id " + _id};
+            throw {message: "listing id " + current_listing_id + " does not exist in current listing ids of user with id " + this._id};
         }
         this.current_listings_ids.splice(index, 1);
     },
@@ -81,11 +81,11 @@ User.prototype = {
         this.previous_listings_ids.push(previous_listing_id);
     },
     removePreviousListingId: function(previous_listing_id){
-        var index = this.previous_listing_ids.indexOf(previous_listing_id);
+        var index = this.previous_listings_ids.indexOf(previous_listing_id);
         if(index <= -1){
-            throw {message: "listing id " + previous_listing_id + " does not exist in previous listings ids of user with id " + _id};
+            throw {message: "listing id " + previous_listing_id + " does not exist in previous listings ids of user with id " + this._id};
         }
-        this.previous_listing_ids.splice(index, 1);
+        this.previous_listings_ids.splice(index, 1);
     },
     getCurrentTransactionIds: function(){
         return this.current_transactions_ids;
@@ -94,9 +94,10 @@ User.prototype = {
         this.current_transactions_ids.push(current_transaction_id);  
     },
     removeCurrentTransactionId: function(current_transaction_id){
-        var index = this.current_transactions_ids.indexOf(previous_listing_id);
+        console.log(this);
+        var index = this.current_transactions_ids.indexOf(current_transaction_id);
         if(index <= -1){
-            throw {message: "transaction id " + current_transaction_id + " does not exist in current transactions ids of user with id " + _id};
+            throw {message: "transaction id " + current_transaction_id + " does not exist in current transactions ids of user with id " + this._id};
         }
         this.current_transactions_ids.splice(index, 1);
     },
@@ -109,7 +110,7 @@ User.prototype = {
     removePreviousTransactionId: function(previous_transaction_id){
         var index = this.previous_transactions_ids.indexOf(previous_transaction_id);
         if(index <= -1){
-            throw {message: "transaction id " + previous_transaction_id+ " does not exist in previous transaction ids of user with id " + _id};
+            throw {message: "transaction id " + previous_transaction_id+ " does not exist in previous transaction ids of user with id " + this._id};
         }
         this.previous_transactions_ids.splice(index, 1);
     },

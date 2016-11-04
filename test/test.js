@@ -305,55 +305,29 @@ describe.skip("Listing", function(){
 });
 
 describe("Transaction", function(){
-    describe("initiateTransaction", function(){
-        it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function(done){
+    describe("Accept Transaction", function() {
+        it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function (done) {
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
             var active_transactions = app.getActiveTransactions();
-            registerTwoEmailAddresses(function(user_id_arr){
+            registerTwoEmailAddresses(function (user_id_arr) {
                 var user_id1 = user_id_arr[0];
                 var user_id2 = user_id_arr[1];
                 var user1 = active_users.get(user_id1);
                 var user2 = active_users.get(user_id2);
-                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function(listing_id){
+                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function (listing_id) {
                     var listing = active_listings.get(listing_id);
                     console.log("User 1 made a listing: ");
                     console.log(listing);
-                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function(transaction_id){
-                        app.acceptTransactionRequest(user1._id, user1.password, transaction_id, function(){
+                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function (transaction_id) {
+                        app.acceptTransactionRequest(user1._id, user1.password, transaction_id, function () {
                             var transaction = active_transactions.get(transaction_id);
                             console.log(transaction);
-                            // assert(transaction.isActive(), true)
-                            // assert(transaction.buyer_accepted_request, true);
-                            // assert(transaction.seller_accepted_request, true);
-                            // assert(transaction.buy, true);
-                            // assert(transaction.buyer_user_id, user1._id);
-                            // assert(transaction.seller_user_id, user2._id)
-                            done();
-                        }, error_handler);
-                    }, error_handler);
-                }, error_handler);
-                
-            })
-        });
-        
-        it.skip("register 2 user/ login both/ user 1 makes listing/ user 1 makes transaction/ throw error, can't accept own transaction", function(){
-            var active_users = app.getActiveUsers();
-            var active_listings = app.getActiveListings();
-            var active_transactions = app.getActiveTransactions();
-            registerTwoEmailAddresses(function(user_id_arr){
-                var user_id1 = user_id_arr[0];
-                var user_id2 = user_id_arr[1];
-                var user1 = active_users.get(user_id1);
-                var user2 = active_users.get(user_id2);
-                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function(listing_id){
-                    var listing = active_listings.get(listing_id);
-                    console.log("User 1 made a listing: ");
-                    console.log(listing);
-                    app.makeTransactionRequest(user1._id, user1.password, listing._id, function(transaction_id){
-                        app.acceptTransactionRequest(user1._id, user1.password, transaction_id, function(){
-                            var transaction = active_transactions.get(transaction_id);
-                            console.log(transaction);
+                            assert(transaction.isActive(), true)
+                            assert(transaction.buyer_accepted_request, true);
+                            assert(transaction.seller_accepted_request, true);
+                            assert(transaction.buyer_user_id, user1._id);
+                            assert(transaction.seller_user_id, user2._id);
                             done();
                         }, error_handler);
                     }, error_handler);
@@ -361,7 +335,77 @@ describe("Transaction", function(){
 
             })
         });
-        
+
+        it("register 2 user/ login both/ user 1 makes listing/ user 1 makes transaction/ throw error, can't accept own transaction", function (done) {
+            var active_users = app.getActiveUsers();
+            var active_listings = app.getActiveListings();
+            var active_transactions = app.getActiveTransactions();
+            registerTwoEmailAddresses(function (user_id_arr) {
+                var user_id1 = user_id_arr[0];
+                var user_id2 = user_id_arr[1];
+                var user1 = active_users.get(user_id1);
+                var user2 = active_users.get(user_id2);
+                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function (listing_id) {
+                    var listing = active_listings.get(listing_id);
+                    console.log("User 1 made a listing: ");
+                    console.log(listing);
+                    app.makeTransactionRequest(user1._id, user1.password, listing._id, function (transaction_id) {
+                        app.acceptTransactionRequest(user1._id, user1.password, transaction_id, function () {
+                            // var transaction = active_transactions.get(transaction_id);
+                            // console.log(transaction);
+                            // assert(transaction.isActive(), true)
+                            // assert(transaction.buyer_accepted_request, true);
+                            // assert(transaction.seller_accepted_request, true);
+                            // assert(transaction.buyer_user_id, user1._id);
+                            // assert(transaction.seller_user_id, user2._id);
+                            done();
+                        }, error_handler);
+                    }, error_handler);
+                }, error_handler);
+
+            })
+
+            function error_handler(message) {
+                console.log(message);
+                assert(message.indexOf("tried to create a transaction with") != -1, true);
+                done();
+            }
+        });
+
+        it("register 2 user/ login both/ user 1 makes listing/ user 2 makes transaction/ user 1 declines", function (done) {
+            var active_users = app.getActiveUsers();
+            var active_listings = app.getActiveListings();
+            var active_transactions = app.getActiveTransactions();
+            registerTwoEmailAddresses(function (user_id_arr) {
+                var user_id1 = user_id_arr[0];
+                var user_id2 = user_id_arr[1];
+                var user1 = active_users.get(user_id1);
+                var user2 = active_users.get(user_id2);
+                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function (listing_id) {
+                    var listing = active_listings.get(listing_id);
+                    console.log("User 1 made a listing: ");
+                    console.log(listing);
+                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function (transaction_id) {
+                        app.declineTransactionRequest(user1._id, user1.password, transaction_id, function () {
+                            var transaction = active_transactions.get(transaction_id);
+                            console.log(transaction);
+                            console.log(user1);
+                            console.log(user2);
+                            done();
+                        }, error_handler);
+                    }, error_handler);
+                }, error_handler);
+
+            })
+
+            function error_handler(message) {
+                console.log(message);
+                assert(message.indexOf("tried to create a transaction with") != -1, true);
+                done();
+            }
+        });
+
+
         // it("register 2 user/ login both/ user 1 makes listing/ user 1 logs out/ user 2 makes transaction/ user 1 gets notification/" +
         //     " after a certain amount of time transaction request is closed", function(){
         //
@@ -370,10 +414,58 @@ describe("Transaction", function(){
         //     "throw error", function(){
         //
         // });
-
-
-
     });
+    
+    describe("Confirm Transaction", function(){
+        it("register 2 user/login both/ user 1 makes listing/user 2 makes transaction/ user 1 accepts/ user 1 confirms/ user2 confirms", function(done){
+            var active_users = app.getActiveUsers();
+            var active_listings = app.getActiveListings();
+            var active_transactions = app.getActiveTransactions();
+            registerTwoEmailAddresses(function (user_id_arr) {
+                var user_id1 = user_id_arr[0];
+                var user_id2 = user_id_arr[1];
+                var user1 = active_users.get(user_id1);
+                var user2 = active_users.get(user_id2);
+                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function (listing_id) {
+                    var listing = active_listings.get(listing_id);
+                    console.log("User 1 made a listing: ");
+                    console.log(listing);
+                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function (transaction_id) {
+                        app.acceptTransactionRequest(user1._id, user1.password, transaction_id, function () {
+                            var transaction = active_transactions.get(transaction_id);
+                            console.log(transaction);
+                            assert(transaction.isActive(), true)
+                            assert(transaction.buyer_accepted_request, true);
+                            assert(transaction.seller_accepted_request, true);
+                            assert(transaction.buyer_user_id, user1._id);
+                            assert(transaction.seller_user_id, user2._id);
+                            var counter = 0;
+                            app.confirmTransaction(user1._id, user1.password, transaction_id, function(){
+                                console.log("user 1 confirmed transaction");
+                                callback();
+                            }, error_handler);
+                            app.confirmTransaction(user2._id, user2.password, transaction_id, function(){
+                                console.log("user 2 confirmed transaction");
+                                callback();
+                            }, error_handler);
+                            function callback(){
+                                counter++;
+                                console.log("counter: "+ counter);
+                                if(transaction.isConfirmed()){
+                                    console.log(active_transactions.get(transaction_id));
+                                    assert(typeof active_transactions.get(transaction_id), "undefined")
+                                    done();
+                                }
+                                else{
+                                    throw "transaction hasn't been confirmed!"
+                                }
+                            }
+                        })
+                        }, error_handler);
+                    }, error_handler);
+                }, error_handler);
+        });
+    })
 });
 
 describe.skip("Socket.io", function (){
