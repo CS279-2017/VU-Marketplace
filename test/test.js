@@ -305,7 +305,7 @@ describe.skip("Listing", function(){
 });
 
 describe("Transaction", function(){
-    describe("Accept Transaction", function() {
+    describe("Accept/Decline Transaction", function() {
         it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function (done) {
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -416,7 +416,7 @@ describe("Transaction", function(){
         // });
     });
     
-    describe("Confirm Transaction", function(){
+    describe("Confirm/Reject Transaction", function(){
         it("register 2 user/login both/ user 1 makes listing/user 2 makes transaction/ user 1 accepts/ user 1 confirms/ user2 confirms", function(done){
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -454,18 +454,73 @@ describe("Transaction", function(){
                                 if(transaction.isConfirmed()){
                                     console.log(active_transactions.get(transaction_id));
                                     assert(typeof active_transactions.get(transaction_id), "undefined")
+                                    console.log(user1);
+                                    console.log(user2);
                                     done();
                                 }
                                 else{
-                                    throw "transaction hasn't been confirmed!"
+                                    error_handler("transaction hasn't been confirmed!");
+                                    return;
+                                }
+                            }
+                        });
+                    }, error_handler);
+                }, error_handler);
+            }, error_handler);
+        });
+        it.skip("register 2 user/login both/ user 1 makes listing/user 2 makes transaction/ user 1 accepts/ user 1 declines/ user 2 confirms", function(done) {
+            var active_users = app.getActiveUsers();
+            var active_listings = app.getActiveListings();
+            var active_transactions = app.getActiveTransactions();
+            registerTwoEmailAddresses(function (user_id_arr) {
+                var user_id1 = user_id_arr[0];
+                var user_id2 = user_id_arr[1];
+                var user1 = active_users.get(user_id1);
+                var user2 = active_users.get(user_id2);
+                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function (listing_id) {
+                    var listing = active_listings.get(listing_id);
+                    console.log("User 1 made a listing: ");
+                    console.log(listing);
+                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function (transaction_id) {
+                        app.acceptTransactionRequest(user1._id, user1.password, transaction_id, function () {
+                            var transaction = active_transactions.get(transaction_id);
+                            console.log(transaction);
+                            assert(transaction.isActive(), true)
+                            assert(transaction.buyer_accepted_request, true);
+                            assert(transaction.seller_accepted_request, true);
+                            assert(transaction.buyer_user_id, user1._id);
+                            assert(transaction.seller_user_id, user2._id);
+                            var counter = 0;
+                            app.confirmTransaction(user1._id, user1.password, transaction_id, function(){
+                                console.log("user 1 confirmed transaction");
+                                callback();
+                            }, error_handler);
+                            app.rejectTransaction(user2._id, user2.password, transaction_id, function(){
+                                console.log("user 2 rejected transaction");
+                                callback();
+                            }, error_handler);
+                            function callback(){
+                                console.log(transaction)
+                                counter++;
+                                console.log("counter: "+ counter);
+                                if(!transaction.isConfirmed() && !transaction.isActive()){
+                                    console.log(active_transactions.get(transaction_id));
+                                    assert(typeof active_transactions.get(transaction_id), "undefined")
+                                    console.log(user1);
+                                    console.log(user2);
+                                    done();
+                                }
+                                else{
+                                    error_handler("transaction hasn't been confirmed!");
+                                    return;
                                 }
                             }
                         })
-                        }, error_handler);
                     }, error_handler);
                 }, error_handler);
+            }, error_handler);
         });
-    })
+    });
 });
 
 describe.skip("Socket.io", function (){

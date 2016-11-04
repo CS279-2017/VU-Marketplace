@@ -764,6 +764,9 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             active_listings.remove(transaction.listing_id);
             //add transaction to current transaction of accepting user, user object returned by authenticate
             user.addCurrentTransactionId(transaction_id);
+            //since transaction has started remove the listing from the current listing of the user
+            var listingOwner = active_users.get(user._id);
+            listingOwner.removeCurrentListingId(listing._id);
             //send message to both users that transaction has begun
             // sendTransactionStartedMessage(transaction, function(){
                 callback();
@@ -924,6 +927,9 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
                 }, error_handler)
             // }, error_handler);
         }
+        else{
+            callback();
+        }
     }, error_handler);
 }
 
@@ -955,6 +961,7 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
                     user2.removeCurrentTransactionId(transaction_id);
                 }
                 active_transactions.remove(transaction_id);
+                callback();
             }, error_handler)
         // }, error_handler)
     }, error_handler)
@@ -974,6 +981,10 @@ function updateTransaction(transaction, callback, error_handler){
             }
         });
     });
+}
+
+function removeTransaction(transaction){
+
 }
 
 
