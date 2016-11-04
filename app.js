@@ -598,7 +598,7 @@ function makeListing(user_id, password, title, description, location, expiration
                                 active_listings.add(new_listing);
                                 user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
                             }catch(e){error_handler(e.message)};
-                            if(callback != undefined){ callback(new_listing._id);}
+                            if(callback != undefined){ callback(new_listing);}
                         }
                         else{
                             error_handler("more than 1 listing inserted into db");
@@ -640,8 +640,8 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
 //note we handle sending transaction request part in the router, since router has access to socket
 function makeTransactionRequest(user_id, password, listing_id, callback, error_handler){
     authenticate(user_id, password, function(user) {
-        makeTransaction(user_id, listing_id, function (transaction_id) {
-            callback(transaction_id); //pass listing_id back for testing purposes (so owner of listing can accept)
+        makeTransaction(user_id, listing_id, function (transaction) {
+            callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
         }, error_handler)
     }, error_handler);
     //called on a user (using user_id) and a listing (using listing_id)
@@ -668,7 +668,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 //user object is returned by authenticate
             }catch(e){error_handler(e.message)};
             if(callback != undefined && callback != null){
-                callback(new_transaction._id);
+                callback(new_transaction);
             }
         });
 

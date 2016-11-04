@@ -305,7 +305,7 @@ describe.skip("Listing", function(){
 });
 
 describe("Transaction", function(){
-    describe("Accept/Decline Transaction", function() {
+    describe.skip("Accept/Decline Transaction", function() {
         it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function (done) {
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -416,7 +416,7 @@ describe("Transaction", function(){
         // });
     });
     
-    describe("Confirm/Reject Transaction", function(){
+    describe.skip("Confirm/Reject Transaction", function(){
         it("register 2 user/login both/ user 1 makes listing/user 2 makes transaction/ user 1 accepts/ user 1 confirms/ user2 confirms", function(done){
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -468,7 +468,7 @@ describe("Transaction", function(){
                 }, error_handler);
             }, error_handler);
         });
-        it.skip("register 2 user/login both/ user 1 makes listing/user 2 makes transaction/ user 1 accepts/ user 1 declines/ user 2 confirms", function(done) {
+        it("register 2 user/login both/ user 1 makes listing/user 2 makes transaction/ user 1 accepts/ user 1 declines/ user 2 confirms", function(done) {
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
             var active_transactions = app.getActiveTransactions();
@@ -521,6 +521,38 @@ describe("Transaction", function(){
             }, error_handler);
         });
     });
+
+    describe("Multiple Transactions", function(){
+        it("register 3 users/login all/user 1 and 2 make listing/ user 3 makes transaction with both/ user 1 and 2 accept", function(done){
+            var active_users = app.getActiveUsers();
+            var active_listings = app.getActiveListings();
+            var active_transactions = app.getActiveTransactions();
+            register3EmailAddresses(function (user_id_arr) {
+                var user_id1 = user_id_arr[0];
+                var user_id2 = user_id_arr[1];
+                var user_id3 = user_id_arr[2];
+                var user1 = active_users.get(user_id1);
+                var user2 = active_users.get(user_id2);
+                var user3 = active_users.get(user_id3);
+                var listing1;
+                var listing2;
+                app.makeListing(user1._id, user1.password, "user 1 listing", "a listing made by user 1", "(0,0)", new Date().getTime() + 10000, 5.00, false, function(listing){
+                    console.log("user1 made a listing:")
+                    console.log(listing);
+                    listing1 = listing;
+                }, error_handler)
+                app.makeListing(user2._id, user2.password, "user 2 listing", "a listing made by user 2", "(1,1)", new Date().getTime() + 10000, 6.00, true, function(listing){
+                    console.log("user2 made a listing: ");
+                    console.log(listing);
+                    listing2= listing;
+                }, error_handler)
+                app.makeTransactionRequest(user3._id, user3.password, listing1._id, function(){
+                    console.log("user3 requested a transaction in listing1 with user1");
+                    
+                }, error_handler)
+            });
+        });
+    })
 });
 
 describe.skip("Socket.io", function (){
@@ -685,6 +717,46 @@ function registerTwoEmailAddresses(callback){
             i++;
             console.log("callback3 called i value is " + i);
             if(i == 2){
+                console.log("callback called");
+                callback(user_id_arr);
+            }
+        }
+        function error_handler(error){
+            console.log(error);
+        }
+    }
+}
+
+function register3EmailAddresses(callback){
+    console.log("registerTwoEmailAddresses called");
+    var i = 0;
+    var user_id_arr = [];
+    dropDatabases(callback0, error_handler);
+    function callback0(){
+        console.log("dropDatabases callback0 called")
+        app.registerEmail('someemail1' + "@vanderbilt.edu", callback1, error_handler);
+        app.registerEmail('someemail2' + "@vanderbilt.edu", callback1, error_handler);
+        app.registerEmail('someemail3' + "@vanderbilt.edu", callback1, error_handler);
+
+        function callback1(verification_code, email_address){
+            var username1 = "bowenjin1";
+            var username2 = "bowenjin2";
+            var username3 = "bowenjin3";
+            app.registerVerificationCode(verification_code, username1, "chocho513", "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username2, "chocho513", "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username3, "chocho513", "chocho513", email_address, callback2, error_handler);
+
+        }
+        function callback2(username, password) {
+            // users.push({username: username, password: password, email_address: email_address});
+            console.log("attempting to login as " + username + " with password " + password);
+            app.login(username, password, callback3, error_handler);
+        }
+        function callback3(user_id){
+            user_id_arr.push(user_id)
+            i++;
+            console.log("callback3 called i value is " + i);
+            if(i == 3){
                 console.log("callback called");
                 callback(user_id_arr);
             }
