@@ -1,8 +1,8 @@
 var Conversation = require("./conversation.js");
 
 //Transactions Database Schema:
-//{_id, title, description, user_id_buy, user_id_sell, listing_id, conversation, user_buy_will_initiate, ...
-//...user_sell_will_initiate, user_buy_confirm_met_up, user_sell_confirm_met_up}
+//{_id, title, description, buyer_user_id, seller_user_id, listing_id, conversation, user_buy_will_initiate, ...
+//...user_sell_will_initiate, buyer_confirmed_meet_up, seller_confirmed_meet_up}
 //TODO:
 //transaction is saved to database when it has been terminated
 //note create the transaction before deleting a listing
@@ -10,7 +10,7 @@ var Conversation = require("./conversation.js");
 //should users be able to offer their own lower price?
 var Transaction = function() {
     //pass in listing from which the transaction is made
-    function Transaction(user_id_buy, user_id_sell, listing) {
+    function Transaction(user_buy_id, user_sell_id, listing) {
         //this._id (this is assigned when transaction retrieved from database)
         //TODO: should user references be references or ids? ids are easier to save on database
         //TODO: transaction is automatically converted to JSON by JSON.stringify
@@ -24,21 +24,21 @@ var Transaction = function() {
         this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
         this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
         this.price = listing.price
-        this.user_id_buy = user_id_buy; //_id of User
-        this.user_id_sell = user_id_sell; //_id of Seller
+        this.buyer_user_id = user_buy_id; //_id of User
+        this.seller_user_id = user_sell_id; //_id of Seller
         this.listing_id = listing._id; //listing_id
         this.conversation = new Conversation();
         if (listing.buy == true) {
-            this.user_buy_accept_request = null;
-            this.user_sell_accept_request = true;
+            this.buyer_accepted_request = null;
+            this.seller_accepted_request = true;
         }
         else {
-            this.user_buy_accept_request = true;
-            this.user_sell_accept_request = null;
+            this.buyer_accepted_request = true;
+            this.seller_accepted_request = null;
         } //booling containing with user_buy and user_sell have accepted the request, user that creates the transaction will
         // set the bool to yes automatically
-        this.user_buy_confirm_met_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
-        this.user_sell_confirm_met_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
+        this.buyer_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
+        this.seller_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
         //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
     }
 
@@ -46,27 +46,27 @@ var Transaction = function() {
         console.log("verifyTransactionNotActivated");
         console.log("this: ");
         console.log(this);
-        if (this.user_buy_accept_request == null && this.user_sell_accept_request != null) {
-            if (this.user_id_buy.toString() == user_id.toString()) {
-                this.user_buy_accept_request = value;
+        if (this.buyer_accepted_request == null && this.seller_accepted_request != null) {
+            if (this.buyer_user_id.toString() == user_id.toString()) {
+                this.buyer_accepted_request = value;
             }
             else {
-                console.log(this.user_id_buy);
-                console.log(typeof this.user_id_buy.toString());
+                console.log(this.buyer_user_id);
+                console.log(typeof this.buyer_user_id.toString());
                 console.log(user_id.toString());
                 console.log(typeof user_id);
-                // console.log(this.user_id_buy === user_id);
-                throw {message: "the user_id " + this.user_id_buy + " associated with this transaction doesn't match the user id of the" +
+                // console.log(this.buyer_user_id === user_id);
+                throw {message: "the user_id " + this.buyer_user_id + " associated with this transaction doesn't match the user id of the" +
                 " user that is accepting the transaction " + user_id}
             }
         }
 
-        else if (this.user_buy_accept_request != null && this.user_sell_accept_request == null) {
-            if (this.user_id_sell == user_id) {
-                this.user_sell_accept_request = value;
+        else if (this.buyer_accepted_request != null && this.seller_accepted_request == null) {
+            if (this.seller_user_id == user_id) {
+                this.seller_accepted_request = value;
             }
             else {
-                throw {message: "the user_id " + this.user_id_sell + " associated with this transaction doesn't match the user id of the" +
+                throw {message: "the user_id " + this.seller_user_id + " associated with this transaction doesn't match the user id of the" +
                 " user that is accepting the transaction which is" + user_id}
             }
         }
@@ -78,11 +78,11 @@ var Transaction = function() {
 
     function verifyTransactionActiveThenSetConfirmed(user_id, value){
         if(this.isActive()){
-            if(this.user_id_buy == user_id){
-                this.user_buy_confirm_met_up = value;
+            if(this.buyer_user_id == user_id){
+                this.buyer_confirmed_meet_up = value;
             }
-            else if(this.user_id_sell == user_id){
-                this.user_sell_confirm_met_up = value;
+            else if(this.seller_user_id == user_id){
+                this.seller_confirmed_meet_up = value;
             }
             else{
                 throw {message:"the user id " + user_id + " that is attempting to confirm the transaction with id " + this._id +
@@ -102,15 +102,14 @@ var Transaction = function() {
             this.title = transaction.title;
             this.description = transaction.description;
             this.price = transaction.price
-            this.user_id_buy = transaction.user_id_buy;
-            this.user_id_sell = transaction.user_id_sell; //_id of Seller
+            this.buyer_user_id = transaction.buyer_user_id;
+            this.seller_user_id = transaction.seller_user_id; //_id of Seller
             this.listing_id = transaction.listing_id; //listing_id
             this.conversation = transaction.conversation;
-            this.accepted = transaction.accepted;
-            this.user_buy_accept_request = transaction.user_buy_accept_request;
-            this.user_sell_accept_request = transaction.user_sell_accept_request;
-            this.user_buy_confirm_met_up = transaction.user_buy_confirm_met_up;
-            this.user_sell_confirm_met_up = transaction.user_sell_confirm_met_up;
+            this.buyer_accepted_request = transaction.buyer_accepted_request;
+            this.seller_accepted_request = transaction.seller_accepted_request;
+            this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
+            this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
         },
         sendMessage: function (text, username) {
             //sends a message to the current conversation
@@ -151,15 +150,15 @@ var Transaction = function() {
         },
         //returns whether transaction has been initiated
         isActive: function () {
-            var accepted = this.user_buy_accept_request && this.user_sell_accept_request
-            var notRejected =  this.user_buy_confirm_met_up != false && this.user_sell_confirm_met_up != false;
-            var notConfirmed = !(this.user_buy_confirm_met_up == true && this.user_sell_confirm_met_up == true);
+            var accepted = this.buyer_accepted_request && this.seller_accepted_request
+            var notRejected =  this.buyer_confirmed_meet_up != false && this.seller_confirmed_meet_up != false;
+            var notConfirmed = !(this.buyer_confirmed_meet_up == true && this.seller_confirmed_meet_up == true);
             return accepted && notRejected && notConfirmed;
         },
         //TODO: watch out for when both users confirm at the same time.
         isConfirmed: function () {
             //TODO: if both confirm_met_up are true then return true;
-            if (this.user_buy_confirm_met_up == true && this.user_sell_confirm_met_up == true) {
+            if (this.buyer_confirmed_meet_up == true && this.seller_confirmed_meet_up == true) {
                 return true;
             }
             return false;

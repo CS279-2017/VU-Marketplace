@@ -646,7 +646,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
 //1. authenticate, if successful proceed; else return message to error_handler ("invalid authentication info")
 //2. get listing from active_listings, if null then return message to error_handler
 //3. check to make sure that the user_id on listing isn't the user_id intiating the transaction (can't have transaction with self)
-//4. if transaction is of type buy then user_id is user_id_sell else user_id_buy
+//4. if transaction is of type buy then user_id is seller_user_id else buyer_user_id
 //5. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
     //6. add the transaction_id of new transaction to the user who initiated
     function makeTransaction(user_id, listing_id, callback, error_handler){
@@ -671,17 +671,17 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 error_handler("makeTransaction: no listing found with listing_id "+listing_id);
                 return;
             }
-            var user_id_buy;
-            var user_id_sell;
+            var user_buy_id;
+            var user_sell_id;
             if(listing.buy == true){
-                user_id_sell = user_id;
-                user_id_buy = listing.user_id;
+                user_sell_id = user_id;
+                user_buy_id = listing.user_id;
             }
             else{
-                user_id_sell = listing.user_id;
-                user_id_buy = user_id;
+                user_sell_id = listing.user_id;
+                user_buy_id = user_id;
             }
-            return new Transaction(user_id_buy, user_id_sell, listing);
+            return new Transaction(user_buy_id, user_sell_id, listing);
         }
 
         function addTransactionToDatabase(new_transaction, callback){
@@ -732,7 +732,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         console.log(active_transactions.getAll());
         console.log(transaction);
         if(transaction == null || transaction == undefined){
-            error_handler("unable to find transaction with transaction_id: " + transaction_id);
+            error_handler({message: "unable to find transaction with transaction_id: " + transaction_id});
             return;
         }
         try {
@@ -748,7 +748,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         //throws error if transaction_id has already been set
         //or listing has already been deleted, means listing has already been accepted
         if(listing == undefined || listing.transaction_id != null){
-            error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
+            error_handler({message: "user with user id " + user_id + "has already accepted another transaction for this listing"});
             return;
         }
         listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
@@ -769,7 +769,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
     function updateListings(listing, callback){
         MongoClient.connect(url, function (err, db) {
             if (err) {
-                error_handler('Unable to connect to the mongoDB server. Error:' + err);
+                error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
                 return;
             }
             var collection_listings = db.collection('listings');
@@ -792,7 +792,7 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == null || transaction == undefined){
-            error_handler("unable to find transaction with transaction_id: " + transaction_id);
+            error_handler({message: "unable to find transaction with transaction_id: " + transaction_id});
             return;
         }
         try {
@@ -808,8 +808,8 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
         updateTransaction(transaction, function(){
             //send message to user that initiated request that request was declined
             // remove transaction_id from initiating user (transaction_id was never added to declining user)
-            var user_buy = active_users.get(transaction.user_id_buy);
-            var user_sell = active_users.get(transaction.user_id_sell);
+            var user_buy = active_users.get(transaction.buyer_user_id);
+            var user_sell = active_users.get(transaction.seller_user_id);
             if(transaction.buy == true){
                 user_sell.removeCurrentTransactionId(transaction_id);
             }
@@ -828,7 +828,7 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
     function updateTransaction(transaction, callback, error_handler){
         MongoClient.connect(url, function (err, db) {
             if (err) {
-                error_handler('Unable to connect to the mongoDB server. Error:' + err);
+                error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
                 return;
             }
             var collection_transactions = db.collection('transactions');
@@ -846,11 +846,11 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
 //TODO: implement sending transaction started message
 // function sendTransactionDeclinedMessage(transaction, callback, error_handler){
 //     if(transaction.buy == true){
-//         //TODO: send message to user_id_sell;
+//         //TODO: send message to seller_user_id;
 //         callback();
 //     }
 //     else if(transaction.buy == false){
-//         //TODO: send message to user_id_buy
+//         //TODO: send message to buyer_user_id
 //         callback();
 //     }
 //     else{
@@ -902,7 +902,7 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == undefined){
-            error_handler("transaction with id " + transaction_id + " was not found");
+            error_handler({message: "transaction with id " + transaction_id + " was not found"});
             return;
         }
         try {
