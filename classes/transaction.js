@@ -31,6 +31,7 @@ var Transaction = function() {
         this.price = listing.price
         this.buyer_user_id = user_buy_id; //_id of User
         this.seller_user_id = user_sell_id; //_id of Seller
+        this.buy = listing.buy;
         this.listing_id = listing._id; //listing_id
         this.conversation = new Conversation();
         if (listing.buy == true) {
@@ -112,6 +113,7 @@ var Transaction = function() {
             this.price = transaction.price
             this.buyer_user_id = transaction.buyer_user_id;
             this.seller_user_id = transaction.seller_user_id; //_id of Seller
+            this.buy = transaction.buy
             this.listing_id = transaction.listing_id; //listing_id
             this.conversation = transaction.conversation;
             this.buyer_accepted_request = transaction.buyer_accepted_request;

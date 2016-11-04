@@ -522,6 +522,7 @@ describe("Transaction", function(){
         });
     });
 
+    //TODO: add tests for sending messages to client and client responses
     describe("Multiple Transactions", function(){
         it("register 3 users/login all/user 1 and 2 make listing/ user 3 makes transaction with both/ user 1 and 2 accept", function(done){
             var active_users = app.getActiveUsers();
@@ -540,15 +541,28 @@ describe("Transaction", function(){
                     console.log("user1 made a listing:")
                     console.log(listing);
                     listing1 = listing;
+                    app.makeTransactionRequest(user3._id, user3.password, listing1._id, function(transaction){
+                        console.log("user3 requested a transaction on listing1 with user1:");
+                        console.log(transaction)
+                        app.acceptTransactionRequest(user1._id, user1.password, transaction._id, function(){
+                            console.log("user 1 has accepted the transaction:")
+                            console.log(transaction);
+                        }, error_handler)
+                    }, error_handler)
                 }, error_handler)
                 app.makeListing(user2._id, user2.password, "user 2 listing", "a listing made by user 2", "(1,1)", new Date().getTime() + 10000, 6.00, true, function(listing){
                     console.log("user2 made a listing: ");
                     console.log(listing);
-                    listing2= listing;
-                }, error_handler)
-                app.makeTransactionRequest(user3._id, user3.password, listing1._id, function(){
-                    console.log("user3 requested a transaction in listing1 with user1");
-                    
+                    listing2 = listing;
+                    app.makeTransactionRequest(user3._id, user3.password, listing2._id, function(transaction){
+                        console.log("user 3 requested a transaction on listing2 with user2");
+                        console.log(transaction);
+                        app.acceptTransactionRequest(user2._id, user2.password, transaction._id, function(){
+                            console.log("user 2 has accepted the transaction: ")
+                            console.log(transaction);
+                            done();
+                        });
+                    }, error_handler);
                 }, error_handler)
             });
         });
