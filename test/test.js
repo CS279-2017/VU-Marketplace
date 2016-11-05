@@ -12,7 +12,7 @@ function error_handler(error){
     console.log(error);
 }
 
-describe.skip("User", function() {
+describe("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
         it("register 26 users", function(done){
@@ -178,7 +178,8 @@ describe.skip("User", function() {
                     // users.push({username: username, password: password, email_address: email_address});
                     console.log("attempting to login as " + username + " with password " + password);
                     app.login(username, password, callback3, error_handler);
-                    function callback3(_id) {
+                    function callback3(user) {
+                        var _id = user._id
                         app.getActiveUsers().get(_id).setVenmoId("some_venmo_id");
                         app.logout(_id, password, function(){
                             console.log(app.getActiveUsers());
@@ -196,7 +197,7 @@ describe.skip("User", function() {
     });
 });
 
-describe.skip("Listing", function(){
+describe("Listing", function(){
     describe("Make Listing", function(){
 
 
@@ -305,7 +306,7 @@ describe.skip("Listing", function(){
 });
 
 describe("Transaction", function(){
-    describe.skip("Accept/Decline Transaction", function() {
+    describe("Accept/Decline Transaction", function() {
         it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function (done) {
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -416,7 +417,7 @@ describe("Transaction", function(){
         // });
     });
     
-    describe.skip("Confirm/Reject Transaction", function(){
+    describe("Confirm/Reject Transaction", function(){
         it("register 2 user/login both/ user 1 makes listing/user 2 makes transaction/ user 1 accepts/ user 1 confirms/ user2 confirms", function(done){
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -569,7 +570,7 @@ describe("Transaction", function(){
     })
 });
 
-describe.skip("Socket.io", function (){
+describe("Socket.io", function (){
    it("connecting, sending a message back and forth, then disconnect", function(done){
        var socket = require('socket.io-client')(base_url);
        socket.on('connect', function(){
@@ -690,7 +691,7 @@ function register26EmailAddressesAndLogin(callback){
                 console.log("attempting to login as " + username + " with password " + password);
                 app.login(username, password, callback3, error_handler);
             }
-            function callback3(){
+            function callback3(user){
                 i++;
                 console.log("callback3 called i value is " + i);
                 if(i == 26){
@@ -726,8 +727,8 @@ function registerTwoEmailAddresses(callback){
             console.log("attempting to login as " + username + " with password " + password);
             app.login(username, password, callback3, error_handler);
         }
-        function callback3(user_id){
-            user_id_arr.push(user_id)
+        function callback3(user){
+            user_id_arr.push(user._id)
             i++;
             console.log("callback3 called i value is " + i);
             if(i == 2){
@@ -766,8 +767,8 @@ function register3EmailAddresses(callback){
             console.log("attempting to login as " + username + " with password " + password);
             app.login(username, password, callback3, error_handler);
         }
-        function callback3(user_id){
-            user_id_arr.push(user_id)
+        function callback3(user){
+            user_id_arr.push(user._id)
             i++;
             console.log("callback3 called i value is " + i);
             if(i == 3){

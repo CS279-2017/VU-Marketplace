@@ -176,8 +176,18 @@ var Transaction = function() {
             }
             return false;
         },
-        isResponseUser: function (user_id) {
-
+        //given a user_id if it matches one of the two user_ids
+        //then return the user_id of the other user in the transaction
+        getOtherUser: function(user_id){
+            if(user_id.toString() == this.buyer_user_id.toString()){
+                return this.seller_user_id;
+            }
+            else if(user_id.toString() == this.seller_user_id.toString()){
+                return this.buyer_user_id
+            }
+            else{
+                throw {message: "user_id doesn't match either of the user ids in the transaction"};
+            }
         }
     }
 

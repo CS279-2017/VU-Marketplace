@@ -1,6 +1,7 @@
 # mealplanserverapp
 
 ###Events Received by Server from Client (Client -> Server)
+JSON object will be passed in with all the arguments of each method
 
 1. register_email_address
     1. registers an email_address that must then be verified
@@ -29,6 +30,9 @@
 
 
 ###Events Received by Client from Server (Server -> Client)
+JSON object with parameters data and error will be passed in
+The data parameter will contain an object containing callback values returned by a successful method call, will be null if error
+The error parameter will contain the error message, will be null if successful
 
 1. register_email_address_response
     1. tells client that their email_address has been stored in database, now client must enter verification code and register account info

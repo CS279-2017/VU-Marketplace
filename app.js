@@ -95,11 +95,13 @@ io.on('connection', function (socket) {
 
     socket.on('register_email_address', function(json) {
         var email_address = json.email_address;
-        var callback = function () {
+        var callback = function (verification_code, email_address) {
+            socket.emit('register_email_address_response', {data: null , error: null})
         };
         //TODO: write proper error_handler
-        var error_handler = function () {
-            console.log(e.message);
+        var error_handler = function (e) {
+            socket.emit('register_email_address_response', {data: null , error: e})
+            console.log(e);
         }
         registerEmailAddress(email_address, callback, error_handler);
     });
@@ -111,10 +113,13 @@ io.on('connection', function (socket) {
         var confirm_password = json.confirm_password;
         var email_address = json.email_address
 
-        var callback = function(){};
+        var callback = function(){
+            socket.emit("register_verification_code_response", {data: null, error: null});
+        };
         //TODO: write proper error_handler
-        var error_handler = function() {
-            console.log(e.message);
+        var error_handler = function(e) {
+            socket.emit("register_verification_code_response", {data: null, error: e});
+            console.log(e);
         }
         registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler);
     });
@@ -124,13 +129,16 @@ io.on('connection', function (socket) {
         var password = json.password;
         var email_address = json.email_address
 
-        var callback = function(user_id){
+        var callback = function(user){
             //TODO: send user_id back to user
             //TODO: notify necessary clients that a user has logged in
+            user.socket_id = socket.id; //store the socket_id of the user
+            socket.emit("login_response", {data: {user_id: user._id}, error: null});
         };
         //TODO: write proper error_handler
-        var error_handler = function() {
-            console.log(e.message);
+        var error_handler = function(e) {
+            socket.emit("login_response", {data: null, error: e});
+            console.log(e);
         }
         login(username, password, callback, error_handler);
     });
@@ -141,10 +149,12 @@ io.on('connection', function (socket) {
 
         function callback(){
             //TODO: notify necessary clients that a sure has logged out
+            socket.emit("logout_response", {data: null, error: null});
         }
         //TODO: write proper error_handler
-        function error_handler(){
-            console.log(e.message);
+        function error_handler(e){
+            socket.emit("logout_response", {data: null, error: e});
+            console.log(e);
         }
         logout(user_id, password, callback, error_handler);
     });
@@ -158,25 +168,29 @@ io.on('connection', function (socket) {
         var expiration_time = json.expiration_time;
         var price = json.price;
         var buy = json.buy;
-        function error_handler(){
-            console.log(e.message);
+        function callback(listing){
+            socket.emit("make_listing_response", {data: {listing: listing}, error: null});
+            //TODO: emit event to all users that a new listing has been made
         }
-        function callback(listing_id){
-            //TODO: notify all users that a new listing has been made
+        function error_handler(e){
+            socket.emit("make_listing_response", {data: null, error: e});
+            console.log(e);
         }
         makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
     });
 
     socket.on('remove_listing', function(json){
-        var callback = function(){
-            //TODO: notify all users that a new listing has been made
+        var user_id = json.user_id;
+        var password = json.password;
+        var callback = function(listing_id){
+            socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
+            //TODO: notify all users that listing_id has been removed
         };
         //TODO: write proper error_handler
         var error_handler = function(e) {
+            socket.emit("remove_listing_response", {data: null, error: e});
             console.log(e);
         }
-        var user_id = json.user_id;
-        var password = json.password;
         removeListing(user_id, password, listing_id, callback, error_handler)
     });
     //initiate_transaction_request:
@@ -186,11 +200,13 @@ io.on('connection', function (socket) {
    socket.on('make_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
-        function error_handler(e){
-            console.log(e);
-        }
-        function callback(){
+        function callback(transaction){
+            socket.emit("make_transaction_request_response", {data: null, error: null});
             //TODO: notify user that owns listing that a user has requested a transaction
+        }
+        function error_handler(e) {
+            socket.emit("make_transaction_request_response", {data: null, error: e});
+            console.log(e);
         }
         makeTransactionRequest(user_id, password, callback, error_handler);
     });
@@ -199,13 +215,21 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var transaction_id = json.transaction_id;
+
+        function callback(transaction){
+            socket.emit("accept_transaction_request_response", {data: null, error: null});
+            //TODO: notify users involved in the transaction that transaction has been accepted, will start
+            try {
+                var buyer = active_users.get(transaction.buyer_user_id);
+                var seller = active_users.get(transaction.seller_user_id);
+                var buyer_socket =
+            }catch(e){
+                error_handler(e.message);
+            }
+        }
         function error_handler(e){
             console.log(e);
         }
-        function callback(){
-            //TODO: notify users involved in the transaction that transaction has been accepted, will start
-        }
-        // makeTransactionRequest(user_id, password, callback, error_handler);
         acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler)
     });
 
@@ -296,8 +320,12 @@ io.on('connection', function (socket) {
     });
 });
 
+//**************************************
+//**BEGIN Client -> Server API methods**
+//**************************************
 
-//THE BELOW METHODS ARE API METHODS THAT USERS CALL ON THE SERVER
+//note each method has a callback and error_handler methods, one or the other will be called in each execution
+//successful execution calls callback, unsuccessful calls error_handler
 
 //TODO: note we pass an error handler method to each of these methods, if the methods are called, they are passed
 //TODO: a string that describes the error
@@ -581,7 +609,7 @@ function login(username, password, callback, error_handler){
                 }
                 console.log(user.username + "is logged in");
                 //return user._id, use this to authenticate rather than username, thus login is independent of username
-                if(callback != undefined){ callback(user._id); }
+                if(callback != undefined){ callback(user); }
 
             }
             else{
@@ -878,7 +906,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             listingOwner.removeCurrentListingId(listing._id);
             //send message to both users that transaction has begun
             // sendTransactionStartedMessage(transaction, function(){
-                callback();
+                callback(transaction);
             // }, error_handler);
         });
 
@@ -1132,10 +1160,70 @@ function updateListings(listing, callback){
     });
 }
 
-function removeTransaction(transaction){
+//**********************************
+//**END Client->Server API methods**
+//**********************************
+
+
+//************************************
+//**START Server->Client API methods**
+//************************************
+
+function registerEmailAddressResponse(socket){
 
 }
 
+function registerVerificationCodeResponse(){
+
+}
+
+function loginResponse(){
+    
+}
+
+function logoutResponse(){
+    
+}
+
+function makeListingResponse(){
+    
+}
+
+function removeListingResponse(){
+    
+}
+
+function makeTransactionRequestResponse(){
+    
+}
+
+function acceptTransactionRequestResponse(){
+    
+}
+
+function declineTransactionRequestResponse(){
+    
+}
+
+function confirmTransactionResponse(){
+    
+}
+
+function rejectTransactionResponse(){
+    
+}
+
+function updateUserLocationResponse(){
+    
+}
+
+function sendChatMessageResponse(){
+    
+}
+
+function getAllActiveListingsResponse(){
+    
+}
 
 // function recoverUsername(email_address){
 //     //TODO: implement details below

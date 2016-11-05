@@ -13,16 +13,16 @@ ActiveTransactions.prototype = {
     constructor: ActiveTransactions,
     add: function(transaction){
         this.transactions[transaction._id] = transaction;
-        //TODO:
-        //Add transaction to database
     },
     remove: function(transaction_id){
         delete this.transactions[transaction_id];
-        //TODO:
-        //update transaction in database to make inactive
     },
     get: function (transaction_id){
-        return this.transactions[transaction_id];
+        var transaction = this.transactions[transaction_id];
+        if(typeof transaction == 'undefined'){
+            throw {message: "transaction with id " + transaction_id + " wasn't found"};
+        }
+        return transaction;
     }
     ,
     //gets all transactions involving a user with a given user_id 

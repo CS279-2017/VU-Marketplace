@@ -11,6 +11,7 @@ function User(username, password, email){
     this.password = password;
     this.email_address = email
     this.venmo_id = null;
+    this.socket_id = null;
     this.current_listings_ids = [];
     // this.previous_listings_ids = []; Rather than storing a copy of previous, just look up in database
     this.current_transactions_ids = [];
@@ -31,6 +32,7 @@ User.prototype = {
         this.email_address = user.email_address;
         this.current_location = user.current_location;
         this.venmo_id = user.venmo_id;
+        this.socket_id = null;
         this.current_listings_ids = user.current_listings_ids;
         this.previous_listings_ids = user.previous_listings_ids;
         this.current_transactions_ids = user.current_transactions_ids
