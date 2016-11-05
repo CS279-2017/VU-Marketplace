@@ -2,17 +2,17 @@
 
 Events Received by Server from Client (Client -> Server)
 1. register_email_address
--registers an email_address that must then be verified
+    1. registers an email_address that must then be verified
 2. register_verification_code
--verifies the email_address and creates a user, with username, password, etc.
+    1. verifies the email_address and creates a user, with username, password, etc.
 
 3. login
--logs a user in (adds them to active_users)
+    1. logs a user in (adds them to active_users)
 4. logout
--logs user out, updates user in database, removes user from active_users
+    1. logs user out, updates user in database, removes user from active_users
 
 5. make_listing
--creates a listing, adds to it to active_listings
+    1. creates a listing, adds to it to active_listings
 6. remove_listing
 
 7. make_transaction_request
@@ -25,32 +25,32 @@ Events Received by Server from Client (Client -> Server)
 13. send_chat_message
 
 14. get_all_active_listings
--called by client to get returned a updated list of listings
+    1. called by client to get returned a updated list of listings
 15.
 
 
 Events Received by Client from Server (Server -> Client)
 1. register_email_address_response
--tells client that their email_address has been stored in database, now client must enter verification code
+    1. tells client that their email_address has been stored in database, now client must enter verification code
 and register account info
--or sends error message
+    2. or sends error message
 
 2. register_verification_code_response
--tells client that they've successfully registered
--or sends error
+    1. tells client that they've successfully registered
+    2. or sends error
 
 3. login_response
--tells clients that they've successfully logged in (sends back user_id)
--or sends error
+    1. tells clients that they've successfully logged in (sends back user_id)
+    2. or sends error
 
 4. logout_response
--tells client that they've succesfully logged out
--or sends error
+    1. tells client that they've succesfully logged out
+    2. or sends error
 
 5. make_listing_response
-    - tells client that they've successfully made a listing (i.e doesn't send error)
+    1. tells client that they've successfully made a listing (i.e doesn't send error)
         * also emits an event to all active_users that tells them a new listing has been added
-    - or sends an error
+    2. or sends an error
 6. remove_listing_response
     1. tells client that they've succesfully made a listing (i.e no error)
         *emits an event to all active_users telling them which listing has been removed
