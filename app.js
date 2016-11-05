@@ -172,8 +172,8 @@ io.on('connection', function (socket) {
             //TODO: notify all users that a new listing has been made
         };
         //TODO: write proper error_handler
-        var error_handler = function() {
-            console.log(e.message);
+        var error_handler = function(e) {
+            console.log(e);
         }
         var user_id = json.user_id;
         var password = json.password;
@@ -183,12 +183,11 @@ io.on('connection', function (socket) {
     //1. make the transaction
     //2. send transaction_request to user who owns the listing
     //3. await response from user
-   socket.on('make_transaction_request', function(){
-        var json = req.body.json;
+   socket.on('make_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
-        function error_handler(){
-            console.log(e.message);
+        function error_handler(e){
+            console.log(e);
         }
         function callback(){
             //TODO: notify user that owns listing that a user has requested a transaction
@@ -196,21 +195,105 @@ io.on('connection', function (socket) {
         makeTransactionRequest(user_id, password, callback, error_handler);
     });
 
-    socket.on('accept_transaction_request', function(){
-
+    socket.on('accept_transaction_request', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var transaction_id = json.transaction_id;
+        function error_handler(e){
+            console.log(e);
+        }
+        function callback(){
+            //TODO: notify users involved in the transaction that transaction has been accepted, will start
+        }
+        // makeTransactionRequest(user_id, password, callback, error_handler);
+        acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler)
     });
 
-    socket.on('decline_transaction_request', function(){
-
+    socket.on('decline_transaction_request', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var transaction_id = json.transaction_id;
+        function error_handler(e){
+            console.log(e);
+        }
+        function callback(){
+            //TODO: notify the initiator of the transaction that transaction has been rejected
+        }
+        declineTransactionRequest(user_id, password, transaction_id, callback, error_handler)
     });
 
-   socket.on('confirm_transaction', function(){
-
+   socket.on('confirm_transaction', function(json){
+       var user_id = json.user_id;
+       var password = json.password;
+       var transaction_id = json.transaction_id;
+       function error_handler(e){
+           console.log(e);
+       }
+       function callback(){
+           //TODO: notify the other user in the transaction that this user has confirmed
+       }
+       confirmTransaction(user_id, password, transaction_id, callback, error_handler);
    });
 
-   socket.on('reject_transaction', function(){
+   socket.on('reject_transaction', function(json){
+       var user_id = json.user_id;
+       var password = json.password;
+       var transaction_id = json.transaction_id;
+       function error_handler(e){
+           console.log(e);
+       }
+       function callback(){
+           //TODO: notify the other user in the transaction that this user has rejected the transaction
 
+       }
+       rejectTransaction(user_id, password, transaction_id, callback, error_handler)
    });
+
+    socket.on('update_user_location', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var new_location = json.new_location;
+        function error_handler(e){
+            console.log(e);
+        }
+        function callback(){
+            //TODO: notify all users, or all users in the same transaction with user whose location was updated,
+            //TODO: or notify noone and just have client periodically poll the server for location (note the design of the
+            //TODO: system favors the first two options as)
+
+        }
+        updateUserLocation(user_id, password, new_location, callback, error_handler)
+    });
+
+    socket.on('send_chat_messaage', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var transaction_id = json.transaction_id;
+        var message_text = json.message_text;
+        function error_handler(e){
+            console.log(e);
+        }
+        function callback(){
+            //TODO: notify the other user in the transaction that this user has rejected the transaction
+
+        }
+        sendChatMessage(user_id, password, transaction_id, message_text, callback, error_handler)
+    });
+
+    socket.on('get_all_active_listings', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var transaction_id = json.transaction_id;
+        var message_text = json.message_text;
+        function error_handler(e){
+            console.log(e);
+        }
+        function callback(all_active_listings){
+            //TODO: send all_active_listings back to client
+
+        }
+        getAllActiveListings(user_id, password, callback, error_handler)
+    });
 });
 
 
@@ -645,12 +728,14 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var listing = active_listings.get(listing_id);
         if(listing.user_id == user_id){
-            active_listings.remove(listing_id);
-            user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
-            user.addPreviousListingId(listing_id);
-            if(callback != undefined){
-                callback(listing_id);
-            }
+            updateListings(listing, function(){
+                active_listings.remove(listing_id);
+                user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
+                // user.addPreviousListingId(listing_id);
+                if(callback != undefined){
+                    callback(listing_id);
+                }
+            });
         }
         else{
             error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
@@ -799,22 +884,6 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
 
 
     }, error_handler);
-
-    function updateListings(listing, callback){
-        MongoClient.connect(url, function (err, db) {
-            if (err) {
-                error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
-                return;
-            }
-            var collection_listings = db.collection('listings');
-            collection_listings.update({_id: listing._id}, listing, function (err, count, status) {
-                if(err){error_handler(err.message);}
-                else{
-                    if(callback != undefined && callback != null){callback();}
-                }
-            });
-        });
-    }
 }
 
 //1-4 same as acceptTransactionRequest()
@@ -839,7 +908,7 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
             return;
         }
         //TODO: update transaction in database before deleting it so we have a record of the failed transaction
-        updateTransaction(transaction, function(){
+        updateTransactions(transaction, function(){
             //send message to user that initiated request that request was declined
             // remove transaction_id from initiating user (transaction_id was never added to declining user)
             var buyer = active_users.get(transaction.buyer_user_id);
@@ -937,7 +1006,7 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         if(transaction.isConfirmed() == true){
             //TODO: sendTransactionCompleted Message
             // sendTransactionCompletedMessages(transaction, function(){
-                updateTransaction(transaction, function(){
+                updateTransactions(transaction, function(){
                     var user1 = active_users.get(transaction.buyer_user_id);
                     var user2 = active_users.get(transaction.seller_user_id);
                     if(user1 != undefined){
@@ -975,7 +1044,7 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
             return;
         }
         // sendTransactionRejectedMessage(transaction, function(){
-            updateTransaction(transaction, function(){
+            updateTransactions(transaction, function(){
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
                 if(user1 != undefined){
@@ -991,7 +1060,47 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
     }, error_handler)
 }
 
-function updateTransaction(transaction, callback, error_handler){
+//1. authenticate
+//2. validate the location
+//3. update the users location to the new_location
+function updateUserLocation(user_id, password, new_location, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        if(validateLocation(new_location) == true){
+            user.location = new_location;
+        }
+        else{
+            error_handler("the location passed to update_user_location is invalid");
+        }
+    }, error_handler)
+}
+
+//1. authenticate
+//2. find the transaction
+//3. verify user is one of the users of the transaction
+//4. send a message in the conversation
+function sendChatMessage(user_id, password, transaction_id, message_text, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var transaction = active_transactions.get(transaction_id);
+        if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
+            transaction.sendMessage(user, message_text);
+        }
+        else{
+            error_handler("user with user_id " + user_id + " tried to send a message to conversation in a transaction of which he/she is not apart of");
+        }
+    }, error_handler)
+}
+
+//1. authenticate
+//2. get active_listings
+//3. return active_listings
+function getAllActiveListings(user_id, password, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var all_active_listings = active_listings.getAll();
+        callback(all_active_listings);
+    }, error_handler)
+}
+
+function updateTransactions(transaction, callback, error_handler){
     MongoClient.connect(url, function (err, db) {
         if (err) {
             error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
@@ -999,6 +1108,22 @@ function updateTransaction(transaction, callback, error_handler){
         }
         var collection_transactions = db.collection('transactions');
         collection_transactions.update({_id: transaction._id}, transaction, function (err, count, status) {
+            if(err){error_handler(err.message);}
+            else{
+                if(callback != undefined && callback != null){callback();}
+            }
+        });
+    });
+}
+
+function updateListings(listing, callback){
+    MongoClient.connect(url, function (err, db) {
+        if (err) {
+            error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
+            return;
+        }
+        var collection_listings = db.collection('listings');
+        collection_listings.update({_id: listing._id}, listing, function (err, count, status) {
             if(err){error_handler(err.message);}
             else{
                 if(callback != undefined && callback != null){callback();}

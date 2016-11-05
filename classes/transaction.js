@@ -123,14 +123,15 @@ var Transaction = function() {
             this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
             this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
         },
-        sendMessage: function (text, username) {
+        //user is an instance of the user that's sending the message
+        sendMessage: function (user, text) {
             //sends a message to the current conversation
             //current_transaction cannot be null
             if (this.conversation == null) {
                 throw {message: "tried to send message to null Conversation"};
             }
             //(Message(text, username, time_sent)
-            var message = new Message(text, username, new Date());
+            var message = new Message(text, user.username, new Date());
             this.conversation.send_message(message);
         },
         //TODO: the below modifications should be done atomically so as the avoid race conditions
