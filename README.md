@@ -1,6 +1,6 @@
-## mealplanserverapp
+# mealplanserverapp
 
-#Events Received by Server from Client (Client -> Server)
+###Events Received by Server from Client (Client -> Server)
 
 1. register_email_address
     1. registers an email_address that must then be verified
@@ -28,8 +28,8 @@
 15.
 
 
-#
-Events Received by Client from Server (Server -> Client)
+###Events Received by Client from Server (Server -> Client)
+
 1. register_email_address_response
     1. tells client that their email_address has been stored in database, now client must enter verification code and register account info
     2. or sends error message
