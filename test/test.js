@@ -452,7 +452,7 @@ describe("Transaction", function(){
                             function callback(){
                                 counter++;
                                 console.log("counter: "+ counter);
-                                if(transaction.isConfirmed()){
+                                if(transaction.isCompleted()){
                                     console.log(active_transactions.get(transaction_id));
                                     assert(typeof active_transactions.get(transaction_id), "undefined")
                                     console.log(user1);
@@ -504,7 +504,7 @@ describe("Transaction", function(){
                                 console.log(transaction)
                                 counter++;
                                 console.log("counter: "+ counter);
-                                if(!transaction.isConfirmed() && !transaction.isActive()){
+                                if(!transaction.isCompleted() && !transaction.isActive()){
                                     console.log(active_transactions.get(transaction_id));
                                     assert(typeof active_transactions.get(transaction_id), "undefined")
                                     console.log(user1);

@@ -133,6 +133,7 @@ var Transaction = function() {
             //(Message(text, username, time_sent)
             var message = new Message(text, user.username, new Date());
             this.conversation.send_message(message);
+            return message;
         },
         //TODO: the below modifications should be done atomically so as the avoid race conditions
         //both buy and sell user_id are defined at transaction creation
@@ -169,7 +170,7 @@ var Transaction = function() {
             return accepted && notRejected && notConfirmed;
         },
         //TODO: watch out for when both users confirm at the same time.
-        isConfirmed: function () {
+        isCompleted: function () {
             //TODO: if both confirm_met_up are true then return true;
             if (this.buyer_confirmed_meet_up == true && this.seller_confirmed_meet_up == true) {
                 return true;

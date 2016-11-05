@@ -171,6 +171,7 @@ io.on('connection', function (socket) {
         function callback(listing){
             socket.emit("make_listing_response", {data: {listing: listing}, error: null});
             //TODO: emit event to all users that a new listing has been made
+            io.emit("listing_made", {data: {listing: listing}});
         }
         function error_handler(e){
             socket.emit("make_listing_response", {data: null, error: e});
@@ -185,6 +186,7 @@ io.on('connection', function (socket) {
         var callback = function(listing_id){
             socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
             //TODO: notify all users that listing_id has been removed
+            io.emit("listing_removed", {data: {listing_id: listing_id}});
         };
         //TODO: write proper error_handler
         var error_handler = function(e) {
@@ -201,6 +203,16 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         function callback(transaction){
+            //send transaction request to other user first then notify calling user of success
+            try {
+                var other_user = transaction.getOtherUser(user_id);
+                var other_user_socket = io.sockets.connected[other_user.socket_id];
+                other_user_socket.emit("transaction_request", {data: transaction, error: null})
+            }catch(e){
+                error_handler(e.message)
+                return;
+            }
+
             socket.emit("make_transaction_request_response", {data: null, error: null});
             //TODO: notify user that owns listing that a user has requested a transaction
         }
@@ -215,19 +227,23 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var transaction_id = json.transaction_id;
-
         function callback(transaction){
             socket.emit("accept_transaction_request_response", {data: null, error: null});
             //TODO: notify users involved in the transaction that transaction has been accepted, will start
             try {
                 var buyer = active_users.get(transaction.buyer_user_id);
                 var seller = active_users.get(transaction.seller_user_id);
-                var buyer_socket =
+                var buyer_socket = io.sockets.connected[buyer.socket_id];
+                var seller_socket = io.sockets.connected[seller.socket_id];
+                buyer_socket.emit("transaction_started", {transaction: transaction});
+                seller_socket.emit("transaction_started", {transaction: transaction});
             }catch(e){
-                error_handler(e.message);
+                console.log(e);
+                return;
             }
         }
         function error_handler(e){
+            socket.emit("accept_transaction_request_response", {data: null, error: e});
             console.log(e);
         }
         acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler)
@@ -237,11 +253,22 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var transaction_id = json.transaction_id;
-        function error_handler(e){
-            console.log(e);
-        }
-        function callback(){
+        function callback(transaction){
+            try {
+                var other_user = transaction.getOtherUser(user_id);
+                var other_user_socket = io.sockets.connected[other_user.socket_id];
+                other_user_socket.emit("transaction_declined", {data: {transaction_id: transaction._id}, error: null})
+            }catch(e){
+                console.log(e);
+                return;
+            }
+
+            socket.emit("decline_transaction_request_response", {data: null, error: null});
             //TODO: notify the initiator of the transaction that transaction has been rejected
+        }
+        function error_handler(e){
+            socket.emit("decline_transaction_request_response", {data: null, error: e});
+            console.log(e);
         }
         declineTransactionRequest(user_id, password, transaction_id, callback, error_handler)
     });
@@ -250,11 +277,30 @@ io.on('connection', function (socket) {
        var user_id = json.user_id;
        var password = json.password;
        var transaction_id = json.transaction_id;
-       function error_handler(e){
-           console.log(e);
+       function callback(transaction){
+           //TODO: notify both users in the transaction that this user has confirmed
+           try {
+               var buyer = active_users.get(transaction.buyer_user_id);
+               var seller = active_users.get(transaction.seller_user_id);
+               var buyer_socket = io.sockets.connected[buyer.socket_id];
+               var seller_socket = io.sockets.connected[seller.socket_id];
+               buyer_socket.emit("transaction_confirmed", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
+               seller_socket.emit("transaction_confirmed", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
+               if(transaction.isCompleted()){
+                   //notify users that transaction is completed
+                   buyer_socket.emit("transaction_completed", {data: {transaction_id: transaction_id}, error: null});
+                   seller_socket.emit("transaction_completed", {data: {transaction_id: transaction_id}, error: null});
+               }
+           }catch(e){
+               console.log(e);
+               return;
+           }
+
+           socket.emit("confirm_transaction_response", {data: null, error: null});
        }
-       function callback(){
-           //TODO: notify the other user in the transaction that this user has confirmed
+       function error_handler(e){
+           socket.emit("confirm_transaction_response", {data: null, error: e});
+           console.log(e);
        }
        confirmTransaction(user_id, password, transaction_id, callback, error_handler);
    });
@@ -263,43 +309,85 @@ io.on('connection', function (socket) {
        var user_id = json.user_id;
        var password = json.password;
        var transaction_id = json.transaction_id;
-       function error_handler(e){
-           console.log(e);
+       function callback(transaction){
+           //TODO: notify both users in the transaction that this user has rejected the transaction
+           try {
+               var buyer = active_users.get(transaction.buyer_user_id);
+               var seller = active_users.get(transaction.seller_user_id);
+               var buyer_socket = io.sockets.connected[buyer.socket_id];
+               var seller_socket = io.sockets.connected[seller.socket_id];
+               buyer_socket.emit("transaction_rejected", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
+               seller_socket.emit("transaction_rejected", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
+           }catch(e){
+               console.log(e);
+               return;
+           }
+           socket.emit("reject_transaction_response", {data: null, error: null});
        }
-       function callback(){
-           //TODO: notify the other user in the transaction that this user has rejected the transaction
-
+       function error_handler(e){
+           socket.emit("reject_transaction_response", {data: null, error: e});
+           console.log(e);
        }
        rejectTransaction(user_id, password, transaction_id, callback, error_handler)
    });
 
+
+    //12. update_user_location_response
+    //1. tells client that their location has been successfully updated
+    //*if successful update, then emit event to all clients in a transaction with this user that their location has changed
+    //2. or sends error
     socket.on('update_user_location', function(json){
         var user_id = json.user_id;
         var password = json.password;
         var new_location = json.new_location;
-        function error_handler(e){
-            console.log(e);
-        }
         function callback(){
+            socket.emit("update_user_location_response", {data: {new_location: new_location}, error: null});
             //TODO: notify all users, or all users in the same transaction with user whose location was updated,
-            //TODO: or notify noone and just have client periodically poll the server for location (note the design of the
-            //TODO: system favors the first two options as)
-
+            var user = active_users.get(user_id);
+            var current_transaction_ids = user.getCurrentTransactionIds();
+            try {
+                for (var key in current_transaction_ids) {
+                    var transaction_id = current_transaction_ids[key];
+                    var transaction = active_transactions.get(transaction_id);
+                    var other_user = transaction.getOtherUser(user_id);
+                    var other_user_socket = io.sockets.connected[other_user.socket_id];
+                    other_user_socket.emit("user_location_updated")
+                }
+            }catch(e){
+                console.log(e);
+                return;
+            }
+        }
+        function error_handler(e){
+            socket.emit("update_user_location_response", {data: null, error: e});
+            console.log(e);
         }
         updateUserLocation(user_id, password, new_location, callback, error_handler)
     });
 
-    socket.on('send_chat_messaage', function(json){
+    socket.on('send_chat_message', function(json){
         var user_id = json.user_id;
         var password = json.password;
         var transaction_id = json.transaction_id;
         var message_text = json.message_text;
+        function callback(message){
+            socket.emit("send_chat_message_response", {data: null, error: null});
+            //TODO: notify all user in the transaction that a new message has been sent
+            try {
+                var transaction = active_transactions.get(transaction_id);
+                var buyer = transaction.buyer_user_id;
+                var seller = transaction.seller_user_id;
+                var buyer_socket = io.sockets.connected[buyer.socket_id];
+                var seller_socket = io.sockets.connected[seller.socket_id];
+                buyer_socket.emit("chat_message_sent", {data: {message: message}, error: null});
+                seller_socket.emit("chat_message_sent", {data: {message: message}, error: null});
+            }catch(e){
+                console.log(e);
+                return;
+            }
+        }
         function error_handler(e){
             console.log(e);
-        }
-        function callback(){
-            //TODO: notify the other user in the transaction that this user has rejected the transaction
-
         }
         sendChatMessage(user_id, password, transaction_id, message_text, callback, error_handler)
     });
@@ -309,12 +397,13 @@ io.on('connection', function (socket) {
         var password = json.password;
         var transaction_id = json.transaction_id;
         var message_text = json.message_text;
-        function error_handler(e){
-            console.log(e);
-        }
         function callback(all_active_listings){
             //TODO: send all_active_listings back to client
-
+            socket.emit("get_all_active_listings_response", {data: {all_active_listings: all_active_listings}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_all_active_listings_response", {data: null, error: e});
+            console.log(e);
         }
         getAllActiveListings(user_id, password, callback, error_handler)
     });
@@ -949,7 +1038,7 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
             }
             //remove transaction from active_transactions
             active_transactions.remove(transaction._id);
-            callback();
+            callback(transaction);
             
         }, error_handler);
 
@@ -1030,8 +1119,8 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         }
         //TODO: watch out for situation where both users confirm at the same time
         console.log("checking is Confirmed inside transaction");
-        console.log("isConfirmed() == " + transaction.isConfirmed());
-        if(transaction.isConfirmed() == true){
+        console.log("isCompleted() == " + transaction.isCompleted());
+        if(transaction.isCompleted() == true){
             //TODO: sendTransactionCompleted Message
             // sendTransactionCompletedMessages(transaction, function(){
                 updateTransactions(transaction, function(){
@@ -1044,12 +1133,12 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
                         user2.removeCurrentTransactionId(transaction_id);
                     }
                     active_transactions.remove(transaction_id);
-                    callback();
+                    callback(transaction);
                 }, error_handler)
             // }, error_handler);
         }
         else{
-            callback();
+            callback(transaction);
         }
     }, error_handler);
 }
@@ -1095,6 +1184,7 @@ function updateUserLocation(user_id, password, new_location, callback, error_han
     authenticate(user_id, password, function(user){
         if(validateLocation(new_location) == true){
             user.location = new_location;
+            callback();
         }
         else{
             error_handler("the location passed to update_user_location is invalid");
@@ -1110,7 +1200,8 @@ function sendChatMessage(user_id, password, transaction_id, message_text, callba
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
-            transaction.sendMessage(user, message_text);
+            var message = transaction.sendMessage(user, message_text);
+            callback(message);
         }
         else{
             error_handler("user with user_id " + user_id + " tried to send a message to conversation in a transaction of which he/she is not apart of");
@@ -1178,51 +1269,51 @@ function registerVerificationCodeResponse(){
 }
 
 function loginResponse(){
-    
+
 }
 
 function logoutResponse(){
-    
+
 }
 
 function makeListingResponse(){
-    
+
 }
 
 function removeListingResponse(){
-    
+
 }
 
 function makeTransactionRequestResponse(){
-    
+
 }
 
 function acceptTransactionRequestResponse(){
-    
+
 }
 
 function declineTransactionRequestResponse(){
-    
+
 }
 
 function confirmTransactionResponse(){
-    
+
 }
 
 function rejectTransactionResponse(){
-    
+
 }
 
 function updateUserLocationResponse(){
-    
+
 }
 
 function sendChatMessageResponse(){
-    
+
 }
 
 function getAllActiveListingsResponse(){
-    
+
 }
 
 // function recoverUsername(email_address){
@@ -1256,6 +1347,10 @@ function getActiveListings(){
 function getActiveTransactions(){
     return active_transactions;
 }
+
+
+
+
 
 function validateEmail(email) {
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -1308,9 +1403,4 @@ function validatePrice(price){
 function validateBuy(buy){
     // return typeof buy == 'boolean';
     return true;
-}
-
-
-function sendErrorMessageToClient(){
-
 }
