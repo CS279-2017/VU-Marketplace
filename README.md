@@ -1,16 +1,15 @@
-# mealplanserverapp
+## mealplanserverapp
 
-Events Received by Server from Client (Client -> Server)
+#Events Received by Server from Client (Client -> Server)
+
 1. register_email_address
     1. registers an email_address that must then be verified
 2. register_verification_code
     1. verifies the email_address and creates a user, with username, password, etc.
-
 3. login
     1. logs a user in (adds them to active_users)
 4. logout
     1. logs user out, updates user in database, removes user from active_users
-
 5. make_listing
     1. creates a listing, adds to it to active_listings
 6. remove_listing
@@ -29,10 +28,10 @@ Events Received by Server from Client (Client -> Server)
 15.
 
 
+#
 Events Received by Client from Server (Server -> Client)
 1. register_email_address_response
-    1. tells client that their email_address has been stored in database, now client must enter verification code
-and register account info
+    1. tells client that their email_address has been stored in database, now client must enter verification code and register account info
     2. or sends error message
 
 2. register_verification_code_response
