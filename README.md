@@ -94,7 +94,7 @@ and register account info
 14. get_all_active_listings response
 -send the listings back the client
 -or send an error
-#we will sort the listings on the client side
+//listings will be sorted on the client-side
 
 
 
