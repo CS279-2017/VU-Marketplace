@@ -12,7 +12,7 @@ function error_handler(error){
     console.log(error);
 }
 
-describe("User", function() {
+describe.skip("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
         it("register 26 users", function(done){
@@ -197,7 +197,7 @@ describe("User", function() {
     });
 });
 
-describe("Listing", function(){
+describe.skip("Listing", function(){
     describe("Make Listing", function(){
 
 
@@ -306,7 +306,7 @@ describe("Listing", function(){
 });
 
 describe("Transaction", function(){
-    describe("Accept/Decline Transaction", function() {
+    describe.skip("Accept/Decline Transaction", function() {
         it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function (done) {
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -417,7 +417,7 @@ describe("Transaction", function(){
         // });
     });
     
-    describe("Confirm/Reject Transaction", function(){
+    describe.skip("Confirm/Reject Transaction", function(){
         it("register 2 user/login both/ user 1 makes listing/user 2 makes transaction/ user 1 accepts/ user 1 confirms/ user2 confirms", function(done){
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -524,7 +524,7 @@ describe("Transaction", function(){
     });
 
     //TODO: add tests for sending messages to client and client responses
-    describe("Multiple Transactions", function(){
+    describe.skip("Multiple Transactions", function(){
         it("register 3 users/login all/user 1 and 2 make listing/ user 3 makes transaction with both/ user 1 and 2 accept", function(done){
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
@@ -589,6 +589,11 @@ describe("Socket.io", function (){
            done();
        });
    })
+    
+    it("register 2 users and login/ user 1 make listing/ user 2 request transaction/ user 1 and user 2 accept/", function(done){
+        // var socket = require('socket.io-client')(base_url);
+        // socket.emit("register_user_email")
+    });
 });
 
 function getAllPossibleStrings(length){
