@@ -8,6 +8,8 @@ var Conversation = require("./conversation.js");
 //note create the transaction before deleting a listing
 //note if we had to recreate transaction object from database, we would need a parameter for conversation as well
 //should users be able to offer their own lower price?
+
+//TODO: can there be multiple transactions at the same time between the same two users?
 var Transaction = function() {
     //pass in listing from which the transaction is made
     function Transaction(user_buy_id, user_sell_id, listing) {

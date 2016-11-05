@@ -581,6 +581,30 @@ function authenticate(user_id, password, callback, error_handler){
 //4. notify all that a new listing has been added 
 function makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler){
     authenticate(user_id, password, function(user){
+        if(!validateTitle(title)){
+            error_handler("invalid title");
+            return;
+        }
+        if(!validateDescription(description)){
+            error_handler("invalid description");
+            return;
+        }
+        if(!validateLocation(location)){
+            error_handler("invalid email");
+            return;
+        }
+        if(!validateExpirationTime(expiration_time)){
+            error_handler("invalid expiration time");
+            return;
+        }
+        if(!validatePrice(price)){
+            error_handler("invalid price");
+            return;
+        }
+        if(!validateBuy(price)){
+            error_handler("invalid buy");
+            return;
+        }
         var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
         MongoClient.connect(url, function (err, db) {
             if (err) {
@@ -1039,6 +1063,40 @@ function validatePassword(password){
     //must be atleast 6 characters long
     return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(password);
 }
+
+//user_id, title, description, location, expiration_time, price, buy
+
+function validateTitle(title){
+    // return typeof title == 'string' && title.length > 0 && title.length <=30;
+    return true;
+}
+
+function validateDescription(description){
+    // return description.length > 0 && description.length <= 140;
+    return true;
+}
+
+function validateLocation(location){
+    // return (typeof location == 'object') && (location.x != undefined) && (location.y != undefined) && (typeof location.x == 'number') && (typeof location.y == 'number');
+    return true;
+}
+
+
+function validateExpirationTime(expiration_time){
+    // return typeof expiration_time == 'number';
+    return true;
+}
+
+function validatePrice(price){
+    // return typeof price == 'number';
+    return true;
+}
+
+function validateBuy(buy){
+    // return typeof buy == 'boolean';
+    return true;
+}
+
 
 function sendErrorMessageToClient(){
 
