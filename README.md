@@ -52,49 +52,48 @@ and register account info
     * also emits an event to all active_users that tells them a new listing has been added
 - or sends an error
 6. remove_listing_response
--tells client that they've succesfully made a listing (i.e no error)
-    *emits an event to all active_users telling them which listing has been removed
-
-- or sends error
+    1. tells client that they've succesfully made a listing (i.e no error)
+        *emits an event to all active_users telling them which listing has been removed
+    2. or sends error
 7. make_transaction_request_response
--tells client that they've succesfully made a transaction_request
--or sends error
-* emits an event to the other user in the transaction requesting a response to the transaction request
+    1. tells client that they've succesfully made a transaction_request
+    2. or sends error
+    * emits an event to the other user in the transaction requesting a response to the transaction request
 
 8. accept_transaction_request_response
--tells client their acceptance has been registered
-    *if successful emits an event to both users of the transaction that the transaction has started
--or sends an error
+    1. tells client their acceptance has been registered
+        * if successful emits an event to both users of the transaction that the transaction has started
+    2. or sends an error
 
 9. decline_transaction_request_response
- -tells client their rejection has been registered
-    *if successful emits an event to other user (requesitng user) that request has been declined
- -or sends error
+    1. tells client their rejection has been registered
+        *if successful emits an event to other user (requesitng user) that request has been declined
+    2. or sends error
 
 10. confirm_transaction_response
--tells client that their confirmation has been registered
--or sends error
-*in the case that both clients have confirmed, emit an event to both that the transaction is confirmed i.e completed
+    1. tells client that their confirmation has been registered
+    2. or sends error
+    * in the case that both clients have confirmed, emit an event to both that the transaction is confirmed i.e completed
 
 11. reject_transaction_response
--tells client that their rejection has been registered
-    *if rejection is successful, emit event to both users that transaction has been rejected
--or sends error
+    1. tells client that their rejection has been registered
+        *if rejection is successful, emit event to both users that transaction has been rejected
+    2. or sends error
 
 12. update_user_location_response
--tells client that their location has been successfully updated
-    *if successful update, then emit event to all clients in a transaction with this user that their location has changed
--or sends error
+    1. tells client that their location has been successfully updated
+        *if successful update, then emit event to all clients in a transaction with this user that their location has changed
+    2. or sends error
 
 13. send_chat_message_response
--tells client that their chat message has been successfully sent
-    *if successfully sent message, then emit event to both users in the transaction that a new message has been added to conversation
--or sends error
+    1. tells client that their chat message has been successfully sent
+        * if successfully sent message, then emit event to both users in the transaction that a new message has been added to conversation
+    2. or sends error
 
 14. get_all_active_listings response
--send the listings back the client
--or send an error
-//listings will be sorted on the client-side
+    1. send the listings back the client
+    2. or send an error
+listings will be sorted on the client-side
 
 
 
