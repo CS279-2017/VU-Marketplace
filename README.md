@@ -48,9 +48,9 @@ and register account info
 -or sends error
 
 5. make_listing_response
--tells client that they've successfully made a listing (i.e doesn't send error)
-    * also emits an event to all active_users that tells them a new listing has been added
-- or sends an error
+    - tells client that they've successfully made a listing (i.e doesn't send error)
+        * also emits an event to all active_users that tells them a new listing has been added
+    - or sends an error
 6. remove_listing_response
     1. tells client that they've succesfully made a listing (i.e no error)
         *emits an event to all active_users telling them which listing has been removed
