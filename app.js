@@ -990,6 +990,15 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             error_handler({message: "user with user id " + user_id + "has already accepted another transaction for this listing"});
             return;
         }
+        //decline all other transactions in based on this listing besides current transaction
+        var transaction_arr = active_transactions.getAllForListingId(listing._id);
+        for(var i=0; i <transaction_arr.length; i++){
+            var transaction = transaction_arr[i];
+            if(transaction._id != transaction_id) {
+                declineTransactionRequest(user_id, password, transaction._id, function (transaction_id) {
+                }, error_handler)
+            }
+        }
         listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
         //update listing in database
         updateListings(listing, function(){

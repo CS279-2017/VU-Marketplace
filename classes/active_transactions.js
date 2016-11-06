@@ -29,7 +29,7 @@ ActiveTransactions.prototype = {
     }
     ,
     //gets all transactions involving a user with a given user_id 
-    getTransactionsForUser: function(user_id){
+    getAllForUser: function(user_id){
         var transactions_arr = [];
         for(transaction_id in this.transactions){
             var transaction = this.transactions[transaction_id];
@@ -39,7 +39,7 @@ ActiveTransactions.prototype = {
         }
         return transactions_arr;
     },
-    getTransactionsForListingId: function(listing_id){
+    getAllForListingId: function(listing_id){
         var transactions_arr = [];
         for(transaction_id in this.transactions){
             var transaction = this.transactions[transaction_id];

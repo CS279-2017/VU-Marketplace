@@ -11,6 +11,11 @@ function error_handler(error){
     console.log(error);
 }
 
+//TODO: 1. a listing gets mutliple transactions and the users accepts multiple of them in quick succession, make sure only 1
+//TODO: gets accepted and once that one is accepted, the others get deleted
+//TODO: 2. make sure a listing is deleted from active_listings at some point after it is expired
+//TODO: 3. try to make a transaction from an expired listing
+
 describe.skip("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){

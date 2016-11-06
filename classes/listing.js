@@ -1,5 +1,7 @@
 //Listing Database Schema:
 //{_id, user_id, title, description, location, creation_time, expiration_time, price, buy, transaction_id}
+//Listings are removed after they expire, or they are removed manually by the user, or they are removed when a transaction based
+//on the listing has started, at the point remove all other transactions based on that listing
 var Listing = function() {
     function Listing(user_id, title, description, location, expiration_time, price, buy) {
         //Listing(id, titile, description, location, creation_time, expiration_time, price, buy)
