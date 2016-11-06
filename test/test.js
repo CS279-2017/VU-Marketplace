@@ -693,8 +693,16 @@ describe("Socket.io", function (){
             console.log(user_id_arr);
             var user_id1 = user_id_arr[0];
             var user_id2 = user_id_arr[1];
-            socket.emit('login', {username: "bowenjin1", password: "chocho513"});
-            socket.emit('logout', {user_id: user_id1, password: "chocho513"});
+            // socket.emit('login', {username: "bowenjin1", password: "chocho513"});
+            // socket.emit('logout', {user_id: user_id1, password: "chocho513"});
+            socket.emit('make_listing', JSON.stringify({
+                user_id: user_id1,
+                password: "chocho513",
+                title: "gay老",
+                description: "菊花爆了",
+                location: {x: 0, y: 0},
+
+            }))
         });
 
         function response_handler(res){
@@ -702,6 +710,7 @@ describe("Socket.io", function (){
         }
         function response_handler_with_done(res){
             console.log(res)
+            console.log(active_users)
             done();
         }
     });
@@ -786,39 +795,39 @@ function printDocumentsInCollection(collection_name, callback){
 function register26EmailAddressesAndLogin(callback){
     console.log("register26EmailAddressesAndLogin called");
     dropDatabases(callback0, error_handler);
-        function callback0(){
-            console.log("dropDatabases callback0 called")
-            var push_strings = []; //push strings onto here after popping off of possible_strings;
-            var possible_strings = getAllPossibleStrings(1);
-            var i = 0;
-            var users = [];
-            for(var string in possible_strings){
-                app.registerEmail(string + "@vanderbilt.edu", callback1, error_handler);
-            }
-            
-            function callback1(verification_code, email_address){
-                var username = possible_strings.pop();
-                push_strings.push(username);
-                // console.log("calling registerVerificationCode");
-                app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
-            }
-            function callback2(username, password) {
-                // users.push({username: username, password: password, email_address: email_address});
-                console.log("attempting to login as " + username + " with password " + password);
-                app.login(username, password, callback3, error_handler);
-            }
-            function callback3(user){
-                i++;
-                console.log("callback3 called i value is " + i);
-                if(i == 26 || i == 25){
-                    console.log("callback called");
-                    callback();
-                }
-            }
-            function error_handler(error){
-                console.log(error);
+    function callback0(){
+        console.log("dropDatabases callback0 called")
+        var push_strings = []; //push strings onto here after popping off of possible_strings;
+        var possible_strings = getAllPossibleStrings(1);
+        var i = 0;
+        var users = [];
+        for(var string in possible_strings){
+            app.registerEmail(string + "@vanderbilt.edu", callback1, error_handler);
+        }
+
+        function callback1(verification_code, email_address){
+            var username = possible_strings.pop();
+            push_strings.push(username);
+            // console.log("calling registerVerificationCode");
+            app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
+        }
+        function callback2(username, password) {
+            // users.push({username: username, password: password, email_address: email_address});
+            console.log("attempting to login as " + username + " with password " + password);
+            app.login(username, password, callback3, error_handler);
+        }
+        function callback3(user){
+            i++;
+            console.log("callback3 called i value is " + i);
+            if(i == 26 || i == 25){
+                console.log("callback called");
+                callback();
             }
         }
+        function error_handler(error){
+            console.log(error);
+        }
+    }
 }
 
 function registerTwoEmailAddresses(callback){

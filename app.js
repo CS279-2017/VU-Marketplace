@@ -89,6 +89,17 @@ app.get('/', function (req, res) {
     res.send('Hello World!');
 });
 
+function parseJson(input, callback, error_handler){
+    try {
+        var output = JSON.parse(input);
+    }catch(e){
+        error_handler("could not parse JSON string:\n" + input)
+        return;
+    }
+    callback(output);
+
+}
+
 io.on('connection', function (socket) {
     console.log("user has connected!");
     socket.emit('event', { data: 'server data' });
@@ -98,16 +109,18 @@ io.on('connection', function (socket) {
     });
 
     socket.on('register_email_address', function(json) {
-        console.log(json);
-        var email_address = json.email_address;
-        var callback = function (verification_code, email_address) {
-            socket.emit('register_email_address_response', {data: null , error: null})
-        };
+        parseJson(json, function(){
+            var email_address = json.email_address;
+            var callback = function (verification_code, email_address) {
+                socket.emit('register_email_address_response', {data: null , error: null});
+            };
+            registerEmailAddress(email_address, callback, error_handler);
+        }, error_handler);
         var error_handler = function (e) {
             socket.emit('register_email_address_response', {data: null , error: e})
             console.log(e);
+            return;
         }
-        registerEmailAddress(email_address, callback, error_handler);
     });
 
     socket.on('register_verification_code', function(json){
@@ -184,6 +197,7 @@ io.on('connection', function (socket) {
     socket.on('remove_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var listing_id = json.listing_id
         var callback = function(listing_id){
             socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
             //notify all users that listing_id has been removed
@@ -202,6 +216,7 @@ io.on('connection', function (socket) {
    socket.on('make_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var listing_id = json.listing_id; 
         function callback(transaction){
             //send transaction request to other user first then notify calling user of success
             try {
@@ -220,7 +235,7 @@ io.on('connection', function (socket) {
             socket.emit("make_transaction_request_response", {data: null, error: e});
             console.log(e);
         }
-        makeTransactionRequest(user_id, password, callback, error_handler);
+        makeTransactionRequest(user_id, password, listing_id, callback, error_handler);
     });
 
     socket.on('accept_transaction_request', function(json){
@@ -340,8 +355,8 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var new_location = json.new_location;
-        function callback(){
-            socket.emit("update_user_location_response", {data: {new_location: new_location}, error: null});
+        function callback(updated_location){
+            socket.emit("update_user_location_response", {data: {updated_location: updated_location}, error: null});
             //notify all users, or all users in the same transaction with user whose location was updated,
             var user = active_users.get(user_id);
             var current_transaction_ids = user.getCurrentTransactionIds();
@@ -351,7 +366,7 @@ io.on('connection', function (socket) {
                     var transaction = active_transactions.get(transaction_id);
                     var other_user = transaction.getOtherUser(user_id);
                     var other_user_socket = io.sockets.connected[other_user.socket_id];
-                    other_user_socket.emit("user_location_updated")
+                    other_user_socket.emit("user_location_updated", {data: {user_id: user._id, transaction_id: transaction_id, updated_location: updated_location}, error: null});
                 }
             }catch(e){
                 console.log(e);
@@ -395,8 +410,6 @@ io.on('connection', function (socket) {
     socket.on('get_all_active_listings', function(json){
         var user_id = json.user_id;
         var password = json.password;
-        var transaction_id = json.transaction_id;
-        var message_text = json.message_text;
         function callback(all_active_listings){
             //send all_active_listings back to client
             socket.emit("get_all_active_listings_response", {data: {all_active_listings: all_active_listings}, error: null});
@@ -1120,7 +1133,7 @@ function updateUserLocation(user_id, password, new_location, callback, error_han
             //transform the ordered pair into a Location object (regardless of whether it was a Location or just a normal
             //object)
             user.location = new Location(new_location.x, new_location.y);
-            callback();
+            callback(user.location);
         }
         else{
             error_handler("the location passed to update_user_location is invalid");
