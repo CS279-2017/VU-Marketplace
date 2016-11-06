@@ -89,17 +89,6 @@ app.get('/', function (req, res) {
     res.send('Hello World!');
 });
 
-function parseJson(input, callback, error_handler){
-    try {
-        var output = JSON.parse(input);
-    }catch(e){
-        error_handler("could not parse JSON string:\n" + input)
-        return;
-    }
-    callback(output);
-
-}
-
 io.on('connection', function (socket) {
     console.log("user has connected!");
     socket.emit('event', { data: 'server data' });
@@ -109,18 +98,16 @@ io.on('connection', function (socket) {
     });
 
     socket.on('register_email_address', function(json) {
-        parseJson(json, function(){
-            var email_address = json.email_address;
-            var callback = function (verification_code, email_address) {
-                socket.emit('register_email_address_response', {data: null , error: null});
-            };
-            registerEmailAddress(email_address, callback, error_handler);
-        }, error_handler);
+        var email_address = json.email_address;
+        var callback = function (verification_code, email_address) {
+            socket.emit('register_email_address_response', {data: null , error: null});
+        };
         var error_handler = function (e) {
             socket.emit('register_email_address_response', {data: null , error: e})
             console.log(e);
             return;
         }
+        registerEmailAddress(email_address, callback, error_handler);
     });
 
     socket.on('register_verification_code', function(json){
