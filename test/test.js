@@ -12,7 +12,7 @@ function error_handler(error){
     console.log(error);
 }
 
-describe.skip("User", function() {
+describe("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
         it("register 26 users", function(done){
@@ -179,12 +179,15 @@ describe.skip("User", function() {
                     console.log("attempting to login as " + username + " with password " + password);
                     app.login(username, password, callback3, error_handler);
                     function callback3(user) {
+                        console.log("login callback:")
+                        console.log(user)
                         var _id = user._id
-                        app.getActiveUsers().get(_id).setVenmoId("some_venmo_id");
+                        var active_users = app.getActiveUsers();
+                        (active_users.get(_id)).setVenmoId("some_venmo_id");
                         app.logout(_id, password, function(){
                             console.log(app.getActiveUsers());
-                            app.login(username, password, function(_id){
-                                assert(app.getActiveUsers().get(_id).venmo_id == "some_venmo_id");
+                            app.login(username, password, function(user){
+                                assert(app.getActiveUsers().get(user._id).venmo_id == "some_venmo_id");
                                 done();
                             }, error_handler)
 
@@ -589,10 +592,15 @@ describe("Socket.io", function (){
            done();
        });
    })
-    
+
     it("register 2 users and login/ user 1 make listing/ user 2 request transaction/ user 1 and user 2 accept/", function(done){
-        // var socket = require('socket.io-client')(base_url);
-        // socket.emit("register_user_email")
+        var socket = require('socket.io-client')(base_url);
+        socket.emit('register_email_address', {email_address: "bowen.jin@vanderbilt.edu"});
+        socket.on('register_email_address_response', function(res){
+            console.log(res);
+            done();
+            socket.emit('register_email_addres')
+        });
     });
 });
 

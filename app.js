@@ -94,6 +94,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('register_email_address', function(json) {
+        console.log(json);
         var email_address = json.email_address;
         var callback = function (verification_code, email_address) {
             socket.emit('register_email_address_response', {data: null , error: null})
@@ -617,16 +618,13 @@ function registerVerificationCode(verification_code, username, password, confirm
                         return;
                     }
                     else{
-                        console.log(email_address + " is unique!")
                         //TODO:
                         collection_users.find({username: username}).toArray(function(err, docs){
                             if(docs.length > 0){
-                                console.log(username + " has been taken");
                                 error_handler(username + " has been taken");
                                 return;
                             }
                             else{
-                                console.log(username + " is unique!")
                                 callback();
                             }
                         });
@@ -687,9 +685,6 @@ function login(username, password, callback, error_handler){
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 var user = new User();
                 user.initFromDatabase(docs[0]);
-
-                console.log("User Object: ")
-                console.log(user);
                 try {
                     active_users.add(user);
                 }catch(error){
@@ -721,13 +716,7 @@ function logout(user_id, password, callback, error_handler){
             if(docs.length > 0) {
                 //TODO:
                 var user = docs[0];
-                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                // console.log("user Object:");
-                // console.log(user);
                 try {
-                    // var user_id = user._id;
-                    // console.log("active_user inside logout:")
-                    // console.log(active_users);
                     //this saves the user data to the database before logging out
                     collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
                         if(err){error_handler(err);}
@@ -760,8 +749,6 @@ function logout(user_id, password, callback, error_handler){
 function authenticate(user_id, password, callback, error_handler){
     var user = active_users.get(user_id);
     console.log("trying to authenticate user_id: " + user_id + " password: " + password);
-    console.log("user: ");
-    console.log(user);
     if(user == undefined){
         error_handler("tried to authenticate an invalid user_id/password combination");
     }
@@ -890,7 +877,6 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 active_transactions.add(new_transaction);
                 var user = active_users.get(user_id);
                 user.addCurrentTransactionId(new_transaction._id); //adds transaction_id to user that initiates
-                console.log(active_transactions.getAll());
                 //user object is returned by authenticate
             }catch(e){error_handler(e.message)};
             if(callback != undefined && callback != null){
@@ -962,8 +948,6 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
 function acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
-        console.log(active_transactions.getAll());
-        console.log(transaction);
         if(transaction == null || transaction == undefined){
             error_handler({message: "unable to find transaction with transaction_id: " + transaction_id});
             return;
@@ -1112,7 +1096,6 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         try {
             //confirms user_id has agreed to continue with the transaction
             transaction.confirm(user_id);
-            console.log(transaction);
         }catch(e){
             error_handler(e.message);
             return;
