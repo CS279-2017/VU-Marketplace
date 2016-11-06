@@ -25,8 +25,8 @@ ActiveUsers.prototype = {
     remove: function(_id){
         if(this.users[_id] != undefined){
             delete this.users[_id];
-            if(this.users[_id] == undefined) {
-                console.log("user with username " + users[_id].username + " has been removed from ActiveUsers");
+            if(typeof this.users[_id] == 'undefined') {
+                console.log("user with id " + _id + " has been removed from ActiveUsers");
             }
             else{
                 throw {message: "removing user with id " + _id  + " failed"};

@@ -693,35 +693,56 @@ function login(username, password, callback, error_handler){
 function logout(user_id, password, callback, error_handler){
     console.log("logout called");
     //verify credentials of user calling logout
-    MongoClient.connect(url, function (err, db) {
-        if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-        var collection = db.collection('users');
-        collection.find({_id: user_id, password: password}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                var user = docs[0];
-                try {
-                    //this saves the user data to the database before logging out
-                    collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
-                        if(err){error_handler(err);}
-                        console.log(user_id + " info saved to database");
-                        db.close()
-                        console.log(user.username + "has logged out");
-                        if(callback != undefined){ callback(); }
-                    });
-                        //update database with new user info
-                    active_users.remove(user_id);
-                }catch(e){
-                    error_handler(e.message);
-                    return;
-                }
-
-            }
-            else{
-                //if not found: alert user that login failed, because incorrect username/password
-                error_handler("invalid user_id/password");
+    authenticate(user_id, password, function(user){
+        MongoClient.connect(url, function (err, db) {
+            if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
+            try {
+                var collection = db.collection('users');
+                //this saves the user data to the database before logging out
+                collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
+                    if(err){error_handler(err); return;}
+                    console.log(user_id + " info saved to database");
+                    db.close()
+                    console.log(user.username + "has logged out");
+                    if(callback != undefined){ callback(); }
+                });
+                    //update database with new user info
+                active_users.remove(user_id);
+            }catch(e){
+                error_handler(e.message);
+                return;
             }
         });
-    });
+    }, error_handler);
+    // MongoClient.connect(url, function (err, db) {
+    //     if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
+    //     var collection = db.collection('users');
+    //     collection.find({_id: user_id, password: password}).toArray(function(err, docs) {
+    //         if(docs.length > 0) {
+    //             var user = docs[0];
+    //             try {
+    //                 //this saves the user data to the database before logging out
+    //                 collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
+    //                     if(err){error_handler(err);}
+    //                     console.log(user_id + " info saved to database");
+    //                     db.close()
+    //                     console.log(user.username + "has logged out");
+    //                     if(callback != undefined){ callback(); }
+    //                 });
+    //                     //update database with new user info
+    //                 active_users.remove(user_id);
+    //             }catch(e){
+    //                 error_handler(e.message);
+    //                 return;
+    //             }
+    //
+    //         }
+    //         else{
+    //             //if not found: alert user that login failed, because incorrect username/password
+    //             error_handler("invalid user_id/password");
+    //         }
+    //     });
+    // });
 }
 
 //check active_users using user_id key, check if password matches password of the user, if so call callback,

@@ -677,12 +677,33 @@ describe("Socket.io", function (){
    });
 
     it("register 2 users and login/ user 1 make listing/ user 2 request transaction/ user 1 and user 2 accept/", function(done){
+        var active_users = app.getActiveUsers();
+        var active_listings = app.getActiveListings();
+        var active_transactions = app.getActiveTransactions();
+
         var socket = require('socket.io-client')(base_url);
-        socket.emit('register_email_address', {email_address: "bowen.jin@vanderbilt.edu"});
-        socket.on('register_email_address_response', function(res){
-            console.log(res);
-            done();
+        socket.on('login_response', response_handler);
+        socket.on('logout_response', response_handler_with_done);
+
+        registerTwoEmailAddresses(function (user_id_arr) {
+            //username1: bowenjin1
+            //username2: bowenjin2
+            //password: chocho513
+            console.log(active_users);
+            console.log(user_id_arr);
+            var user_id1 = user_id_arr[0];
+            var user_id2 = user_id_arr[1];
+            socket.emit('login', {username: "bowenjin1", password: "chocho513"});
+            socket.emit('logout', {user_id: user_id1, password: "chocho513"});
         });
+
+        function response_handler(res){
+            console.log(res);
+        }
+        function response_handler_with_done(res){
+            console.log(res)
+            done();
+        }
     });
 });
 
