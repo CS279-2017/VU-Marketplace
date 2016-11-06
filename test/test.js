@@ -571,6 +571,12 @@ describe("Transaction", function(){
     })
 });
 
+describe("Update location", function(){
+    it("register a user, update his location, check that location was updated",function(done){
+        register
+    })
+})
+
 describe("Socket.io", function (){
    it("connecting, sending a message back and forth, then disconnect", function(done){
        var socket = require('socket.io-client')(base_url);

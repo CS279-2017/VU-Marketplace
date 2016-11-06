@@ -45,7 +45,6 @@ exports.getActiveTransactions = getActiveTransactions;
 
 
 // create reusable transporter object using the default SMTP transport
-//TODO: currently using gmail, switch to mailgun for more sends per day
 var transporter = nodemailer.createTransport({
     //service: 'Gmail',
     service: 'SendGrid',
@@ -99,7 +98,6 @@ io.on('connection', function (socket) {
         var callback = function (verification_code, email_address) {
             socket.emit('register_email_address_response', {data: null , error: null})
         };
-        //TODO: write proper error_handler
         var error_handler = function (e) {
             socket.emit('register_email_address_response', {data: null , error: e})
             console.log(e);
@@ -117,7 +115,6 @@ io.on('connection', function (socket) {
         var callback = function(){
             socket.emit("register_verification_code_response", {data: null, error: null});
         };
-        //TODO: write proper error_handler
         var error_handler = function(e) {
             socket.emit("register_verification_code_response", {data: null, error: e});
             console.log(e);
@@ -131,12 +128,11 @@ io.on('connection', function (socket) {
         var email_address = json.email_address
 
         var callback = function(user){
-            //TODO: send user_id back to user
-            //TODO: notify necessary clients that a user has logged in
+            //send user_id back to user
+            //notify necessary clients that a user has logged in
             user.socket_id = socket.id; //store the socket_id of the user
             socket.emit("login_response", {data: {user_id: user._id}, error: null});
         };
-        //TODO: write proper error_handler
         var error_handler = function(e) {
             socket.emit("login_response", {data: null, error: e});
             console.log(e);
@@ -149,10 +145,9 @@ io.on('connection', function (socket) {
         var password = json.password;
 
         function callback(){
-            //TODO: notify necessary clients that a sure has logged out
+            //notify necessary clients that a sure has logged out
             socket.emit("logout_response", {data: null, error: null});
         }
-        //TODO: write proper error_handler
         function error_handler(e){
             socket.emit("logout_response", {data: null, error: e});
             console.log(e);
@@ -171,7 +166,7 @@ io.on('connection', function (socket) {
         var buy = json.buy;
         function callback(listing){
             socket.emit("make_listing_response", {data: {listing: listing}, error: null});
-            //TODO: emit event to all users that a new listing has been made
+            //emit event to all users that a new listing has been made
             io.emit("listing_made", {data: {listing: listing}});
         }
         function error_handler(e){
@@ -186,10 +181,9 @@ io.on('connection', function (socket) {
         var password = json.password;
         var callback = function(listing_id){
             socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
-            //TODO: notify all users that listing_id has been removed
+            //notify all users that listing_id has been removed
             io.emit("listing_removed", {data: {listing_id: listing_id}});
         };
-        //TODO: write proper error_handler
         var error_handler = function(e) {
             socket.emit("remove_listing_response", {data: null, error: e});
             console.log(e);
@@ -215,7 +209,7 @@ io.on('connection', function (socket) {
             }
 
             socket.emit("make_transaction_request_response", {data: null, error: null});
-            //TODO: notify user that owns listing that a user has requested a transaction
+            //notify user that owns listing that a user has requested a transaction
         }
         function error_handler(e) {
             socket.emit("make_transaction_request_response", {data: null, error: e});
@@ -230,7 +224,7 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         function callback(transaction){
             socket.emit("accept_transaction_request_response", {data: null, error: null});
-            //TODO: notify users involved in the transaction that transaction has been accepted, will start
+            //notify users involved in the transaction that transaction has been accepted, will start
             try {
                 var buyer = active_users.get(transaction.buyer_user_id);
                 var seller = active_users.get(transaction.seller_user_id);
@@ -265,7 +259,7 @@ io.on('connection', function (socket) {
             }
 
             socket.emit("decline_transaction_request_response", {data: null, error: null});
-            //TODO: notify the initiator of the transaction that transaction has been rejected
+            //notify the initiator of the transaction that transaction has been rejected
         }
         function error_handler(e){
             socket.emit("decline_transaction_request_response", {data: null, error: e});
@@ -279,7 +273,7 @@ io.on('connection', function (socket) {
        var password = json.password;
        var transaction_id = json.transaction_id;
        function callback(transaction){
-           //TODO: notify both users in the transaction that this user has confirmed
+           //notify both users in the transaction that this user has confirmed
            try {
                var buyer = active_users.get(transaction.buyer_user_id);
                var seller = active_users.get(transaction.seller_user_id);
@@ -311,7 +305,7 @@ io.on('connection', function (socket) {
        var password = json.password;
        var transaction_id = json.transaction_id;
        function callback(transaction){
-           //TODO: notify both users in the transaction that this user has rejected the transaction
+           //notify both users in the transaction that this user has rejected the transaction
            try {
                var buyer = active_users.get(transaction.buyer_user_id);
                var seller = active_users.get(transaction.seller_user_id);
@@ -343,7 +337,7 @@ io.on('connection', function (socket) {
         var new_location = json.new_location;
         function callback(){
             socket.emit("update_user_location_response", {data: {new_location: new_location}, error: null});
-            //TODO: notify all users, or all users in the same transaction with user whose location was updated,
+            //notify all users, or all users in the same transaction with user whose location was updated,
             var user = active_users.get(user_id);
             var current_transaction_ids = user.getCurrentTransactionIds();
             try {
@@ -373,7 +367,7 @@ io.on('connection', function (socket) {
         var message_text = json.message_text;
         function callback(message){
             socket.emit("send_chat_message_response", {data: null, error: null});
-            //TODO: notify all user in the transaction that a new message has been sent
+            //notify all user in the transaction that a new message has been sent
             try {
                 var transaction = active_transactions.get(transaction_id);
                 var buyer = transaction.buyer_user_id;
@@ -399,7 +393,7 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         var message_text = json.message_text;
         function callback(all_active_listings){
-            //TODO: send all_active_listings back to client
+            //send all_active_listings back to client
             socket.emit("get_all_active_listings_response", {data: {all_active_listings: all_active_listings}, error: null});
         }
         function error_handler(e){
@@ -417,22 +411,20 @@ io.on('connection', function (socket) {
 //note each method has a callback and error_handler methods, one or the other will be called in each execution
 //successful execution calls callback, unsuccessful calls error_handler
 
-//TODO: note we pass an error handler method to each of these methods, if the methods are called, they are passed
-//TODO: a string that describes the error
+//note we pass an error handler method to each of these methods, if the methods are called, they are passed
+//a string that describes the error
 function registerEmailAddress(email_address, callback, error_handler){
     //validate email address is real
     if(validateEmail(email_address) == false){
-        //TODO: return a object type that has an error message
+        //return a object type that has an error message
         error_handler("invalid email address");
         return;
     }
     //validate email address is vanderbilt.edu
     if(validateVanderbiltEmail(email_address) == false){
-        //TODO: return a object type that has an error message
         error_handler("must be a vanderbilt.edu email address")
         return;
     }
-    //TODO: implement details below
     //validate email address send out verification email
     try {
         //generates veritification code and sends out email containing the code to email_address
@@ -443,8 +435,8 @@ function registerEmailAddress(email_address, callback, error_handler){
 
     //returns the verification_code and asychronously adds it to the database
     function sendVerificationEmail(email_address){
-        //TODO: first ensure that email address has not already been verified
-        //TODO: if the email address exists but hasn't been verified delete the email address
+        //first ensure that email address has not already been verified
+        //if the email address exists but hasn't been verified delete the email address
         function makeVerificationCode(length){
             var text = "";
             var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -488,11 +480,11 @@ function registerEmailAddress(email_address, callback, error_handler){
                 //TODO: delete the entry
                 var email = {email_address: email_address, registered: false, verification_code: verification_code}
                 //adding unique index on email_address ensures no duplicate email_addresses
-                //TODO: add something that translates the duplicate error into a more user friendly message
                 collection.ensureIndex({email_address: 1}, {unique:true}, function(){
                     collection.update({email_address: email_address}, email, {upsert: true}, function (err, result) {
                         if (err) {
                             if(err.message.indexOf('duplicate key error') >= 0){
+                                // a friendly message that replaces the duplicate error
                                 error_handler('email_address has been taken, cannot register ' + email_address);
                             }
                             else {
@@ -533,25 +525,22 @@ function registerEmailAddress(email_address, callback, error_handler){
     return true;
 }
 
-//TODO: this causes a race condition is two users registerVerification code within about .5 seconds of each other
+//this causes a race condition is two users registerVerification code within about .5 seconds of each other
+//fixed: by adding an index to database before inserting
 function registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler){
     console.log("called registerVerificationCode");
-    //TODO: implement details below
     //verify that username is valid
     if(!validateUsername(username)){
-        //TODO: return some error message
         error_handler("invalid username");
         return;
     }
     //verify password is valid
     if(!validatePassword(password)) {
-        //TODO: return some error message
         error_handler("invalid password");
         return;
     }
     //verify password confirm matches password
     if(password != confirm_password){
-        //TODO: return a object type that has an error message
         error_handler("password doesn't match");
         return;
     }
@@ -563,11 +552,8 @@ function registerVerificationCode(verification_code, username, password, confirm
             error_handler('Unable to connect to the server. Error:' +  err);
             return;
         }
-
-        //TODO: verify that the verification code is valid, or if user has clicked on verification link
+        //verify that the verification code is valid, or if user has clicked on verification link
         var collection_emails = db.collection('emails');
-        //TODO: the fact that checking if registered is false and setting registered to true are not atomic operations
-        //TODO:leads to possibility of race condition, though unlikely
         //register the user
         collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
             if(docs.length > 0) {
@@ -587,7 +573,6 @@ function registerVerificationCode(verification_code, username, password, confirm
                 }
             }
             else{
-                //TODO:
                 error_handler("cannot register, email_address not found in emails database ")
                 return;
             }
@@ -598,11 +583,11 @@ function registerVerificationCode(verification_code, username, password, confirm
             var collection_emails = db.collection('emails');
             var collection_users = db.collection('users');
             collection_users.createIndex({ "username": 1 , unique: true });
-            //TODO: check to make sure that email and username are unique
-            //TODO:change emails database entry to reflect that a email has been registered
+            //check to make sure that email and username are unique
+            //change emails database entry to reflect that a email has been registered
             checkIfEmailAndUserNameUnique(function() {
                 insertUser(function () {
-                    //TODO: log user registering
+                    //log user registering
                     if (callback != undefined) {
                         // callback(username + " with email address " + email_address + " has been registered");
                         callback(username, password, email_address); //used for testing purposes
@@ -618,7 +603,6 @@ function registerVerificationCode(verification_code, username, password, confirm
                         return;
                     }
                     else{
-                        //TODO:
                         collection_users.find({username: username}).toArray(function(err, docs){
                             if(docs.length > 0){
                                 error_handler(username + " has been taken");
@@ -638,8 +622,6 @@ function registerVerificationCode(verification_code, username, password, confirm
                         error_handler(err);
                         return;
                     }
-                    //adding unique index on usernames makes sure no duplicate usernames will be inserted
-                    //TODO: add something that translates the duplicate error into a more user friendly message
                     collection_users.createIndex({username: 1}, {unique: true}, function(){
                         collection_users.createIndex({email_address: 1}, {unique: true}, function(){
                             collection_users.insert(user, function (err, result) {
@@ -670,10 +652,7 @@ function registerVerificationCode(verification_code, username, password, confirm
     return true;
 }
 
-//TODO: return the id from registration and use that for future server accesses along with the password
-//TODO: login with username and password or email address, or facebook?
 function login(username, password, callback, error_handler){
-    //TODO: implement details below
     //query database for user with given username and password
     console.log("login called");
     MongoClient.connect(url, function (err, db) {
@@ -681,7 +660,6 @@ function login(username, password, callback, error_handler){
         var collection = db.collection('users');
         collection.find({username: username, password: password}).toArray(function(err, docs) {
             if(docs.length > 0) {
-                //TODO:
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 var user = new User();
                 user.initFromDatabase(docs[0]);
@@ -697,7 +675,6 @@ function login(username, password, callback, error_handler){
 
             }
             else{
-                //TODO:
                 //if not found: alert user that login failed, because incorrect username/password
                 error_handler("invalid username/password");
             }
@@ -706,6 +683,8 @@ function login(username, password, callback, error_handler){
     });
 }
 
+//TODO: what if a user logs out during a transaction? while he/she has listings? or he or she has requested a transaction
+//TODO: or when he or she has received a transaction?
 function logout(user_id, password, callback, error_handler){
     console.log("logout called");
     //verify credentials of user calling logout
@@ -714,7 +693,6 @@ function logout(user_id, password, callback, error_handler){
         var collection = db.collection('users');
         collection.find({_id: user_id, password: password}).toArray(function(err, docs) {
             if(docs.length > 0) {
-                //TODO:
                 var user = docs[0];
                 try {
                     //this saves the user data to the database before logging out
@@ -723,7 +701,6 @@ function logout(user_id, password, callback, error_handler){
                         console.log(user_id + " info saved to database");
                         db.close()
                         console.log(user.username + "has logged out");
-                        // //TODO: notify user that they've been logged out
                         if(callback != undefined){ callback(); }
                     });
                         //update database with new user info
@@ -735,7 +712,6 @@ function logout(user_id, password, callback, error_handler){
 
             }
             else{
-                //TODO:
                 //if not found: alert user that login failed, because incorrect username/password
                 error_handler("invalid user_id/password");
             }
@@ -971,7 +947,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             return;
         }
         listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
-        //TODO: update listing in database
+        //update listing in database
         updateListings(listing, function(){
             active_listings.remove(transaction.listing_id);
             //add transaction to current transaction of accepting user, user object returned by authenticate
@@ -1010,7 +986,7 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
             error_handler(e.message);
             return;
         }
-        //TODO: update transaction in database before deleting it so we have a record of the failed transaction
+        //update transaction in database before deleting it so we have a record of the failed transaction
         updateTransactions(transaction, function(){
             //send message to user that initiated request that request was declined
             // remove transaction_id from initiating user (transaction_id was never added to declining user)
@@ -1031,56 +1007,6 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
 
     }, error_handler);
 }
-
-
-//TODO: implement sending transaction started message
-// function sendTransactionDeclinedMessage(transaction, callback, error_handler){
-//     if(transaction.buy == true){
-//         //TODO: send message to seller_user_id;
-//         callback();
-//     }
-//     else if(transaction.buy == false){
-//         //TODO: send message to buyer_user_id
-//         callback();
-//     }
-//     else{
-//         error_handler("sendTransactionDeclinedMessage: +" +
-//             "user_id doesn't match either user_id of the transaction, this error should've been caught earlier");
-//         return;
-//     }
-//
-// }
-
-//TODO: implement sending transaction started message
-//TODO: send a message to all the active transactions with the same listing_id to cancel
-// function sendTransactionStartedMessage(transaction, callback, error_handler){
-//     var other_transactions_with_same_listing_id = active_transactions.getTransactionsForListingId(transaction.listing_id);
-//     for(var i in other_transactions_with_same_listing_id){
-//         var other_transaction = other_transactions_with_same_listing_id[i];
-//         try {
-//             other_transaction.declineRequest();
-//         }catch(error){
-//             error_handler(error.message);
-//         }
-//         sendTransactionDeclinedMessage(other_transaction, function(){
-//             console.log("declined transaction with id "+other_transaction._id);
-//         }, error_handler)
-//     }
-//     //TODO: send message to both users of transaction that transaction has been started
-//     sendTransactionCompletedMessages(transaction, function(){
-//         callback();
-//     },error_handler)
-// }
-
-// //TODO: sends a message to both users of the transaction that the transaction has completed
-// function sendTransactionCompletedMessages(transaction, callback, error_handler){
-//
-// }
-//
-// //TODO: send message to both users of transaction and state which user rejected transaction
-// function sendTransactionRejectedMessage(transaction, callback, error_handler){
-//
-// }
 
 //1. authenticate, same as above
 //2. get transaction, same as above
@@ -1106,21 +1032,18 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         console.log("checking is Confirmed inside transaction");
         console.log("isCompleted() == " + transaction.isCompleted());
         if(transaction.isCompleted() == true){
-            //TODO: sendTransactionCompleted Message
-            // sendTransactionCompletedMessages(transaction, function(){
-                updateTransactions(transaction, function(){
-                    var user1 = active_users.get(transaction.buyer_user_id);
-                    var user2 = active_users.get(transaction.seller_user_id);
-                    if(user1 != undefined){
-                        user1.removeCurrentTransactionId(transaction_id);
-                    }
-                    if(user2 != undefined){
-                        user2.removeCurrentTransactionId(transaction_id);
-                    }
-                    active_transactions.remove(transaction_id);
-                    callback(transaction);
-                }, error_handler)
-            // }, error_handler);
+            updateTransactions(transaction, function(){
+                var user1 = active_users.get(transaction.buyer_user_id);
+                var user2 = active_users.get(transaction.seller_user_id);
+                if(user1 != undefined){
+                    user1.removeCurrentTransactionId(transaction_id);
+                }
+                if(user2 != undefined){
+                    user2.removeCurrentTransactionId(transaction_id);
+                }
+                active_transactions.remove(transaction_id);
+                callback(transaction);
+            }, error_handler)
         }
         else{
             callback(transaction);
