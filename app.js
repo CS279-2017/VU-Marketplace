@@ -839,7 +839,7 @@ function removeListing(user_id, password, listing_id, callback, error_handler){
                 if(callback != undefined){
                     callback(listing_id);
                 }
-            });
+            }, error_handler);
         }
         else{
             error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
@@ -880,6 +880,8 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 //user object is returned by authenticate
             }catch(e){error_handler(e.message)};
             if(callback != undefined && callback != null){
+                console.log("callback(new_transaction)");
+                console.log(new_transaction);
                 callback(new_transaction);
             }
         });
@@ -1218,7 +1220,7 @@ function updateTransactions(transaction, callback, error_handler){
     });
 }
 
-function updateListings(listing, callback){
+function updateListings(listing, callback, error_handler){
     MongoClient.connect(url, function (err, db) {
         if (err) {
             error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});

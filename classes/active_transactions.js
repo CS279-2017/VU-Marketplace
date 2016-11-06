@@ -20,6 +20,9 @@ ActiveTransactions.prototype = {
     get: function (transaction_id){
         var transaction = this.transactions[transaction_id];
         if(typeof transaction == 'undefined'){
+            console.log("transaction not found: ")
+            console.log(transaction_id);
+            console.log(this.transactions)
             throw {message: "transaction with id " + transaction_id + " wasn't found"};
         }
         return transaction;
