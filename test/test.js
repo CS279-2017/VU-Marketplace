@@ -1,4 +1,3 @@
-
 var assert = require('assert');
 var app = require("../app.js");
 var request = require("request");
@@ -606,7 +605,7 @@ describe("Send message", function(){
             var user3 = active_users.get(user_id3);
             var listing1;
             var listing2;
-            app.makeListing(user1._id, user1.password, "user 1 listing", "a listing made by user 1", "(0,0)", new Date().getTime() + 10000, 5.00, false, function(listing){
+            app.makeListing(user1._id, user1.password, "user 1 listing", "a listing made by user 1", "(0,0)", new Date().getTime() + 100000, 5.00, false, function(listing){
                 console.log("user1 made a listing:")
                 console.log(listing);
                 listing1 = listing;
@@ -619,7 +618,7 @@ describe("Send message", function(){
                     }, error_handler)
                 }, error_handler)
             }, error_handler)
-            app.makeListing(user2._id, user2.password, "user 2 listing", "a listing made by user 2", "(1,1)", new Date().getTime() + 10000, 6.00, true, function(listing){
+            app.makeListing(user2._id, user2.password, "user 2 listing", "a listing made by user 2", "(1,1)", new Date().getTime() + 100000, 6.00, true, function(listing){
                 console.log("user2 made a listing: ");
                 console.log(listing);
                 listing2 = listing;

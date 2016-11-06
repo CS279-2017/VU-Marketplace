@@ -891,7 +891,12 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
         function createTransactionFromListing(user_id, listing_id){
             var listing = active_listings.get(listing_id);
             if(listing == undefined){
-                error_handler({message: "makeTransaction: no listing found with listing_id "+listing_id});
+                throw {message: "makeTransaction: no listing found with listing_id "};
+                return;
+            }
+            //don't make transaction if listing has expired
+            if(listing.expiration_time <= new Date().getTime()){
+                throw {message: "makeTransaction: listing with id " + listing_id + " has expired"};
                 return;
             }
             var user_buy_id;
