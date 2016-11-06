@@ -38,6 +38,12 @@ var Listing = function() {
             var user_sell_id = this.buy ? user_initiate_id : this.user_id;
             return new Transaction(user_buy_id, user_sell_id, this._id)
         },
+        isExpired: function(){
+            if(this.expiration_time <= new Date().getTime()){
+                return true;
+            }
+            return false;
+        }
     }
 
     return Listing;

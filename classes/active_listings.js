@@ -40,5 +40,15 @@ ActiveListings.prototype = {
         this.listings = [];
         this.map = {};
     },
+    getExpiredListings:function(){
+        for(var key in this.listings){
+            var expired_listings_arr = [];
+            var listing = this.listings[key]
+            if(listing.isExpired()){
+                expired_listings_arr.push(listing);
+            }
+        }
+        return expired_listings_arr;
+    },
 
 }

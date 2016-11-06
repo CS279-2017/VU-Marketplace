@@ -78,6 +78,19 @@ server.listen(3000, function () {
     active_transactions = new ActiveTransactions();
     active_users = new ActiveUsers();
 
+    //remove all expired active_listings once a minute
+    var minutes = 1, interval = minutes * 60 * 1000;
+    setInterval(function() {
+        var expired_listings_arr = active_listings.getExpiredListings();
+        for(var key in expired_listings_arr){
+            var listing = expired_listings_arr[key];
+            var user = active_users.get(listing.user_id)
+            removeListing(user.user_id, user.password, listing._id, function(listing_id){
+                console.log("listing with id " + listing_id + " was removed because it has expired");
+            });
+        }
+    }, interval);
+
     try {
 
     }catch(e){
@@ -895,7 +908,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 return;
             }
             //don't make transaction if listing has expired
-            if(listing.expiration_time <= new Date().getTime()){
+            if(listing.isExpired()){
                 throw {message: "makeTransaction: listing with id " + listing_id + " has expired"};
                 return;
             }
