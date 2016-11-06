@@ -684,6 +684,12 @@ describe("Socket.io", function (){
         var socket = require('socket.io-client')(base_url);
         socket.on('login_response', response_handler);
         socket.on('logout_response', response_handler_with_done);
+        socket.on('make_listing_response', function(res){
+            console.log(res);
+            console.log(active_listings);
+            console.log(active_users.getAll());
+            done();
+        })
 
         registerTwoEmailAddresses(function (user_id_arr) {
             //username1: bowenjin1
@@ -695,14 +701,16 @@ describe("Socket.io", function (){
             var user_id2 = user_id_arr[1];
             // socket.emit('login', {username: "bowenjin1", password: "chocho513"});
             // socket.emit('logout', {user_id: user_id1, password: "chocho513"});
-            socket.emit('make_listing', JSON.stringify({
+            socket.emit('make_listing', {
                 user_id: user_id1,
                 password: "chocho513",
                 title: "gay老",
                 description: "菊花爆了",
                 location: {x: 0, y: 0},
-
-            }))
+                expiration_time: new Date().getTime() + 10000,
+                price: 5.00,
+                buy: true,
+            });
         });
 
         function response_handler(res){
