@@ -1,12 +1,17 @@
 module.exports = Conversation;
 
-function Conversation(){
-    this.messages = [];
+function Conversation(conversation){
+    if(typeof conversation == 'undefined' || typeof conversation.message == 'undefined') {
+        this.messages = [];
+    }
+    else{
+        this.messages = conversation.messages;
+    }
 }
 
 Conversation.prototype = {
     constructor: Conversation,
-    send_message: function(message){
+    sendMessage: function(message){
         this.messages.push(message);
     },
     convertToJSON: function(){

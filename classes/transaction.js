@@ -1,4 +1,5 @@
 var Conversation = require("./conversation.js");
+var Message = require("./message.js")
 
 //Transactions Database Schema:
 //{_id, title, description, buyer_user_id, seller_user_id, listing_id, conversation, user_buy_will_initiate, ...
@@ -117,7 +118,7 @@ var Transaction = function() {
             this.seller_user_id = transaction.seller_user_id; //_id of Seller
             this.buy = transaction.buy
             this.listing_id = transaction.listing_id; //listing_id
-            this.conversation = transaction.conversation;
+            this.conversation = new Conversation(transaction.conversation);
             this.buyer_accepted_request = transaction.buyer_accepted_request;
             this.seller_accepted_request = transaction.seller_accepted_request;
             this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
@@ -131,8 +132,8 @@ var Transaction = function() {
                 throw {message: "tried to send message to null Conversation"};
             }
             //(Message(text, username, time_sent)
-            var message = new Message(text, user.username, new Date());
-            this.conversation.send_message(message);
+            var message = new Message(text, user.username, new Date().getTime());
+            this.conversation.sendMessage(message);
             return message;
         },
         //TODO: the below modifications should be done atomically so as the avoid race conditions

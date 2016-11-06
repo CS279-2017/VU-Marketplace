@@ -2,7 +2,7 @@ module.exports = User;
 
 //User Database Schema:
 //we use all_listing
-//{_id, username, password, email_address, venmo_id, current_listing_ids, previous_listing_ids, previous_transaction_ids, all_transaction_ids, current_location}
+//{_id, username, password, email_address, venmo_id, current_listing_ids, previous_listing_ids, previous_transaction_ids, all_transaction_ids, location}
 //do not include password in User object, use password only to retrieve from database on login
 function User(username, password, email){
     //TODO: find way to get a unique id that we can then assign the user, probably have to get it by querying the Database
@@ -17,7 +17,7 @@ function User(username, password, email){
     this.current_transactions_ids = [];
     // this.previous_transactions_ids = []; Rather than storing a copy of previous, just look up in database
 
-    this.current_location = null; // not saved onto db
+    this.location = null; // not saved onto db
     this.logged_in = null; //not saved onto db
 }
 
@@ -30,7 +30,7 @@ User.prototype = {
         this.username = user.username;
         this.password = user.password;
         this.email_address = user.email_address;
-        this.current_location = user.current_location;
+        this.location = user.location;
         this.venmo_id = user.venmo_id;
         this.socket_id = null;
         this.current_listings_ids = user.current_listings_ids;
@@ -49,12 +49,6 @@ User.prototype = {
     },
     getEmailAddress: function(){
         return this.email_address;
-    },
-    getCurrentLocation: function(location){
-        return this.current_location;
-    },
-    setCurrentLocation: function(location){
-        this.current_location = location;
     },
     getVenmoId: function(){
         return this.venmo_id;

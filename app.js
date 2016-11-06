@@ -17,6 +17,7 @@ var Message = require("./classes/message.js");
 var Transaction = require("./classes/transaction.js");
 var Listing = require("./classes/listing.js");
 var Conversation = require("./classes/conversation.js");
+var Location = require("./classes/location.js")
 
 var ActiveUsers = require("./classes/active_users.js");
 var ActiveListings = require("./classes/active_listings.js");
@@ -38,6 +39,10 @@ exports.acceptTransactionRequest = acceptTransactionRequest;
 exports.declineTransactionRequest = declineTransactionRequest;
 exports.confirmTransaction = confirmTransaction;
 exports.rejectTransaction = rejectTransaction;
+
+exports.updateUserLocation = updateUserLocation;
+
+exports.sendChatMessage = sendChatMessage;
 
 exports.getActiveUsers = getActiveUsers;
 exports.getActiveListings = getActiveListings;
@@ -1091,7 +1096,9 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
 function updateUserLocation(user_id, password, new_location, callback, error_handler){
     authenticate(user_id, password, function(user){
         if(validateLocation(new_location) == true){
-            user.location = new_location;
+            //transform the ordered pair into a Location object (regardless of whether it was a Location or just a normal
+            //object)
+            user.location = new Location(new_location.x, new_location.y);
             callback();
         }
         else{

@@ -12,7 +12,7 @@ function error_handler(error){
     console.log(error);
 }
 
-describe("User", function() {
+describe.skip("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
         it("register 26 users", function(done){
@@ -307,7 +307,7 @@ describe.skip("Listing", function(){
     });
 });
 
-describe("Transaction", function(){
+describe.skip("Transaction", function(){
     describe("Accept/Decline Transaction", function() {
         it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function (done) {
             var active_users = app.getActiveUsers();
@@ -573,9 +573,88 @@ describe("Transaction", function(){
 
 describe("Update location", function(){
     it("register a user, update his location, check that location was updated",function(done){
-        register
+        var active_users = app.getActiveUsers();
+        registerTwoEmailAddresses(function (user_id_arr) {
+            var user_id1 = user_id_arr[0];
+            var user_id2 = user_id_arr[1];
+            var user1 = active_users.get(user_id1);
+            var user2 = active_users.get(user_id2);
+            console.log("user1 location before update");
+            console.log(user1.location)
+            app.updateUserLocation(user_id1, user1.password, {x:1, y:1}, function(){
+                console.log("user 1 location after update");
+                console.log(user1.location);
+                assert(user1.location.x, 1)
+                assert(user1.location.y, 1)
+                done();
+            }, error_handler);
+        })
     })
-})
+});
+
+describe("Send message", function(){
+    it("register two users, make listing, make transaction, accept transaction, send message", function(done){
+        var active_users = app.getActiveUsers();
+        var active_listings = app.getActiveListings();
+        var active_transactions = app.getActiveTransactions();
+        register3EmailAddresses(function (user_id_arr) {
+            var user_id1 = user_id_arr[0];
+            var user_id2 = user_id_arr[1];
+            var user_id3 = user_id_arr[2];
+            var user1 = active_users.get(user_id1);
+            var user2 = active_users.get(user_id2);
+            var user3 = active_users.get(user_id3);
+            var listing1;
+            var listing2;
+            app.makeListing(user1._id, user1.password, "user 1 listing", "a listing made by user 1", "(0,0)", new Date().getTime() + 10000, 5.00, false, function(listing){
+                console.log("user1 made a listing:")
+                console.log(listing);
+                listing1 = listing;
+                app.makeTransactionRequest(user3._id, user3.password, listing1._id, function(transaction){
+                    console.log("user3 requested a transaction on listing1 with user1:");
+                    console.log(transaction)
+                    app.acceptTransactionRequest(user1._id, user1.password, transaction._id, function(){
+                        console.log("user 1 has accepted the transaction:")
+                        console.log(transaction);
+                    }, error_handler)
+                }, error_handler)
+            }, error_handler)
+            app.makeListing(user2._id, user2.password, "user 2 listing", "a listing made by user 2", "(1,1)", new Date().getTime() + 10000, 6.00, true, function(listing){
+                console.log("user2 made a listing: ");
+                console.log(listing);
+                listing2 = listing;
+                app.makeTransactionRequest(user3._id, user3.password, listing2._id, function(transaction){
+                    console.log("user 3 requested a transaction on listing2 with user2");
+                    console.log(transaction);
+                    app.acceptTransactionRequest(user2._id, user2.password, transaction._id, function(){
+                        console.log("user 2 has accepted the transaction: ")
+                        console.log(transaction);
+                        app.sendChatMessage(user2._id, user2.password, transaction._id, "FACK!", function(message){
+                            console.log(message);
+                            console.log(transaction);
+                            assert(transaction.conversation.messages[0] == message);
+                            assert(transaction.conversation.messages[0].text == "FACK!");
+                        }, error_handler)
+                        app.sendChatMessage(user3._id, user3.password, transaction._id, "HELLO!", function(message){
+                            console.log(message);
+                            console.log(transaction);
+                            assert(transaction.conversation.messages[1] == message);
+                            assert(transaction.conversation.messages[1].text == "HELLO!");
+                        }, error_handler)
+                        app.sendChatMessage(user1._id, user1.password, transaction._id, "FACK!", function(message){
+                            console.log(message);
+                            console.log(transaction);
+                        }, error_handler)
+                        function error_handler(e){
+                            console.log(e)
+                            done();
+                        }
+                    });
+                }, error_handler);
+            }, error_handler)
+        });
+    });
+});
 
 describe("Socket.io", function (){
    it("connecting, sending a message back and forth, then disconnect", function(done){
