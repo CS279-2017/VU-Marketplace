@@ -41,7 +41,7 @@ describe.skip("User", function() {
                             var collection = db.collection('users');
                             collection.count(null,null,function(err, count){
                                 if(err){ error_handler(err); return;}
-                                assert(count, 26);
+                                assert(count == 26);
                                 done();
                             });
 
@@ -75,7 +75,7 @@ describe.skip("User", function() {
                     printDocumentsInCollection('emails', function(){
                         getNumberOfDocumentsInCollection('emails', function(count){
                             console.log("Number of emails in emails db: " + count);
-                            assert(count, 1);
+                            assert(count == 1);
                             done();
                         });
                     })
@@ -276,7 +276,7 @@ describe.skip("Listing", function(){
                                 // console.log("active_users: ");
                                 // console.log(active_users);
                             }
-                            assert(listing_count, 13);
+                            assert(listing_count == 13);
                             console.log("assert(list_count, 13) = " + (listing_count == 13));
                             console.log("about to call done");
                             done();
@@ -571,7 +571,7 @@ describe("Transaction", function(){
                 }, error_handler)
             });
         });
-        it.only("register 3 users/ login all/user 1 makes listing/user 2 and 3 make transactions/ user 1 tries accepting both", function(done){
+        it("register 3 users/ login all/user 1 makes listing/user 2 and 3 make transactions/ user 1 tries accepting both", function(done){
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
             var active_transactions = app.getActiveTransactions();
@@ -698,6 +698,32 @@ describe("Send message", function(){
         });
     });
 });
+
+describe.only("Expired Listing Cleaner", function(){
+    it("register two users, user 1 makes 2 listings that expire immediately, wait 10 seconds, see if listings have been cleaned up", function(done){
+        var active_transactions = app.getActiveTransactions();
+        var active_listings = app.getActiveListings();
+        var active_users = app.getActiveUsers()
+        this.timeout(100000);
+        function error_handler(e){
+            console.log(e);
+        }
+        registerTwoEmailAddresses(function (user_id_arr) {
+            var user_id1 = user_id_arr[0];
+            var user_id2 = user_id_arr[1];
+            var user1 = active_users.get(user_id1);
+            var user2 = active_users.get(user_id2);
+            app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime(), 5.00, true, function (listing) {
+                console.log(active_listings)
+                assert(active_listings.size(), 1);
+                setTimeout(function(){
+                    assert(active_listings.size() == 0);
+                    done();
+                }, 10000);
+            }, error_handler);
+        });
+    });
+})
 
 describe("Socket.io", function (){
    it("connecting, sending a message back and forth, then disconnect", function(done){

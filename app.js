@@ -79,15 +79,20 @@ server.listen(3000, function () {
     active_users = new ActiveUsers();
 
     //remove all expired active_listings once a minute
-    var minutes = 1, interval = minutes * 60 * 1000;
+    var minutes = .1, interval = minutes * 60 * 1000;
     setInterval(function() {
         var expired_listings_arr = active_listings.getExpiredListings();
+        function error_handler(e){
+            console.log(e)
+        }
         for(var key in expired_listings_arr){
             var listing = expired_listings_arr[key];
-            var user = active_users.get(listing.user_id)
-            removeListing(user.user_id, user.password, listing._id, function(listing_id){
+            var user = active_users.get(listing.user_id);
+            console.log(user);
+            console.log(listing);
+            removeListing(user._id, user.password, listing._id, function(listing_id){
                 console.log("listing with id " + listing_id + " was removed because it has expired");
-            });
+            }, error_handler);
         }
     }, interval);
 
@@ -844,9 +849,14 @@ function makeListing(user_id, password, title, description, location, expiration
 //5. add listing_id to user's previous_listings
 //5. notify all that a listing has been removed
 function removeListing(user_id, password, listing_id, callback, error_handler){
+    console.log("removeListing called");
+    console.log(active_listings);
     authenticate(user_id, password, function(user){
+        console.log("user authenticated")
         var listing = active_listings.get(listing_id);
-        if(listing.user_id == user_id){
+        console.log(listing)
+        console.log(listing_id);
+        if(listing.user_id.toString() == user_id.toString()){
             updateListings(listing, function(){
                 active_listings.remove(listing_id);
                 user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
