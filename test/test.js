@@ -11,8 +11,8 @@ function error_handler(error){
     console.log(error);
 }
 
-//TODO: 1. a listing gets mutliple transactions and the users accepts multiple of them in quick succession, make sure only 1
-//TODO: gets accepted and once that one is accepted, the others get deleted
+//1. a listing gets mutliple transactions and the users accepts multiple of them in quick succession, make sure only 1
+//gets accepted and once that one is accepted, the others get deleted
 //TODO: 2. make sure a listing is deleted from active_listings at some point after it is expired
 //TODO: 3. try to make a transaction from an expired listing
 
@@ -117,7 +117,7 @@ describe.skip("User", function() {
         //     //TODO: write some methods to test the email validation code
         // });
         // it("is vanderbilt email", function(){
-        //    //TODO: write osme methods to test the vanderbilt validation code
+        //    //TODO: write some methods to test the vanderbilt validation code
         // });
         //
         // it("is valid username", function(){
@@ -311,7 +311,7 @@ describe.skip("Listing", function(){
     });
 });
 
-describe.skip("Transaction", function(){
+describe("Transaction", function(){
     describe("Accept/Decline Transaction", function() {
         it("register 2 user/login both/user 1 makes listing/user 2 makes transaction/user 1 accepts transaction", function (done) {
             var active_users = app.getActiveUsers();
@@ -528,7 +528,6 @@ describe.skip("Transaction", function(){
         });
     });
 
-    //TODO: add tests for sending messages to client and client responses
     describe("Multiple Transactions", function(){
         it("register 3 users/login all/user 1 and 2 make listing/ user 3 makes transaction with both/ user 1 and 2 accept", function(done){
             var active_users = app.getActiveUsers();
@@ -569,6 +568,46 @@ describe.skip("Transaction", function(){
                             done();
                         });
                     }, error_handler);
+                }, error_handler)
+            });
+        });
+        it.only("register 3 users/ login all/user 1 makes listing/user 2 and 3 make transactions/ user 1 tries accepting both", function(done){
+            var active_users = app.getActiveUsers();
+            var active_listings = app.getActiveListings();
+            var active_transactions = app.getActiveTransactions();
+            function error_handler(e){
+                console.log(e);
+                assert(active_transactions.size(), 1);
+                done();
+            }
+            register3EmailAddresses(function(user_id_arr){
+                var user_id1 = user_id_arr[0];
+                var user_id2 = user_id_arr[1];
+                var user_id3 = user_id_arr[2];
+                var user1 = active_users.get(user_id1);
+                var user2 = active_users.get(user_id2);
+                var user3 = active_users.get(user_id3);
+                app.makeListing(user1._id, user1.password, "user 1 listing", "a listing made by user 1", {x:0, y:0}, new Date().getTime() + 10000, 5.00, false, function(listing){
+                    console.log("user1 made a listing:")
+                    console.log(listing);
+                    var listing1 = listing;
+                    app.makeTransactionRequest(user3._id, user3.password, listing1._id, function(transaction1){
+                        console.log("user3 requested a transaction on listing1 with user1:");
+                        console.log(transaction1)
+                        app.makeTransactionRequest(user2._id, user2.password, listing1._id, function(transaction2){
+                            console.log("user2 requested a transaction on listing1 with user1:");
+                            console.log(transaction2)
+                            assert(active_transactions.size(), 2)
+                            app.acceptTransactionRequest(user1._id, user1.password, transaction1._id, function(){
+                                console.log("user 1 has accepted the transaction:")
+                                console.log(transaction1);
+                            }, error_handler)
+                            app.acceptTransactionRequest(user1._id, user1.password, transaction2._id, function(){
+                                console.log("user 1 has accepted the transaction:")
+                                console.log(transaction2);
+                            }, error_handler)
+                        });
+                    }, error_handler)
                 }, error_handler)
             });
         });
@@ -715,6 +754,7 @@ describe("Socket.io", function (){
                 price: 5.00,
                 buy: true,
             });
+
         });
 
         function response_handler(res){

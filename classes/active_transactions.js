@@ -26,8 +26,10 @@ ActiveTransactions.prototype = {
             throw {message: "transaction with id " + transaction_id + " wasn't found"};
         }
         return transaction;
-    }
-    ,
+    },
+    size: function(){
+        return Object.keys(this.transactions).length
+    },
     //gets all transactions involving a user with a given user_id 
     getAllForUser: function(user_id){
         var transactions_arr = [];

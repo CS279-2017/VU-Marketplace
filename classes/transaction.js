@@ -71,7 +71,7 @@ var Transaction = function() {
         }
 
         else if (this.buyer_accepted_request != null && this.seller_accepted_request == null) {
-            if (this.seller_user_id == user_id) {
+            if (this.seller_user_id.toString() == user_id.toString()) {
                 this.seller_accepted_request = value;
             }
             else {

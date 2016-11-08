@@ -4,15 +4,15 @@
 JSON object will be passed in with all the arguments of each method
 
 1. register_email_address
-    1. registers an email_address that must then be verified
+    * registers an email_address that must then be verified
 2. register_verification_code
-    1. verifies the email_address and creates a user, with username, password, etc.
+    * verifies the email_address and creates a user, with username, password, etc.
 3. login
-    1. logs a user in (adds them to active_users)
+    * logs a user in (adds them to active_users)
 4. logout
-    1. logs user out, updates user in database, removes user from active_users
+    * logs user out, updates user in database, removes user from active_users
 5. make_listing
-    1. creates a listing, adds to it to active_listings
+    * creates a listing, adds to it to active_listings
 6. remove_listing
 
 7. make_transaction_request
@@ -25,7 +25,7 @@ JSON object will be passed in with all the arguments of each method
 13. send_chat_message
 
 14. get_all_active_listings
-    1. called by client to get returned a updated list of listings
+    * called by client to get returned a updated list of listings
 15.
 
 
@@ -70,7 +70,7 @@ The error parameter will contain the error message, will be null if successful
 
 9. decline_transaction_request_response
     1. tells client their rejection has been registered
-        *if successful emits an event to other user (requesitng user) that request has been declined
+        * if successful emits an event to other user (requesitng user) that request has been declined
     2. or sends error
 
 10. confirm_transaction_response
@@ -81,17 +81,17 @@ The error parameter will contain the error message, will be null if successful
 
 11. reject_transaction_response
     1. tells client that their rejection has been registered
-        *if rejection is successful, emit "transaction_rejected" both users, telling user that transaction is terminated
+      * if rejection is successful, emit "transaction_rejected" both users, telling user that transaction is terminated
     2. or sends error
 
 12. update_user_location_response
     1. tells client that their location has been successfully updated
-        *if successful update, then emit 'user_location_updated' to all clients in a transaction with this user that their location has changed
+      *if successful update, then emit 'user_location_updated' to all clients in a transaction with this user that their location has changed
     2. or sends error
 
 13. send_chat_message_response
     1. tells client that their chat message has been successfully sent
-        * if successfully sent message, then emit 'chat_message_sent' to both users in the transaction that a new message has been added to conversation
+      * if successfully sent message, then emit 'chat_message_sent' to both users in the transaction that a new message has been added to conversation
     2. or sends error
 
 14. get_all_active_listings response
