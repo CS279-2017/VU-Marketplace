@@ -52,11 +52,11 @@ The error parameter will contain the error message, will be null if successful
 
 5. make_listing_response
     1. tells client that they've successfully made a listing (i.e doesn't send error)
-        * also emits an event to all active_users that tells them a new listing has been added
+        * emits listing_made to all active_users that tells them a new listing has been added
     2. or sends an error
 6. remove_listing_response
     1. tells client that they've succesfully made a listing (i.e no error)
-        *emits an event to all active_users telling them which listing has been removed
+        *emits listing_removed to all active_users telling them which listing has been removed
     2. or sends error
 7. make_transaction_request_response
     1. emits 'transaction_request(transaction)' to the other user in the transaction

@@ -129,7 +129,11 @@ var Transaction = function() {
             //sends a message to the current conversation
             //current_transaction cannot be null
             if (this.conversation == null) {
-                throw {message: "tried to send message to null Conversation"};
+                throw {message: "sendMessage: tried to send message to null Conversation"};
+            }
+
+            if(user._id.toString() != this.buyer_user_id.toString() && user._id.toString() != this.seller_user_id.toString()){
+                throw {message: "sendMessage: user with id " + user._id + " doesn't match either user_id of the users in the transaction"}
             }
             //(Message(text, username, time_sent)
             var message = new Message(text, user.username, new Date().getTime());

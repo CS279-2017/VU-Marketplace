@@ -16,6 +16,12 @@ function error_handler(error){
 //TODO: 2. make sure a listing is deleted from active_listings at some point after it is expired
 //TODO: 3. try to make a transaction from an expired listing
 
+//TODO: Listing
+//TODO: 1. Try to remove a listing that doesn't belong to the user
+
+//TODO: Transaction
+//TODO: 1. operating on a transaction that doesn't belong to the user
+
 describe.skip("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){

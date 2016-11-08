@@ -985,7 +985,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             return;
         }
         try {
-            transaction.acceptRequest(user_id);
+            transaction.acceptRequest(user._id);
             //throws error if user with the user_id has already accepted request or if user_id
             //doesn't match either user_id of the transactions
             //verify that the other user has already accepted_request if not throw error
@@ -1173,8 +1173,13 @@ function sendChatMessage(user_id, password, transaction_id, message_text, callba
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
-            var message = transaction.sendMessage(user, message_text);
-            callback(message);
+            try {
+                var message = transaction.sendMessage(user, message_text);
+                callback(message);
+            }catch(e){
+                error_handler(e.message);
+                return;
+            }
         }
         else{
             error_handler("user with user_id " + user_id + " tried to send a message to conversation in a transaction of which he/she is not apart of");
