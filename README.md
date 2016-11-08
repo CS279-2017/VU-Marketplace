@@ -31,9 +31,8 @@ JSON object will be passed in with all the arguments of each method
 16. get_user(user_id)
     * called by client to get passed by a user with the user_id
 
-
 ###Events Received by Client from Server (Server -> Client) as Responses
-JSON object with parameters data and error will be passed in
+JSON object with parameters data and error will be passed in {data:{}, error:{}}
 The data parameter will contain an object containing callback values returned by a successful method call, will be null if error
 The error parameter will contain the error message, will be null if successful
 
@@ -115,7 +114,7 @@ The error parameter will contain the error message, will be null if successful
 
 3. transaction_request_made(user_id, listing_id)
   * notifies that owner of the listing that a transaction request has been made from some user, 
-  * gives user_id of requesting user and listing_id of the listing being requested
+  * gives user_id being requested
 
 4. transaction_started(transaction)
   * notifies both users of a transaction that a transaction has started

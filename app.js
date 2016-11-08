@@ -227,7 +227,7 @@ io.on('connection', function (socket) {
             try {
                 var other_user = transaction.getOtherUser(user_id);
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
-                other_user_socket.emit("transaction_request", {data: transaction, error: null})
+                other_user_socket.emit("transaction_request_made", {data: {user_id: user_id, listing_id: listing_id}, error: null})
             }catch(e){
                 error_handler(e.message)
                 return;
@@ -399,8 +399,8 @@ io.on('connection', function (socket) {
                 var seller = transaction.seller_user_id;
                 var buyer_socket = io.sockets.connected[buyer.socket_id];
                 var seller_socket = io.sockets.connected[seller.socket_id];
-                buyer_socket.emit("chat_message_sent", {data: {message: message}, error: null});
-                seller_socket.emit("chat_message_sent", {data: {message: message}, error: null});
+                buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+                seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
             }catch(e){
                 console.log(e);
                 return;
