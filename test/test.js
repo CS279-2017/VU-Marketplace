@@ -22,7 +22,7 @@ function error_handler(error){
 //TODO: Transaction
 //TODO: 1. operating on a transaction that doesn't belong to the user
 
-describe.skip("User", function() {
+describe("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
         it("register 26 users", function(done){

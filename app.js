@@ -10,6 +10,8 @@ var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
 var url = 'mongodb://localhost:27017/mealplanappserver';
 // // Use connect method to connect to the Server
+var database;
+
 
 //import classes
 var User = require("./classes/user.js");
@@ -83,6 +85,14 @@ server.listen(3000, function () {
     active_listings = new ActiveListings();
     active_transactions = new ActiveTransactions();
     active_users = new ActiveUsers();
+
+    MongoClient.connect(url, function (err, db) {
+        if (err) {
+            error_handler('Unable to connect to the server. Error:' + err);
+            return;
+        }
+        database = db;
+    });
 
     //remove all expired active_listings once a minute
     var minutes = .1, interval = minutes * 60 * 1000;
@@ -503,77 +513,71 @@ function registerEmailAddress(email_address, callback, error_handler){
             return text;
         }
         var verification_code = makeVerificationCode(6);
-        MongoClient.connect(url, function (err, db) {
-            if (err) {
-                error_handler('Unable to connect to the mongoDB server. Error:' +  err);
-                return;
-            }
-            var collection = db.collection('emails');
-            collection.find({email_address: email_address}).toArray(function(err, docs) {
-                if(docs.length > 0) {
-                    //if email has already been registered throw error saying email is taken
-                    if(docs[0].registered == true){
-                        error_handler("email address has already been registered")
-                        return;
-                    }
-                    // else{
-                    //     collection.remove({email_address: email_address}, function(err, result) {
-                    //         if (err) {console.log(err);}
-                    //         console.log("Successfully removed entry with email_address = " + email_address);
-                    //     });
-                    // }
+        var collection = database.collection('emails');
+        collection.find({email_address: email_address}).toArray(function(err, docs) {
+            if(docs.length > 0) {
+                //if email has already been registered throw error saying email is taken
+                if(docs[0].registered == true){
+                    error_handler("email address has already been registered")
+                    return;
                 }
-                //adds the verification code and email to db
-                insertVerificationCode();
-                //TODO: For testing purposes, dont actually send emails!
-                // sendEmail(email_address, verification_code);
-            });
-            //email address, verified, registered, verification_code
-            //generate a random verification code
-
-            function insertVerificationCode(){
-                //TODO: add a number of attempts that gets incremented everytime an attempt is wrong, once a certain number is reached
-                //TODO: delete the entry
-                var email = {email_address: email_address, registered: false, verification_code: verification_code}
-                //adding unique index on email_address ensures no duplicate email_addresses
-                collection.ensureIndex({email_address: 1}, {unique:true}, function(){
-                    collection.update({email_address: email_address}, email, {upsert: true}, function (err, result) {
-                        if (err) {
-                            if(err.message.indexOf('duplicate key error') >= 0){
-                                // a friendly message that replaces the duplicate error
-                                error_handler('email_address has been taken, cannot register ' + email_address);
-                            }
-                            else {
-                                error_handler(err);
-                            }
-                            return;
-                        } else {
-                            console.log('Inserted verification code '+verification_code+' into the email db under email address '+email_address);
-                            if(callback != undefined){ callback(verification_code, email_address);}
-                        }
-                        db.close();
-                    });
-                });
+                // else{
+                //     collection.remove({email_address: email_address}, function(err, result) {
+                //         if (err) {console.log(err);}
+                //         console.log("Successfully removed entry with email_address = " + email_address);
+                //     });
+                // }
             }
-            function sendEmail(email_address, verification_code){
-                // setup e-mail data with unicode symbols
-                var mailOptions = {
-                    from: '"Meal Plan App" <mealplanapp@gmail.com>', // sender address
-                    to: email_address, // list of receivers
-                    subject: 'Verification Code for Meal Plan App', // Subject line
-                    text: 'Verification Code: ' + verification_code, // plaintext body
-                };
-
-                // send mail with defined transport object
-                transporter.sendMail(mailOptions, function(error, info){
-                    if(error){
-                        return console.log(error);
-                    }
-                    console.log('Message sent: ' + info.response);
-                    //send verification_code to callback as well as email (for testing purposes)
-                });
-            }
+            //adds the verification code and email to database
+            insertVerificationCode();
+            //TODO: For testing purposes, dont actually send emails!
+            // sendEmail(email_address, verification_code);
         });
+        //email address, verified, registered, verification_code
+        //generate a random verification code
+
+        function insertVerificationCode(){
+            //TODO: add a number of attempts that gets incremented everytime an attempt is wrong, once a certain number is reached
+            //TODO: delete the entry
+            var email = {email_address: email_address, registered: false, verification_code: verification_code}
+            //adding unique index on email_address ensures no duplicate email_addresses
+            collection.ensureIndex({email_address: 1}, {unique:true}, function(){
+                collection.update({email_address: email_address}, email, {upsert: true}, function (err, result) {
+                    if (err) {
+                        if(err.message.indexOf('duplicate key error') >= 0){
+                            // a friendly message that replaces the duplicate error
+                            error_handler('email_address has been taken, cannot register ' + email_address);
+                        }
+                        else {
+                            error_handler(err);
+                        }
+                        return;
+                    } else {
+                        console.log('Inserted verification code '+verification_code+' into the email database under email address '+email_address);
+                        if(callback != undefined){ callback(verification_code, email_address);}
+                    }
+                    // database.close();
+                });
+            });
+        }
+        function sendEmail(email_address, verification_code){
+            // setup e-mail data with unicode symbols
+            var mailOptions = {
+                from: '"Meal Plan App" <mealplanapp@gmail.com>', // sender address
+                to: email_address, // list of receivers
+                subject: 'Verification Code for Meal Plan App', // Subject line
+                text: 'Verification Code: ' + verification_code, // plaintext body
+            };
+
+            // send mail with defined transport object
+            transporter.sendMail(mailOptions, function(error, info){
+                if(error){
+                    return console.log(error);
+                }
+                console.log('Message sent: ' + info.response);
+                //send verification_code to callback as well as email (for testing purposes)
+            });
+        }
         return verification_code;
     }
     //notify client that verification email has been sent (client moves to text page with verification code username and password)
@@ -603,106 +607,99 @@ function registerVerificationCode(verification_code, username, password, email_a
     //create user and add to database
     var user = new User(username, password, email_address);
     //note this action happens asynchronously, subsequent events will probably occur before callback occurs
-    MongoClient.connect(url, function (err, db) {
-        if (err) {
-            error_handler('Unable to connect to the server. Error:' +  err);
-            return;
-        }
-        //verify that the verification code is valid, or if user has clicked on verification link
-        var collection_emails = db.collection('emails');
-        //register the user
-        collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                //checks that verification_code is valid and email hasn't already been registered
-                if(docs[0].verification_code == verification_code){
-                    if(docs[0].registered == false){
-                        registerUser();
-                    }
-                    else{
-                        error_handler(email_address + " has already been registered");
-                        return;
-                    }
+    //verify that the verification code is valid, or if user has clicked on verification link
+    var collection_emails = database.collection('emails');
+    //register the user
+    collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
+        if(docs.length > 0) {
+            //checks that verification_code is valid and email hasn't already been registered
+            if(docs[0].verification_code == verification_code){
+                if(docs[0].registered == false){
+                    registerUser();
                 }
                 else{
-                    error_handler("verification code doesn't match")
+                    error_handler(email_address + " has already been registered");
                     return;
                 }
             }
             else{
-                error_handler("cannot register, email_address not found in emails database ")
+                error_handler("verification code doesn't match")
                 return;
             }
+        }
+        else{
+            error_handler("cannot register, email_address not found in emails database ")
+            return;
+        }
+    });
+
+
+    function registerUser(){
+        var collection_emails = database.collection('emails');
+        var collection_users = database.collection('users');
+        collection_users.createIndex({ "username": 1 , unique: true });
+        //check to make sure that email and username are unique
+        //change emails database entry to reflect that a email has been registered
+        checkIfEmailAndUserNameUnique(function() {
+            insertUser(function () {
+                //log user registering
+                if (callback != undefined) {
+                    // callback(username + " with email address " + email_address + " has been registered");
+                    callback(username, password, email_address); //used for testing purposes
+                }
+            })
         });
 
-
-        function registerUser(){
-            var collection_emails = db.collection('emails');
-            var collection_users = db.collection('users');
-            collection_users.createIndex({ "username": 1 , unique: true });
-            //check to make sure that email and username are unique
-            //change emails database entry to reflect that a email has been registered
-            checkIfEmailAndUserNameUnique(function() {
-                insertUser(function () {
-                    //log user registering
-                    if (callback != undefined) {
-                        // callback(username + " with email address " + email_address + " has been registered");
-                        callback(username, password, email_address); //used for testing purposes
-                    }
-                })
+        //TODO: should we use usernames or real names? Real Names might require integration with Facebook
+        function checkIfEmailAndUserNameUnique(callback){
+            collection_users.find({email_address: email_address}).toArray(function(err, docs) {
+                if(docs.length > 0) {
+                    error_handler("email address has already been registered")
+                    return;
+                }
+                else{
+                    collection_users.find({username: username}).toArray(function(err, docs){
+                        if(docs.length > 0){
+                            error_handler(username + " has been taken");
+                            return;
+                        }
+                        else{
+                            callback();
+                        }
+                    });
+                }
             });
+        }
 
-            //TODO: should we use usernames or real names? Real Names might require integration with Facebook
-            function checkIfEmailAndUserNameUnique(callback){
-                collection_users.find({email_address: email_address}).toArray(function(err, docs) {
-                    if(docs.length > 0) {
-                        error_handler("email address has already been registered")
-                        return;
-                    }
-                    else{
-                        collection_users.find({username: username}).toArray(function(err, docs){
-                            if(docs.length > 0){
-                                error_handler(username + " has been taken");
-                                return;
-                            }
-                            else{
-                                callback();
-                            }
-                        });
-                    }
-                });
-            }
-
-            function insertUser(callback){
-                collection_emails.update({email_address:email_address}, {$set: {registered : true}}, function(err, result) {
-                    if(err){
-                        error_handler(err);
-                        return;
-                    }
-                    collection_users.createIndex({username: 1}, {unique: true}, function(){
-                        collection_users.createIndex({email_address: 1}, {unique: true}, function(){
-                            collection_users.insert(user, function (err, result) {
-                                if (err) {
-                                    if(err.message.indexOf('duplicate key error') >= 0){
-                                        error_handler('username has been taken, cannot register ' + user.username);
-                                    }
-                                    else{
-                                        error_handler(err);
-                                    }
-                                    return;
-                                } else {
-                                    console.log('Inserted ' + user.username + ' into user database');
-
+        function insertUser(callback){
+            collection_emails.update({email_address:email_address}, {$set: {registered : true}}, function(err, result) {
+                if(err){
+                    error_handler(err);
+                    return;
+                }
+                collection_users.createIndex({username: 1}, {unique: true}, function(){
+                    collection_users.createIndex({email_address: 1}, {unique: true}, function(){
+                        collection_users.insert(user, function (err, result) {
+                            if (err) {
+                                if(err.message.indexOf('duplicate key error') >= 0){
+                                    error_handler('username has been taken, cannot register ' + user.username);
                                 }
-                                db.close(); //we close the db in the callback of the last database operation is performed
-                                callback(); //return username, password, and email_address of user that's been registered for testing purposes
-                            });
+                                else{
+                                    error_handler(err);
+                                }
+                                return;
+                            } else {
+                                console.log('Inserted ' + user.username + ' into user database');
+
+                            }
+                            // database.close(); //we close the database in the callback of the last database operation is performed
+                            callback(); //return username, password, and email_address of user that's been registered for testing purposes
                         });
                     });
                 });
-            }
+            });
         }
-
-    });
+    }
 
     //return something indicating all the validation of input is valid but database may still trigger error
     return true;
@@ -711,31 +708,27 @@ function registerVerificationCode(verification_code, username, password, email_a
 function login(username, password, callback, error_handler){
     //query database for user with given username and password
     console.log("login called");
-    MongoClient.connect(url, function (err, db) {
-        if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-        var collection = db.collection('users');
-        collection.find({username: username, password: password}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                var user = new User();
-                user.initFromDatabase(docs[0]);
-                try {
-                    active_users.add(user);
-                }catch(error){
-                    error_handler(error.message);
-                    return;
-                }
-                console.log(user.username + "is logged in");
-                //return user._id, use this to authenticate rather than username, thus login is independent of username
-                if(callback != undefined){ callback(user); }
+    var collection = database.collection('users');
+    collection.find({username: username, password: password}).toArray(function(err, docs) {
+        if(docs.length > 0) {
+            //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+            var user = new User();
+            user.initFromDatabase(docs[0]);
+            try {
+                active_users.add(user);
+            }catch(error){
+                error_handler(error.message);
+                return;
+            }
+            console.log(user.username + "is logged in");
+            //return user._id, use this to authenticate rather than username, thus login is independent of username
+            if(callback != undefined){ callback(user); }
 
-            }
-            else{
-                //if not found: alert user that login failed, because incorrect username/password
-                error_handler("invalid username/password");
-            }
-            db.close()
-        });
+        }
+        else{
+            //if not found: alert user that login failed, because incorrect username/password
+            error_handler("invalid username/password");
+        }
     });
 }
 
@@ -745,55 +738,22 @@ function logout(user_id, password, callback, error_handler){
     console.log("logout called");
     //verify credentials of user calling logout
     authenticate(user_id, password, function(user){
-        MongoClient.connect(url, function (err, db) {
-            if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-            try {
-                var collection = db.collection('users');
-                //this saves the user data to the database before logging out
-                collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
-                    if(err){error_handler(err); return;}
-                    console.log(user_id + " info saved to database");
-                    db.close()
-                    console.log(user.username + "has logged out");
-                    if(callback != undefined){ callback(); }
-                });
-                    //update database with new user info
-                active_users.remove(user_id);
-            }catch(e){
-                error_handler(e.message);
-                return;
-            }
-        });
+        try {
+            var collection = database.collection('users');
+            //this saves the user data to the database before logging out
+            collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
+                if(err){error_handler(err); return;}
+                console.log(user_id + " info saved to database");
+                console.log(user.username + "has logged out");
+                if(callback != undefined){ callback(); }
+            });
+                //update database with new user info
+            active_users.remove(user_id);
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
     }, error_handler);
-    // MongoClient.connect(url, function (err, db) {
-    //     if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-    //     var collection = db.collection('users');
-    //     collection.find({_id: user_id, password: password}).toArray(function(err, docs) {
-    //         if(docs.length > 0) {
-    //             var user = docs[0];
-    //             try {
-    //                 //this saves the user data to the database before logging out
-    //                 collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
-    //                     if(err){error_handler(err);}
-    //                     console.log(user_id + " info saved to database");
-    //                     db.close()
-    //                     console.log(user.username + "has logged out");
-    //                     if(callback != undefined){ callback(); }
-    //                 });
-    //                     //update database with new user info
-    //                 active_users.remove(user_id);
-    //             }catch(e){
-    //                 error_handler(e.message);
-    //                 return;
-    //             }
-    //
-    //         }
-    //         else{
-    //             //if not found: alert user that login failed, because incorrect username/password
-    //             error_handler("invalid user_id/password");
-    //         }
-    //     });
-    // });
 }
 
 //check active_users using user_id key, check if password matches password of the user, if so call callback,
@@ -846,31 +806,25 @@ function makeListing(user_id, password, title, description, location, expiration
             return;
         }
         var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
-        MongoClient.connect(url, function (err, db) {
-            if (err) {
-                error_handler('Unable to connect to the mongoDB server. Error:' + err);
-                return;
+        var collection_listings = database.collection('listings');
+        collection_listings.insert(new_listing, function (err, count, status) {
+            if(err){error_handler(err.message);}
+            else{
+                collection_listings.find(new_listing).toArray(function(err, docs){
+                    if(docs.length == 1){
+                        new_listing.initFromDatabase(docs[0]);
+                        try {
+                            active_listings.add(new_listing);
+                            user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
+                        }catch(e){error_handler(e.message)};
+                        if(callback != undefined){ callback(new_listing);}
+                    }
+                    else{
+                        error_handler("more than 1 listing inserted into database");
+                        return;
+                    }
+                });
             }
-            var collection_listings = db.collection('listings');
-            collection_listings.insert(new_listing, function (err, count, status) {
-                if(err){error_handler(err.message);}
-                else{
-                    collection_listings.find(new_listing).toArray(function(err, docs){
-                        if(docs.length == 1){
-                            new_listing.initFromDatabase(docs[0]);
-                            try {
-                                active_listings.add(new_listing);
-                                user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
-                            }catch(e){error_handler(e.message)};
-                            if(callback != undefined){ callback(new_listing);}
-                        }
-                        else{
-                            error_handler("more than 1 listing inserted into db");
-                            return;
-                        }
-                    });
-                }
-            });
         });
     }, error_handler)
 }
@@ -969,27 +923,21 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
         }
 
         function addTransactionToDatabase(new_transaction, callback){
-            MongoClient.connect(url, function (err, db) {
-                if (err) {
-                    error_handler('Unable to connect to the mongoDB server. Error:' + err);
-                    return;
+            var collection_transactions = database.collection('transactions');
+            collection_transactions.insert(new_transaction, function (err, count, status) {
+                if(err){error_handler(err.message);}
+                else{
+                    collection_transactions.find(new_transaction).toArray(function(err, docs){
+                        if(docs.length == 1){
+                            new_transaction.initFromDatabase(docs[0]);
+                            if(callback != undefined){ callback(new_transaction);}
+                        }
+                        else{
+                            error_handler("more than 1 transaction inserted into the database");
+                            return;
+                        }
+                    });
                 }
-                var collection_transactions = db.collection('transactions');
-                collection_transactions.insert(new_transaction, function (err, count, status) {
-                    if(err){error_handler(err.message);}
-                    else{
-                        collection_transactions.find(new_transaction).toArray(function(err, docs){
-                            if(docs.length == 1){
-                                new_transaction.initFromDatabase(docs[0]);
-                                if(callback != undefined){ callback(new_transaction);}
-                            }
-                            else{
-                                error_handler("more than 1 transaction inserted into db");
-                                return;
-                            }
-                        });
-                    }
-                });
             });
         }
     }
@@ -1235,24 +1183,20 @@ function getUser(user_id, callback, error_handler){
     var user = active_users.get(user_id);
     //if user is not in active_users, search database
     if(user == undefined){
-        MongoClient.connect(url, function (err, db) {
-            if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-            var collection = db.collection('users');
-            collection.find({_id: user_id}).toArray(function(err, docs) {
-                if (docs.length > 0) {
-                    //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                    var user = new User();
-                    user.initFromDatabase(docs[0]);
-                    var user_info = new UserInfo(user);
-                    user_info.logged_in = false;
-                    callback(user_info);
+        var collection = database.collection('users');
+        collection.find({_id: user_id}).toArray(function(err, docs) {
+            if (docs.length > 0) {
+                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                var user = new User();
+                user.initFromDatabase(docs[0]);
+                var user_info = new UserInfo(user);
+                user_info.logged_in = false;
+                callback(user_info);
 
-                }
-                else {
-                    error_handler("user with user_id " + user_id + " was not found");
-                }
-            });
-            db.close()
+            }
+            else {
+                error_handler("user with user_id " + user_id + " was not found");
+            }
         });
     }
     //if user is in active_users then logged in, thus set the parameter and return user;
@@ -1267,24 +1211,20 @@ function getListing(listing_id, callback, error_handler){
     var listing = active_listings.get(listing_id);
     //if user is not in active_users, search database
     if(listing == undefined){
-        MongoClient.connect(url, function (err, db) {
-            if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-            var collection = db.collection('listings');
-            collection.find({_id: listing_id}).toArray(function(err, docs) {
-                if (docs.length > 0) {
-                    //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                    var listing = new Listing();
-                    listing.initFromDatabase(docs[0]);
-                    var listing_info = new ListingInfo(listing);
-                    listing_info.active = false;
-                    callback(listing_info);
+        var collection = database.collection('listings');
+        collection.find({_id: listing_id}).toArray(function(err, docs) {
+            if (docs.length > 0) {
+                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                var listing = new Listing();
+                listing.initFromDatabase(docs[0]);
+                var listing_info = new ListingInfo(listing);
+                listing_info.active = false;
+                callback(listing_info);
 
-                }
-                else {
-                    error_handler("listing with listing_id " + listing_id + " was not found");
-                }
-            });
-            db.close()
+            }
+            else {
+                error_handler("listing with listing_id " + listing_id + " was not found");
+            }
         });
     }
     //if user is in active_users then logged in, thus set the parameter and return user;
@@ -1296,101 +1236,28 @@ function getListing(listing_id, callback, error_handler){
 }
 
 function updateTransactions(transaction, callback, error_handler){
-    MongoClient.connect(url, function (err, db) {
-        if (err) {
-            error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
-            return;
+    var collection_transactions = database.collection('transactions');
+    collection_transactions.update({_id: transaction._id}, transaction, function (err, count, status) {
+        if(err){error_handler(err.message);}
+        else{
+            if(callback != undefined && callback != null){callback();}
         }
-        var collection_transactions = db.collection('transactions');
-        collection_transactions.update({_id: transaction._id}, transaction, function (err, count, status) {
-            if(err){error_handler(err.message);}
-            else{
-                if(callback != undefined && callback != null){callback();}
-            }
-        });
     });
 }
 
 function updateListings(listing, callback, error_handler){
-    MongoClient.connect(url, function (err, db) {
-        if (err) {
-            error_handler({message: 'Unable to connect to the mongoDB server. Error:' + err});
-            return;
+    var collection_listings = database.collection('listings');
+    collection_listings.update({_id: listing._id}, listing, function (err, count, status) {
+        if(err){error_handler(err.message);}
+        else{
+            if(callback != undefined && callback != null){callback();}
         }
-        var collection_listings = db.collection('listings');
-        collection_listings.update({_id: listing._id}, listing, function (err, count, status) {
-            if(err){error_handler(err.message);}
-            else{
-                if(callback != undefined && callback != null){callback();}
-            }
-        });
     });
 }
 
 //**********************************
 //**END Client->Server API methods**
 //**********************************
-
-
-//************************************
-//**START Server->Client API methods**
-//************************************
-
-function registerEmailAddressResponse(socket){
-
-}
-
-function registerVerificationCodeResponse(){
-
-}
-
-function loginResponse(){
-
-}
-
-function logoutResponse(){
-
-}
-
-function makeListingResponse(){
-
-}
-
-function removeListingResponse(){
-
-}
-
-function makeTransactionRequestResponse(){
-
-}
-
-function acceptTransactionRequestResponse(){
-
-}
-
-function declineTransactionRequestResponse(){
-
-}
-
-function confirmTransactionResponse(){
-
-}
-
-function rejectTransactionResponse(){
-
-}
-
-function updateUserLocationResponse(){
-
-}
-
-function sendChatMessageResponse(){
-
-}
-
-function getAllActiveListingsResponse(){
-
-}
 
 // function recoverUsername(email_address){
 //     //TODO: implement details below
@@ -1423,10 +1290,6 @@ function getActiveListings(){
 function getActiveTransactions(){
     return active_transactions;
 }
-
-
-
-
 
 function validateEmail(email) {
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
