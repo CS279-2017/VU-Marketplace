@@ -2,20 +2,27 @@
 
 ###Events Received by Server from Client (Client -> Server)
 JSON object will be passed in with all the arguments of each method
-
-1. register_email_address({email_address:String})
+{data: {}, error: null}
+1. register_email_address({email_address:String}) -> register_email_address_response({data: null, error: null})
     * registers an email_address that must then be verified
-2. register_verification_code({verification_code:String, username:String, password:String,    , 
+    * sends a verification_code to email_address
+2. register_verification_code({verification_code:String, username:String, password:String, email_address:String}) -> register_verification_code_response({data: null, error: null})   , 
     * verifies the email_address and creates a user, with username, password, etc.
-3. login
+3. login({username:String, password:String}) -> login_response({data: {user_id:String}, error: null})
     * logs a user in (adds them to active_users)
-4. logout
+    * returns user_id on success
+4. logout({user_id:String, password:String}) -> logout_response({data: null, error: null})
     * logs user out, updates user in database, removes user from active_users
-5. make_listing
+    * returns null on success
+5. make_listing({user_id:String, password:String, title:String, description:String, location:{x:Integer, y: Integer}, expiration_time:Integer, price:Integer, buy:Boolean}) -> make_listing_response{data: null, error: null})
     * creates a listing, adds to it to active_listings
-6. remove_listing
-
+    * returns null on success
+6. remove_listing({user_id:String,  password:String, listing_id, String}) -> remove_listing_response({data: {listing_id: String}, error: null})
+    * removes the listing with the listing_id id from active_listings
+      * before removing saves to database
+    * returns listing_id of the removed listing
 7. make_transaction_request
+    * 
 8. accept_transaction_request
 9. decline_transaction_request
 10. confirm_transaction

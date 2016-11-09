@@ -9,7 +9,7 @@ var io = require('socket.io')(server);
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
 var url = 'mongodb://localhost:27017/mealplanappserver';
-// // Use connect method to connect to the Server
+//database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
 
@@ -164,6 +164,7 @@ io.on('connection', function (socket) {
     socket.on('login', function(json){
         var username = json.username;
         var password = json.password;
+        //TODO: provide option to login with email_address in the future
         var email_address = json.email_address
 
         var callback = function(user){
@@ -204,7 +205,7 @@ io.on('connection', function (socket) {
         var price = json.price;
         var buy = json.buy;
         function callback(listing){
-            socket.emit("make_listing_response", {data: {listing: listing}, error: null});
+            socket.emit("make_listing_response", {data: null, error: null});
             //emit event to all users that a new listing has been made
             io.emit("listing_made", {data: {listing: listing}});
         }
