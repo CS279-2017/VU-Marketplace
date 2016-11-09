@@ -18,6 +18,9 @@ var Transaction = require("./classes/transaction.js");
 var Listing = require("./classes/listing.js");
 var Conversation = require("./classes/conversation.js");
 var Location = require("./classes/location.js")
+var UserInfo = require("./classes/user_info.js")
+var ListingInfo = require("./classes/listing_info.js")
+
 
 var ActiveUsers = require("./classes/active_users.js");
 var ActiveListings = require("./classes/active_listings.js");
@@ -424,6 +427,33 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         getAllActiveListings(user_id, password, callback, error_handler)
+    });
+    
+    socket.on('get_listing', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        function callback(listing_info){
+            //send all_active_listings back to client
+            socket.emit("get_listing_response", {data: {listing_info: listing_info}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_listing_response", {data: null, error: e});
+            console.log(e);
+        }
+        getListing(user_id, password, callback, error_handler);
+    });
+    socket.on('get_user', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        function callback(user_info){
+            //send all_active_listings back to client
+            socket.emit("get_user_response", {data: {user_info: user_info}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_user_response", {data: null, error: e});
+            console.log(e);
+        }
+        getUser(user_id, password, callback, error_handler);
     });
 });
 
@@ -1195,6 +1225,71 @@ function getAllActiveListings(user_id, password, callback, error_handler){
         var all_active_listings = active_listings.getAll();
         callback(all_active_listings);
     }, error_handler)
+}
+
+//Finds user in active_users if not found, searches database, returns a UserInfo object made from the User
+function getUser(user_id, callback, error_handler){
+    var user = active_users.get(user_id);
+    //if user is not in active_users, search database
+    if(user == undefined){
+        MongoClient.connect(url, function (err, db) {
+            if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
+            var collection = db.collection('users');
+            collection.find({_id: user_id}).toArray(function(err, docs) {
+                if (docs.length > 0) {
+                    //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                    var user = new User();
+                    user.initFromDatabase(docs[0]);
+                    var user_info = new UserInfo(user);
+                    user_info.logged_in = false;
+                    callback(user_info);
+
+                }
+                else {
+                    error_handler("user with user_id " + user_id + " was not found");
+                }
+            });
+            db.close()
+        });
+    }
+    //if user is in active_users then logged in, thus set the parameter and return user;
+    else{
+        var user_info = new UserInfo(user);
+        user_info.logged_in = true;
+        callback(user_info)
+    }
+}
+
+function getListing(listing_id, callback, error_handler){
+    var listing = active_listings.get(listing_id);
+    //if user is not in active_users, search database
+    if(listing == undefined){
+        MongoClient.connect(url, function (err, db) {
+            if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
+            var collection = db.collection('users');
+            collection.find({_id: listing_id}).toArray(function(err, docs) {
+                if (docs.length > 0) {
+                    //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                    var listing = new Listing();
+                    listing.initFromDatabase(docs[0]);
+                    var listing_info = new ListingInfo(listing);
+                    listing_info.active = false;
+                    callback(listing_info);
+
+                }
+                else {
+                    error_handler("listing with listing_id " + listing_id + " was not found");
+                }
+            });
+            db.close()
+        });
+    }
+    //if user is in active_users then logged in, thus set the parameter and return user;
+    else{
+        var listing_info = new ListingInfo(listing);
+        listing_info.active = true;
+        callback(listing_info)
+    }
 }
 
 function updateTransactions(transaction, callback, error_handler){

@@ -26,10 +26,11 @@ JSON object will be passed in with all the arguments of each method
 
 14. get_all_active_listings
     * called by client to get returned a updated list of listings
-15. get_listing(listing_id)
-    * called by client to get passed back a listing with the listing_id
-16. get_user(user_id)
-    * called by client to get passed by a user with the user_id
+15. get_user(user_id)
+    * returns an user_info object containing non-private data members of user
+16. get_listing(listing_id)
+    * returns a listing_info object containing non-private data members of listing
+
 
 ###Events Received by Client from Server (Server -> Client) as Responses
 JSON object with parameters data and error will be passed in {data:{}, error:{}}
