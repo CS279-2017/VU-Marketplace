@@ -13,5 +13,5 @@ function ListingInfo(listing){
     this.price = listing.price;
     this.buy = listing.buy;
     this.transaction_id = listing.transaction_id;
-    this.active = null;
+    this.is_active = null;
 }

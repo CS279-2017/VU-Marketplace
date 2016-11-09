@@ -344,8 +344,7 @@ describe("Transaction", function(){
                         }, error_handler);
                     }, error_handler);
                 }, error_handler);
-
-            })
+            });
         });
 
         it("register 2 user/ login both/ user 1 makes listing/ user 1 makes transaction/ throw error, can't accept own transaction", function (done) {
@@ -705,7 +704,7 @@ describe("Send message", function(){
     });
 });
 
-describe.only("Expired Listing Cleaner", function(){
+describe("Expired Listing Cleaner", function(){
     it("register two users, user 1 makes 2 listings that expire immediately, wait 10 seconds, see if listings have been cleaned up", function(done){
         var active_transactions = app.getActiveTransactions();
         var active_listings = app.getActiveListings();
@@ -730,6 +729,50 @@ describe.only("Expired Listing Cleaner", function(){
         });
     });
 })
+
+describe.only("getListing, getUser", function(){
+   it("create 2 users, user2 logs out, user1 creates a listing, calls getListing, user1 deletes listing, calls getListing", function(done){
+       var active_transactions = app.getActiveTransactions();
+       var active_listings = app.getActiveListings();
+       var active_users = app.getActiveUsers()
+       registerTwoEmailAddresses(function (user_id_arr) {
+           console.log("registerTwoEmailAddresses completed!\n\n\n")
+           var user_id1 = user_id_arr[0];
+           var user_id2 = user_id_arr[1];
+           var user1 = active_users.get(user_id1);
+           var user2 = active_users.get(user_id2);
+           app.logout(user_id2, user2.password, function(){
+               app.getUser(user_id1, function(user_info){
+                   console.log(user_info);
+                   assert(user_info._id.toString() == user_id1);
+                   assert(user_info.logged_in == true);
+               }, error_handler)
+               app.getUser(user_id2, function(user_info){
+                   console.log(user_info);
+                   assert(user_info._id.toString() == user_id2);
+                   assert(user_info.logged_in == false);
+               }, error_handler)
+               app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function (listing1) {
+                   app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function (listing2) {
+                       app.removeListing(user_id1, user1.password, listing2._id, function(){
+                           app.getListing(listing1._id, function(listing_info){
+                               console.log(listing_info);
+                               assert(listing_info._id.toString() == listing1._id.toString())
+                               // assert(listing_info.is_active == true);
+                           }, error_handler)
+                           app.getListing(listing2._id, function(listing_info){
+                               console.log(listing_info);
+                               assert(listing_info._id.toString() == listing2._id.toString())
+                               // assert(listing_info.is_active == false);
+                               done();
+                           }, error_handler)
+                       }, error_handler)
+                   }, error_handler);
+               }, error_handler);
+           }, error_handler)
+       });
+   })
+});
 
 describe("Socket.io", function (){
    it("connecting, sending a message back and forth, then disconnect", function(done){

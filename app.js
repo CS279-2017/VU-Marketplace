@@ -51,6 +51,9 @@ exports.getActiveUsers = getActiveUsers;
 exports.getActiveListings = getActiveListings;
 exports.getActiveTransactions = getActiveTransactions;
 
+exports.getUser = getUser;
+exports.getListing = getListing;
+
 
 // create reusable transporter object using the default SMTP transport
 var transporter = nodemailer.createTransport({
@@ -1266,7 +1269,7 @@ function getListing(listing_id, callback, error_handler){
     if(listing == undefined){
         MongoClient.connect(url, function (err, db) {
             if (err) { console.log('Unable to connect to the mongoDB server. Error:', err); }
-            var collection = db.collection('users');
+            var collection = db.collection('listings');
             collection.find({_id: listing_id}).toArray(function(err, docs) {
                 if (docs.length > 0) {
                     //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
