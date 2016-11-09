@@ -3,9 +3,9 @@
 ###Events Received by Server from Client (Client -> Server)
 JSON object will be passed in with all the arguments of each method
 
-1. register_email_address
+1. register_email_address({email_address:String})
     * registers an email_address that must then be verified
-2. register_verification_code
+2. register_verification_code({verification_code:String, username:String, password:String,    , 
     * verifies the email_address and creates a user, with username, password, etc.
 3. login
     * logs a user in (adds them to active_users)

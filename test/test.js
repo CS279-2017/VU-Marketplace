@@ -33,7 +33,7 @@ describe.skip("User", function() {
                 function callback1(verification_code, email_address){
                     var username = possible_strings.pop();
                     // console.log("calling registerVerificationCode");
-                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
+                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", email_address, callback2, error_handler);
                 }
                 function callback2(message) {
                     // console.log(message);
@@ -105,7 +105,7 @@ describe.skip("User", function() {
                 console.log("callback1 called on " + email_address)
                 var username = 'helloooo';
                 // console.log("calling registerVerificationCode");
-                app.registerVerificationCode(verification_code, username , "chocho513", "chocho513", email_address, callback2, error_handler);
+                app.registerVerificationCode(verification_code, username , "chocho513", email_address, callback2, error_handler);
             }
             function callback2(message) {
                 console.log("callback2 called");
@@ -150,7 +150,7 @@ describe.skip("User", function() {
                     var username = possible_strings.pop();
                     push_strings.push(username);
                     // console.log("calling registerVerificationCode");
-                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
+                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", email_address, callback2, error_handler);
                 }
                 function callback2(username, password) {
                     // users.push({username: username, password: password, email_address: email_address});
@@ -181,7 +181,7 @@ describe.skip("User", function() {
                 app.registerEmail( "bowen.leeroy@vanderbilt.edu", callback1, error_handler);
                 function callback1(verification_code, email_address){
                     console.log("registering bowenjin with verification code " + verification_code);
-                    app.registerVerificationCode(verification_code, 'bowenjin', "chocho513", "chocho513", email_address, callback2, error_handler);
+                    app.registerVerificationCode(verification_code, 'bowenjin', "chocho513", email_address, callback2, error_handler);
                 }
                 function callback2(username, password) {
                     // users.push({username: username, password: password, email_address: email_address});
@@ -209,7 +209,7 @@ describe.skip("User", function() {
     });
 });
 
-describe.skip("Listing", function(){
+describe("Listing", function(){
     describe("Make Listing", function(){
 
 
@@ -730,7 +730,7 @@ describe("Expired Listing Cleaner", function(){
     });
 })
 
-describe.only("getListing, getUser", function(){
+describe("getListing, getUser", function(){
    it("create 2 users, user2 logs out, user1 creates a listing, calls getListing, user1 deletes listing, calls getListing", function(done){
        var active_transactions = app.getActiveTransactions();
        var active_listings = app.getActiveListings();
@@ -936,7 +936,7 @@ function register26EmailAddressesAndLogin(callback){
             var username = possible_strings.pop();
             push_strings.push(username);
             // console.log("calling registerVerificationCode");
-            app.registerVerificationCode(verification_code, username + '6666666', "chocho513", "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username + '6666666', "chocho513", email_address, callback2, error_handler);
         }
         function callback2(username, password) {
             // users.push({username: username, password: password, email_address: email_address});
@@ -970,8 +970,8 @@ function registerTwoEmailAddresses(callback){
         function callback1(verification_code, email_address){
             var username1 = "bowenjin1";
             var username2 = "bowenjin2";
-            app.registerVerificationCode(verification_code, username1, "chocho513", "chocho513", email_address, callback2, error_handler);
-            app.registerVerificationCode(verification_code, username2, "chocho513", "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username1, "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username2, "chocho513", email_address, callback2, error_handler);
 
         }
         function callback2(username, password) {
@@ -1009,9 +1009,9 @@ function register3EmailAddresses(callback){
             var username1 = "bowenjin1";
             var username2 = "bowenjin2";
             var username3 = "bowenjin3";
-            app.registerVerificationCode(verification_code, username1, "chocho513", "chocho513", email_address, callback2, error_handler);
-            app.registerVerificationCode(verification_code, username2, "chocho513", "chocho513", email_address, callback2, error_handler);
-            app.registerVerificationCode(verification_code, username3, "chocho513", "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username1, "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username2, "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, username3, "chocho513", email_address, callback2, error_handler);
 
         }
         function callback2(username, password) {

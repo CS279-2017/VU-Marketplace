@@ -138,7 +138,7 @@ io.on('connection', function (socket) {
         var verification_code = json.verification_code;
         var username = json.username;
         var password = json.password;
-        var confirm_password = json.confirm_password;
+        // var confirm_password = json.confirm_password;
         var email_address = json.email_address
 
         var callback = function(){
@@ -148,7 +148,7 @@ io.on('connection', function (socket) {
             socket.emit("register_verification_code_response", {data: null, error: e});
             console.log(e);
         }
-        registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler);
+        registerVerificationCode(verification_code, username, password, email_address, callback, error_handler);
     });
 
     socket.on('login', function(json){
@@ -583,7 +583,7 @@ function registerEmailAddress(email_address, callback, error_handler){
 
 //this causes a race condition is two users registerVerification code within about .5 seconds of each other
 //fixed: by adding an index to database before inserting
-function registerVerificationCode(verification_code, username, password, confirm_password, email_address, callback, error_handler){
+function registerVerificationCode(verification_code, username, password, email_address, callback, error_handler){
     console.log("called registerVerificationCode");
     //verify that username is valid
     if(!validateUsername(username)){
@@ -596,10 +596,10 @@ function registerVerificationCode(verification_code, username, password, confirm
         return;
     }
     //verify password confirm matches password
-    if(password != confirm_password){
-        error_handler("password doesn't match");
-        return;
-    }
+    // if(password != confirm_password){
+    //     error_handler("password doesn't match");
+    //     return;
+    // }
     //create user and add to database
     var user = new User(username, password, email_address);
     //note this action happens asynchronously, subsequent events will probably occur before callback occurs
