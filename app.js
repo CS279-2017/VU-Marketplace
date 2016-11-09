@@ -146,8 +146,11 @@ io.on('connection', function (socket) {
 
     socket.on('register_verification_code', function(json){
         var verification_code = json.verification_code;
-        var username = json.username;
+        // var username = json.username;
         var password = json.password;
+        
+        var first_name = json.first_name;
+        var last_name = json.last_name;
         // var confirm_password = json.confirm_password;
         var email_address = json.email_address
 
@@ -158,14 +161,12 @@ io.on('connection', function (socket) {
             socket.emit("register_verification_code_response", {data: null, error: e});
             console.log(e);
         }
-        registerVerificationCode(verification_code, username, password, email_address, callback, error_handler);
+        registerVerificationCode(verification_code, email_address, password, first_name, last_name, callback, error_handler);
     });
 
     socket.on('login', function(json){
-        var username = json.username;
+        var email_address = json.email_address;
         var password = json.password;
-        //TODO: provide option to login with email_address in the future
-        var email_address = json.email_address
 
         var callback = function(user){
             //send user_id back to user
@@ -177,7 +178,7 @@ io.on('connection', function (socket) {
             socket.emit("login_response", {data: null, error: e});
             console.log(e);
         }
-        login(username, password, callback, error_handler);
+        login(email_address, password, callback, error_handler);
     });
 
     socket.on('logout', function(json){
@@ -588,13 +589,8 @@ function registerEmailAddress(email_address, callback, error_handler){
 
 //this causes a race condition is two users registerVerification code within about .5 seconds of each other
 //fixed: by adding an index to database before inserting
-function registerVerificationCode(verification_code, username, password, email_address, callback, error_handler){
+function registerVerificationCode(verification_code, email_address, password, first_name, last_name, callback, error_handler){
     console.log("called registerVerificationCode");
-    //verify that username is valid
-    if(!validateUsername(username)){
-        error_handler("invalid username");
-        return;
-    }
     //verify password is valid
     if(!validatePassword(password)) {
         error_handler("invalid password");
@@ -606,7 +602,7 @@ function registerVerificationCode(verification_code, username, password, email_a
     //     return;
     // }
     //create user and add to database
-    var user = new User(username, password, email_address);
+    var user = new User(first_name, last_name, password, email_address);
     //note this action happens asynchronously, subsequent events will probably occur before callback occurs
     //verify that the verification code is valid, or if user has clicked on verification link
     var collection_emails = database.collection('emails');
@@ -638,65 +634,51 @@ function registerVerificationCode(verification_code, username, password, email_a
     function registerUser(){
         var collection_emails = database.collection('emails');
         var collection_users = database.collection('users');
-        collection_users.createIndex({ "username": 1 , unique: true });
         //check to make sure that email and username are unique
         //change emails database entry to reflect that a email has been registered
-        checkIfEmailAndUserNameUnique(function() {
+        checkIfEmailAddressUnique(function() {
             insertUser(function () {
                 //log user registering
                 if (callback != undefined) {
-                    // callback(username + " with email address " + email_address + " has been registered");
-                    callback(username, password, email_address); //used for testing purposes
+                    callback(email_address, password); //used for testing purposes
                 }
             })
         });
 
-        //TODO: should we use usernames or real names? Real Names might require integration with Facebook
-        function checkIfEmailAndUserNameUnique(callback){
+        function checkIfEmailAddressUnique(callback){
             collection_users.find({email_address: email_address}).toArray(function(err, docs) {
                 if(docs.length > 0) {
                     error_handler("email address has already been registered")
                     return;
                 }
                 else{
-                    collection_users.find({username: username}).toArray(function(err, docs){
-                        if(docs.length > 0){
-                            error_handler(username + " has been taken");
-                            return;
-                        }
-                        else{
-                            callback();
-                        }
-                    });
+                    callback()
                 }
             });
         }
 
         function insertUser(callback){
-            collection_emails.update({email_address:email_address}, {$set: {registered : true}}, function(err, result) {
-                if(err){
-                    error_handler(err);
-                    return;
-                }
-                collection_users.createIndex({username: 1}, {unique: true}, function(){
-                    collection_users.createIndex({email_address: 1}, {unique: true}, function(){
-                        collection_users.insert(user, function (err, result) {
-                            if (err) {
-                                if(err.message.indexOf('duplicate key error') >= 0){
-                                    error_handler('username has been taken, cannot register ' + user.username);
-                                }
-                                else{
-                                    error_handler(err);
-                                }
+            collection_users.createIndex({email_address: 1}, {unique: true}, function(){
+                collection_users.insert(user, function (err, result) {
+                    if (err) {
+                        if(err.message.indexOf('duplicate key error') >= 0){
+                            error_handler('email_address has been taken, cannot register ' + user.email_address);
+                        }
+                        else{
+                            error_handler(err);
+                        }
+                        return;
+                    } else {
+                        console.log('Inserted ' + user.email_address + ' into user database');
+                        collection_emails.update({email_address:email_address}, {$set: {registered : true}}, function(err, result) {
+                            if(err){
+                                error_handler(err);
                                 return;
-                            } else {
-                                console.log('Inserted ' + user.username + ' into user database');
-
                             }
-                            // database.close(); //we close the database in the callback of the last database operation is performed
-                            callback(); //return username, password, and email_address of user that's been registered for testing purposes
+                            callback();
                         });
-                    });
+
+                    }
                 });
             });
         }
@@ -706,11 +688,11 @@ function registerVerificationCode(verification_code, username, password, email_a
     return true;
 }
 
-function login(username, password, callback, error_handler){
-    //query database for user with given username and password
+function login(email_address, password, callback, error_handler){
+    //query database for user with given email_address and password
     console.log("login called");
     var collection = database.collection('users');
-    collection.find({username: username, password: password}).toArray(function(err, docs) {
+    collection.find({email_address: email_address, password: password}).toArray(function(err, docs) {
         if(docs.length > 0) {
             //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
             var user = new User();
@@ -721,14 +703,14 @@ function login(username, password, callback, error_handler){
                 error_handler(error.message);
                 return;
             }
-            console.log(user.username + "is logged in");
-            //return user._id, use this to authenticate rather than username, thus login is independent of username
+            console.log(user.email_address + " is logged in");
+            //return user._id, use this to authenticate, thus login is independent of login credentials
             if(callback != undefined){ callback(user); }
 
         }
         else{
-            //if not found: alert user that login failed, because incorrect username/password
-            error_handler("invalid username/password");
+            //if not found: alert user that login failed, because incorrect email_address/password
+            error_handler("invalid email_address/password");
         }
     });
 }
@@ -745,7 +727,7 @@ function logout(user_id, password, callback, error_handler){
             collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
                 if(err){error_handler(err); return;}
                 console.log(user_id + " info saved to database");
-                console.log(user.username + "has logged out");
+                console.log(user.email_address + "has logged out");
                 if(callback != undefined){ callback(); }
             });
                 //update database with new user info

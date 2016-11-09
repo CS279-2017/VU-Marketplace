@@ -4,10 +4,12 @@ module.exports = User;
 //we use all_listing
 //{_id, username, password, email_address, venmo_id, current_listing_ids, previous_listing_ids, previous_transaction_ids, all_transaction_ids, location}
 //do not include password in User object, use password only to retrieve from database on login
-function User(username, password, email){
+function User(first_name, last_name, password, email){
     //TODO: find way to get a unique id that we can then assign the user, probably have to get it by querying the Database
     //this.id (assigned when retrieved from database)
-    this.username = username;
+    // this.username = username;
+    this.first_name = first_name;
+    this.last_name = last_name;
     this.password = password;
     this.email_address = email
     this.venmo_id = null;
@@ -27,7 +29,8 @@ User.prototype = {
     //initUserFromDatabase initializes a user object based on an object returned from database
     initFromDatabase: function(user){
         this._id = user._id;
-        this.username = user.username;
+        this.first_name = user.first_name;
+        this.last_name = user.last_name;
         this.password = user.password;
         this.email_address = user.email_address;
         this.location = user.location;

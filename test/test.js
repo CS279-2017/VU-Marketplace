@@ -22,7 +22,7 @@ function error_handler(error){
 //TODO: Transaction
 //TODO: 1. operating on a transaction that doesn't belong to the user
 
-describe("User", function() {
+describe.only("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
         it("register 26 users", function(done){
@@ -33,7 +33,7 @@ describe("User", function() {
                 function callback1(verification_code, email_address){
                     var username = possible_strings.pop();
                     // console.log("calling registerVerificationCode");
-                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", email_address, callback2, error_handler);
+                    app.registerVerificationCode(verification_code, email_address, "chocho513", username, "Jin", callback2, error_handler);
                 }
                 function callback2(message) {
                     // console.log(message);
@@ -93,19 +93,18 @@ describe("User", function() {
         })
 
         //since adding unique indexes
-        it("registering username that's been taken", function(done){
+        it("registering email_address that's been taken", function(done){
             dropDatabases(function(){
                 //simultaneously registering (creates a race condition)
                 app.registerEmail('aa' + "@vanderbilt.edu", callback1, error_handler);
-                app.registerEmail('ab' + "@vanderbilt.edu", callback1, error_handler);
+                app.registerEmail('aa' + "@vanderbilt.edu", callback1, error_handler);
 
             })
 
             function callback1(verification_code, email_address){
                 console.log("callback1 called on " + email_address)
-                var username = 'helloooo';
                 // console.log("calling registerVerificationCode");
-                app.registerVerificationCode(verification_code, username , "chocho513", email_address, callback2, error_handler);
+                app.registerVerificationCode(verification_code, email_address , "chocho513", "Bowen", "Jin", callback2, error_handler);
             }
             function callback2(message) {
                 console.log("callback2 called");
@@ -113,7 +112,7 @@ describe("User", function() {
             }
             function error_handler(error){
                 console.log(error);
-                assert(error, "helloooo has been taken");
+                assert(error, "email_address has been taken");
                 done();
             }
 
@@ -150,12 +149,12 @@ describe("User", function() {
                     var username = possible_strings.pop();
                     push_strings.push(username);
                     // console.log("calling registerVerificationCode");
-                    app.registerVerificationCode(verification_code, username + '6666666', "chocho513", email_address, callback2, error_handler);
+                    app.registerVerificationCode(verification_code, email_address, "chocho513", "Bowen", "Jin", callback2, error_handler);
                 }
-                function callback2(username, password) {
+                function callback2(email_address, password) {
                     // users.push({username: username, password: password, email_address: email_address});
-                    console.log("attempting to login as " + username + " with password " + password);
-                    app.login(username, password, callback, error_handler);
+                    console.log("attempting to login as " + email_address + " with password " + password);
+                    app.login(email_address, password, callback, error_handler);
                     function callback() {
                         i++;
                         if(i == 25){
@@ -181,12 +180,12 @@ describe("User", function() {
                 app.registerEmail( "bowen.leeroy@vanderbilt.edu", callback1, error_handler);
                 function callback1(verification_code, email_address){
                     console.log("registering bowenjin with verification code " + verification_code);
-                    app.registerVerificationCode(verification_code, 'bowenjin', "chocho513", email_address, callback2, error_handler);
+                    app.registerVerificationCode(verification_code, email_address, "chocho513", "Bowen", "Jin", callback2, error_handler);
                 }
-                function callback2(username, password) {
+                function callback2(email_address, password) {
                     // users.push({username: username, password: password, email_address: email_address});
-                    console.log("attempting to login as " + username + " with password " + password);
-                    app.login(username, password, callback3, error_handler);
+                    console.log("attempting to login as " + email_address + " with password " + password);
+                    app.login(email_address, password, callback3, error_handler);
                     function callback3(user) {
                         console.log("login callback:")
                         console.log(user)
@@ -195,7 +194,7 @@ describe("User", function() {
                         (active_users.get(_id)).setVenmoId("some_venmo_id");
                         app.logout(_id, password, function(){
                             console.log(app.getActiveUsers());
-                            app.login(username, password, function(user){
+                            app.login(email_address, password, function(user){
                                 assert(app.getActiveUsers().get(user._id).venmo_id == "some_venmo_id");
                                 done();
                             }, error_handler)
@@ -936,12 +935,12 @@ function register26EmailAddressesAndLogin(callback){
             var username = possible_strings.pop();
             push_strings.push(username);
             // console.log("calling registerVerificationCode");
-            app.registerVerificationCode(verification_code, username + '6666666', "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, email_address, "chocho513", "Bowen", "Jin", callback2, error_handler);
         }
-        function callback2(username, password) {
+        function callback2(email_address, password) {
             // users.push({username: username, password: password, email_address: email_address});
-            console.log("attempting to login as " + username + " with password " + password);
-            app.login(username, password, callback3, error_handler);
+            console.log("attempting to login as " + email_address + " with password " + password);
+            app.login(email_address, password, callback3, error_handler);
         }
         function callback3(user){
             i++;
@@ -970,14 +969,14 @@ function registerTwoEmailAddresses(callback){
         function callback1(verification_code, email_address){
             var username1 = "bowenjin1";
             var username2 = "bowenjin2";
-            app.registerVerificationCode(verification_code, username1, "chocho513", email_address, callback2, error_handler);
-            app.registerVerificationCode(verification_code, username2, "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, email_address, "chocho513", "Bowen", "Jin", callback2, error_handler);
+            app.registerVerificationCode(verification_code, email_address, "chocho513", "Bowen", "Jin", callback2, error_handler);
 
         }
-        function callback2(username, password) {
+        function callback2(email_address, password) {
             // users.push({username: username, password: password, email_address: email_address});
-            console.log("attempting to login as " + username + " with password " + password);
-            app.login(username, password, callback3, error_handler);
+            console.log("attempting to login as " + email_address + " with password " + password);
+            app.login(email_address, password, callback3, error_handler);
         }
         function callback3(user){
             user_id_arr.push(user._id)
@@ -1009,15 +1008,15 @@ function register3EmailAddresses(callback){
             var username1 = "bowenjin1";
             var username2 = "bowenjin2";
             var username3 = "bowenjin3";
-            app.registerVerificationCode(verification_code, username1, "chocho513", email_address, callback2, error_handler);
-            app.registerVerificationCode(verification_code, username2, "chocho513", email_address, callback2, error_handler);
-            app.registerVerificationCode(verification_code, username3, "chocho513", email_address, callback2, error_handler);
+            app.registerVerificationCode(verification_code, email_address, "chocho513", username1, "lastname", callback2, error_handler);
+            app.registerVerificationCode(verification_code, email_address, "chocho513", username2, "lastname", callback2, error_handler);
+            app.registerVerificationCode(verification_code, email_address, "chocho513", username3, "lastname", callback2, error_handler);
 
         }
-        function callback2(username, password) {
+        function callback2(email_address, password) {
             // users.push({username: username, password: password, email_address: email_address});
-            console.log("attempting to login as " + username + " with password " + password);
-            app.login(username, password, callback3, error_handler);
+            console.log("attempting to login as " + email_address + " with password " + password);
+            app.login(email_address, password, callback3, error_handler);
         }
         function callback3(user){
             user_id_arr.push(user._id)
