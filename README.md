@@ -1,12 +1,10 @@
 # mealplanserverapp
 
 ###Events Received by Server from Client (Client -> Server)
-JSON object will be passed in with all the arguments of each method
-{data: {}, error: null}
 1. register_email_address({email_address:String}) -> register_email_address_response({data: null, error: null})
     * registers an email_address that must then be verified
     * sends a verification_code to email_address
-2. register_verification_code({verification_code:String, username:String, password:String, email_address:String}) -> register_verification_code_response({data: null, error: null})   , 
+2. register_verification_code({verification_code:String, username:String, password:String, email_address:String}) -> register_verification_code_response({data: null, error: null})
     * verifies the email_address and creates a user, with username, password, etc.
 3. login({username:String, password:String}) -> login_response({data: {user_id:String}, error: null})
     * logs a user in (adds them to active_users)
