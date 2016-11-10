@@ -126,9 +126,21 @@ app.get('/', function (req, res) {
 io.on('connection', function (socket) {
     console.log("user has connected!");
     socket.emit('event', { data: 'server data' });
-    socket.on('my other event', function (data) {
-        console.log('my other event triggered');
-        console.log(data);
+    //TODO: should active_listings and transactions be terminated?
+    //log the user out on disconnect
+    //send 'logged_out_due_to_disconnect' event to user
+    socket.on('disconnect', function() {
+        console.log('user has disconnected!');
+        var socket_id = socket.id
+        var disconnected_user = active_users.getUserBySocketId(socket_id);
+        var error_handler = function (e) {
+            console.log(e);
+            return;
+        }
+        logout(disconnected_user._id, disconnected_user.password, function(user_id){
+            console.log("user with id " + user_id + " logged out due to disconnected")
+            socket.emit('logged_out_due_to_disconnect', {data: null , error: null});
+        }, error_handler)
     });
 
     socket.on('register_email_address', function(json) {
