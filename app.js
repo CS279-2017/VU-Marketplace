@@ -494,6 +494,7 @@ io.on('connection', function (socket) {
 //note we pass an error handler method to each of these methods, if the methods are called, they are passed
 //a string that describes the error
 function registerEmailAddress(email_address, callback, error_handler){
+    email_address = email_address.toLowerCase() //converts email_address to lowercase because email_addresses are case insensitive
     //validate email address is real
     if(validateEmail(email_address) == false){
         //return a object type that has an error message
@@ -603,6 +604,7 @@ function registerEmailAddress(email_address, callback, error_handler){
 //fixed: by adding an index to database before inserting
 function registerVerificationCode(verification_code, email_address, password, first_name, last_name, callback, error_handler){
     console.log("called registerVerificationCode");
+    email_address = email_address.toLowerCase() //converts email_address to lower_case because email_addresses are case insensitive
     //verify password is valid
     if(!validatePassword(password)) {
         error_handler("invalid password");
