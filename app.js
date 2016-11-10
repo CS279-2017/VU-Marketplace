@@ -12,7 +12,6 @@ var url = 'mongodb://localhost:27017/mealplanappserver';
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
-
 //import classes
 var User = require("./classes/user.js");
 var Message = require("./classes/message.js");
@@ -123,10 +122,12 @@ app.get('/', function (req, res) {
     res.send('Hello World!');
 });
 
+//TODO: when a user connects check if they are logged in, if not then tell them to login
 io.on('connection', function (socket) {
     console.log("user has connected!");
     socket.emit('event', { data: 'server data' });
     //TODO: should active_listings and transactions be terminated?
+    //TODO: log a user out only after they've been disconnected for 30 seconds
     //log the user out on disconnect
     //send 'logged_out_due_to_disconnect' event to user
     socket.on('disconnect', function() {
@@ -144,7 +145,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('register_email_address', function(json) {
-        var email_address = json.email_address;
+        var email_address = json.email_address.toLowerCase();
         var callback = function (verification_code, email_address) {
             socket.emit('register_email_address_response', {data: null , error: null});
         };
@@ -164,8 +165,7 @@ io.on('connection', function (socket) {
         var first_name = json.first_name;
         var last_name = json.last_name;
         // var confirm_password = json.confirm_password;
-        var email_address = json.email_address
-
+        var email_address = json.email_address.toLowerCase();
         var callback = function(){
             socket.emit("register_verification_code_response", {data: null, error: null});
         };
@@ -177,7 +177,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('login', function(json){
-        var email_address = json.email_address;
+        var email_address = json.email_address.toLowerCase();
         var password = json.password;
 
         var callback = function(user){
@@ -703,6 +703,7 @@ function registerVerificationCode(verification_code, email_address, password, fi
 }
 
 function login(email_address, password, callback, error_handler){
+    email_address = email_address.toLowerCase();
     //query database for user with given email_address and password
     console.log("login called");
     var collection = database.collection('users');
