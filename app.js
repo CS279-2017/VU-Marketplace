@@ -545,7 +545,7 @@ function registerEmailAddress(email_address, callback, error_handler){
             //adds the verification code and email to database
             insertVerificationCode();
             //TODO: For testing purposes, dont actually send emails!
-            // sendEmail(email_address, verification_code);
+            sendEmail(email_address, verification_code);
         });
         //email address, verified, registered, verification_code
         //generate a random verification code
