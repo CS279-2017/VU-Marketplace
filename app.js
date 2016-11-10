@@ -604,7 +604,16 @@ function registerEmailAddress(email_address, callback, error_handler){
 //fixed: by adding an index to database before inserting
 function registerVerificationCode(verification_code, email_address, password, first_name, last_name, callback, error_handler){
     console.log("called registerVerificationCode");
-    email_address = email_address.toLowerCase() //converts email_address to lower_case because email_addresses are case insensitive
+
+    //adds a function to String prototype to capitalize first letter
+    String.prototype.capitalizeFirstLetter = function() {
+        return this.charAt(0).toUpperCase() + this.slice(1);
+    }
+    email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
+    first_name = first_name.toLowerCase(); //converts first name to lower case
+    first_name = first_name.capitalizeFirstLetter(); //then capitalizes first letter
+    last_name = last_name.toLowerCase(); //converts last name to lower case
+    last_name = last_name.capitalizeFirstLetter(); //then capitalizes first letter
     //verify password is valid
     if(!validatePassword(password)) {
         error_handler("invalid password");
