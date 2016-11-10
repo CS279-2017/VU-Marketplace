@@ -167,7 +167,7 @@ io.on('connection', function (socket) {
         // var confirm_password = json.confirm_password;
         var email_address = json.email_address.toLowerCase();
         var callback = function(){
-            socket.emit("register_verification_code_response", {data: null, error: null});
+            socket.emit("register_verification_code_response", {data: {first_name: first_name, last_name: last_name}, error: null});
         };
         var error_handler = function(e) {
             socket.emit("register_verification_code_response", {data: null, error: e});
