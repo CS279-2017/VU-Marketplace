@@ -49,13 +49,12 @@ ActiveUsers.prototype = {
         return users_arr;
     },
     getUserBySocketId: function(socket_id){
-        var users_arr = [];
         for(key in this.users){
             if(this.users[key].socket_id == socket_id){
-                return user;
+                return this.users[key];
             }
         }
-        return users_arr;
+        return null;
     },
     //clears the active_users, for testing purposes
     clear: function(){

@@ -87,7 +87,7 @@ server.listen(3000, function () {
 
     MongoClient.connect(url, function (err, db) {
         if (err) {
-            error_handler('Unable to connect to the server. Error:' + err);
+            console.log('Unable to connect to the server. Error:' + err);
             return;
         }
         database = db;
@@ -138,10 +138,12 @@ io.on('connection', function (socket) {
             console.log(e);
             return;
         }
-        logout(disconnected_user._id, disconnected_user.password, function(user_id){
-            console.log("user with id " + user_id + " logged out due to disconnected")
-            socket.emit('logged_out_due_to_disconnect', {data: null , error: null});
-        }, error_handler)
+        if(disconnected_user != null) {
+            logout(disconnected_user._id, disconnected_user.password, function (user_id) {
+                console.log("user with id " + user_id + " logged out due to disconnected")
+                socket.emit('logged_out_due_to_disconnect', {data: null, error: null});
+            }, error_handler)
+        }
     });
 
     socket.on('register_email_address', function(json) {
