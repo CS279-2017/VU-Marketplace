@@ -140,7 +140,7 @@ io.on('connection', function (socket) {
         }
         if(disconnected_user != null) {
             logout(disconnected_user._id, disconnected_user.password, function (user_id) {
-                console.log("user with id " + user_id + " logged out due to disconnected")
+                console.log("user with id " + disconnected_user._id + " logged out due to disconnected")
                 socket.emit('logged_out_due_to_disconnect', {data: null, error: null});
             }, error_handler)
         }
@@ -753,7 +753,7 @@ function logout(user_id, password, callback, error_handler){
             collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
                 if(err){error_handler(err); return;}
                 console.log(user_id + " info saved to database");
-                console.log(user.email_address + "has logged out");
+                console.log(user.email_address + " has logged out");
                 if(callback != undefined){ callback(); }
             });
                 //update database with new user info
