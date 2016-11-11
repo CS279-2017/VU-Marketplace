@@ -12,7 +12,7 @@ ActiveUsers.prototype = {
     add: function(user){
         if(this.users[user._id] == undefined) {
             this.users[user._id] = user;
-            console.log(this.users[user._id].username + " has been added to ActiveUsers");
+            console.log(this.users[user._id].email_address + " has been added to ActiveUsers");
         }
         else{
             throw {message: "user is already logged in, can't login"}
