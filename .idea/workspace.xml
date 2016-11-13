@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/location.js" afterPath="$PROJECT_DIR$/classes/location.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -27,10 +26,26 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="128">
-              <caret line="1161" column="71" selection-start-line="1161" selection-start-column="70" selection-end-line="1161" selection-end-column="71" />
+            <state relative-caret-position="248">
+              <caret line="825" column="59" selection-start-line="825" selection-start-column="59" selection-end-line="825" selection-end-column="59" />
               <folding />
             </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+            <state split_layout="FIRST">
+              <first_editor relative-caret-position="-45">
+                <caret line="23" column="25" selection-start-line="23" selection-start-column="25" selection-end-line="23" selection-end-column="25" />
+                <folding />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+          <provider editor-type-id="MarkdownFxPreviewEditor">
+            <state />
           </provider>
         </entry>
       </file>
@@ -106,16 +121,6 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="conversation.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/classes/conversation.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="420">
-              <caret line="28" column="5" selection-start-line="28" selection-start-column="5" selection-end-line="28" selection-end-column="5" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="listing_info.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/listing_info.js">
           <provider selected="true" editor-type-id="text-editor">
@@ -165,8 +170,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="152" />
-    <option name="y" value="61" />
+    <option name="x" value="253" />
+    <option name="y" value="25" />
     <option name="width" value="1101" />
     <option name="height" value="742" />
   </component>
@@ -363,21 +368,21 @@
       <workItem from="1478741418616" duration="1406000" />
       <workItem from="1478809028623" duration="5485000" />
       <workItem from="1478836951825" duration="6520000" />
-      <workItem from="1479002534858" duration="160000" />
+      <workItem from="1479002534858" duration="1402000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="259287000" />
+    <option name="totallyTimeSpent" value="260529000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="152" y="61" width="1101" height="742" extended-state="0" />
-    <editor active="false" />
+    <frame x="253" y="25" width="1101" height="742" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2361111" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32668713" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32668713" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890365" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -681,26 +686,6 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/classes/database.js" />
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="362">
-          <caret line="88" column="71" selection-start-line="88" selection-start-column="71" selection-end-line="88" selection-end-column="71" />
-          <folding />
-        </state>
-      </provider>
-      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-        <state split_layout="FIRST">
-          <first_editor relative-caret-position="300">
-            <caret line="23" column="25" selection-start-line="23" selection-start-column="25" selection-end-line="23" selection-end-column="25" />
-            <folding />
-          </first_editor>
-          <second_editor />
-        </state>
-      </provider>
-      <provider editor-type-id="MarkdownFxPreviewEditor">
-        <state />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/message.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
@@ -810,10 +795,30 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider editor-type-id="text-editor">
+        <state relative-caret-position="362">
+          <caret line="88" column="71" selection-start-line="88" selection-start-column="71" selection-end-line="88" selection-end-column="71" />
+          <folding />
+        </state>
+      </provider>
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="-45">
+            <caret line="23" column="25" selection-start-line="23" selection-start-column="25" selection-end-line="23" selection-end-column="25" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+      <provider editor-type-id="MarkdownFxPreviewEditor">
+        <state />
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="128">
-          <caret line="1161" column="71" selection-start-line="1161" selection-start-column="70" selection-end-line="1161" selection-end-column="71" />
+        <state relative-caret-position="248">
+          <caret line="825" column="59" selection-start-line="825" selection-start-column="59" selection-end-line="825" selection-end-column="59" />
           <folding />
         </state>
       </provider>

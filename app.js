@@ -823,6 +823,8 @@ function makeListing(user_id, password, title, description, location, expiration
                     if(docs.length == 1){
                         new_listing.initFromDatabase(docs[0]);
                         try {
+                            console.log("new listing added!")
+                            console.log(new_listing)
                             active_listings.add(new_listing);
                             user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
                         }catch(e){error_handler(e.message)};
