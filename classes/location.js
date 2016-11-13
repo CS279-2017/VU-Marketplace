@@ -10,9 +10,9 @@ function Location(x,y){
 
 Location.prototype = {
     constructor: Location,
-    update: function(x, y){
-        this.x = x;
-        this.y = y;
+    update: function(latitude, longitude){
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.last_update = new Date().getTime();
     }
 }

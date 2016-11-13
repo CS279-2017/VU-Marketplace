@@ -1146,7 +1146,7 @@ function updateUserLocation(user_id, password, new_location, callback, error_han
         if(validateLocation(new_location) == true){
             //transform the ordered pair into a Location object (regardless of whether it was a Location or just a normal
             //object)
-            user.location = new Location(new_location.x, new_location.y);
+            user.location = new Location(new_location.latitude, new_location.longitude);
             callback(user.location);
         }
         else{
