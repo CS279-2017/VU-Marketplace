@@ -102,14 +102,14 @@ server.listen(3000, function () {
         }
         for(var i=0; i<expired_listings_arr.length; i++){
             var listing = expired_listings_arr[i];
-            var user = active_users.get(listing.user_id);
-            console.log(user);
-            console.log(listing);
-            console.log("Expired Listings Before Removal");
+            // var user = active_users.get(listing.user_id);
+            // console.log(user);
+            // console.log(listing);
+            // console.log("Expired Listings Before Removal");
             console.log(active_listings.getExpiredListings());
-            removeListing(user._id, user.password, listing._id, function(listing_id){
-                console.log("Expired Listings After Removal");
-                console.log(active_listings.getExpiredListings());
+            removeListing(listing._id, function(listing_id){
+                // console.log("Expired Listings After Removal");
+                // console.log(active_listings.getExpiredListings());
                 io.emit("listing_removed", {data: {listing_id: listing_id}});
                 console.log("listing with id " + listing_id + " was removed because it has expired");
             }, error_handler);
@@ -249,7 +249,18 @@ io.on('connection', function (socket) {
             socket.emit("remove_listing_response", {data: null, error: e});
             console.log(e);
         }
-        removeListing(user_id, password, listing_id, callback, error_handler)
+        authenticate(user_id, password, function(user){
+            console.log("user authenticated")
+            var listing = active_listings.get(listing_id);
+            console.log(listing)
+            console.log(listing_id);
+            if(listing.user_id.toString() == user_id.toString()){
+                removeListing(listing_id, callback, error_handler)
+            }
+            else{
+                error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
+            }
+        }, error_handler);
     });
     //initiate_transaction_request:
     //1. make the transaction
@@ -849,26 +860,15 @@ function makeListing(user_id, password, title, description, location, expiration
 //4. remove listing_id from user's current listings
 //5. add listing_id to user's previous_listings
 //5. notify all that a listing has been removed
-function removeListing(user_id, password, listing_id, callback, error_handler){
+function removeListing(listing_id, callback, error_handler){
+    var listing = active_listings.get(listing_id);
     console.log("removeListing called");
-    console.log(active_listings);
-    authenticate(user_id, password, function(user){
-        console.log("user authenticated")
-        var listing = active_listings.get(listing_id);
-        console.log(listing)
-        console.log(listing_id);
-        if(listing.user_id.toString() == user_id.toString()){
-            updateListings(listing, function(){
-                active_listings.remove(listing_id);
-                user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
-                // user.addPreviousListingId(listing_id);
-                if(callback != undefined){
-                    callback(listing_id);
-                }
-            }, error_handler);
-        }
-        else{
-            error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
+    updateListings(listing, function(){
+        var user = active_users.get(listing.user_id)
+        active_listings.remove(listing_id);
+        user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
+        if(callback != undefined){
+            callback(listing_id);
         }
     }, error_handler);
 }
