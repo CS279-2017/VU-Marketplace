@@ -106,6 +106,7 @@ server.listen(3000, function () {
             console.log(user);
             console.log(listing);
             removeListing(user._id, user.password, listing._id, function(listing_id){
+                io.emit("listing_removed", {data: {listing_id: listing_id}});
                 console.log("listing with id " + listing_id + " was removed because it has expired");
             }, error_handler);
         }
