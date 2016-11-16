@@ -22,7 +22,7 @@ function error_handler(error){
 //TODO: Transaction
 //TODO: 1. operating on a transaction that doesn't belong to the user
 
-describe.only("User", function() {
+describe("User", function() {
     //NOTE: running this test wipes the users and emails databases
     describe("Registration", function(){
         it("register 26 users", function(done){
@@ -703,7 +703,7 @@ describe("Send message", function(){
     });
 });
 
-describe("Expired Listing Cleaner", function(){
+describe.only("Expired Listing Cleaner", function(){
     it("register two users, user 1 makes 2 listings that expire immediately, wait 10 seconds, see if listings have been cleaned up", function(done){
         var active_transactions = app.getActiveTransactions();
         var active_listings = app.getActiveListings();
@@ -717,13 +717,15 @@ describe("Expired Listing Cleaner", function(){
             var user_id2 = user_id_arr[1];
             var user1 = active_users.get(user_id1);
             var user2 = active_users.get(user_id2);
-            app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime(), 5.00, true, function (listing) {
-                console.log(active_listings)
+            app.makeListing(user_id1, user1.password, "Listing 1", "listing 1", "some location", new Date().getTime() + 4, 5.00, true, function (listing) {
                 assert(active_listings.size(), 1);
-                setTimeout(function(){
-                    assert(active_listings.size() == 0);
-                    done();
-                }, 10000);
+                app.makeListing(user_id1, user1.password, "Listing 2", "listing 2", "some location", new Date().getTime() + 7, 5.00, true, function (listing) {
+                    console.log(active_listings);
+                    setTimeout(function(){
+                        assert(active_listings.size() == 0);
+                        done();
+                    }, 10000);
+                }, error_handler);
             }, error_handler);
         });
     });

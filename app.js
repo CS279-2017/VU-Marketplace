@@ -94,18 +94,22 @@ server.listen(3000, function () {
     });
 
     //remove all expired active_listings once a minute
-    var minutes = .1, interval = minutes * 60 * 1000;
+    var interval = 5000;
     setInterval(function() {
         var expired_listings_arr = active_listings.getExpiredListings();
         function error_handler(e){
             console.log(e)
         }
-        for(var key in expired_listings_arr){
-            var listing = expired_listings_arr[key];
+        for(var i=0; i<expired_listings_arr.length; i++){
+            var listing = expired_listings_arr[i];
             var user = active_users.get(listing.user_id);
             console.log(user);
             console.log(listing);
+            console.log("Expired Listings Before Removal");
+            console.log(active_listings.getExpiredListings());
             removeListing(user._id, user.password, listing._id, function(listing_id){
+                console.log("Expired Listings After Removal");
+                console.log(active_listings.getExpiredListings());
                 io.emit("listing_removed", {data: {listing_id: listing_id}});
                 console.log("listing with id " + listing_id + " was removed because it has expired");
             }, error_handler);
@@ -547,7 +551,7 @@ function registerEmailAddress(email_address, callback, error_handler){
             //adds the verification code and email to database
             insertVerificationCode();
             //TODO: For testing purposes, dont actually send emails!
-            sendEmail(email_address, verification_code);
+            // sendEmail(email_address, verification_code);
         });
         //email address, verified, registered, verification_code
         //generate a random verification code

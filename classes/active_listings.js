@@ -44,8 +44,8 @@ ActiveListings.prototype = {
 
     //TODO: this expired method is called every so many seconds, find a more efficient way
     getExpiredListings:function(){
+        var expired_listings_arr = [];
         for(var key in this.listings){
-            var expired_listings_arr = [];
             var listing = this.listings[key]
             if(listing.isExpired()){
                 expired_listings_arr.push(listing);
