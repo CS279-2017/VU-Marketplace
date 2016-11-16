@@ -40,6 +40,9 @@ ActiveListings.prototype = {
         this.listings = [];
         this.map = {};
     },
+
+
+    //TODO: this expired method is called every so many seconds, find a more efficient way
     getExpiredListings:function(){
         for(var key in this.listings){
             var expired_listings_arr = [];

@@ -31,6 +31,7 @@ ActiveTransactions.prototype = {
         return Object.keys(this.transactions).length
     },
     //gets all transactions involving a user with a given user_id 
+    //TODO: find a better way to perform these searching functions
     getAllForUser: function(user_id){
         var transactions_arr = [];
         for(transaction_id in this.transactions){

@@ -48,6 +48,7 @@ ActiveUsers.prototype = {
         }
         return users_arr;
     },
+    //TODO: find some faster way to search users on socket id, maybe make another hashmap
     getUserBySocketId: function(socket_id){
         for(key in this.users){
             if(this.users[key].socket_id == socket_id){

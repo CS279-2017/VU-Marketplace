@@ -459,8 +459,7 @@ io.on('connection', function (socket) {
     });
     
     socket.on('get_listing', function(json){
-        var user_id = json.user_id;
-        var password = json.password;
+        var listing_id = json.listing_id;
         function callback(listing_info){
             //send all_active_listings back to client
             socket.emit("get_listing_response", {data: {listing_info: listing_info}, error: null});
@@ -469,11 +468,10 @@ io.on('connection', function (socket) {
             socket.emit("get_listing_response", {data: null, error: e});
             console.log(e);
         }
-        getListing(user_id, password, callback, error_handler);
+        getListing(listing_id, callback, error_handler);
     });
     socket.on('get_user', function(json){
         var user_id = json.user_id;
-        var password = json.password;
         function callback(user_info){
             //send all_active_listings back to client
             socket.emit("get_user_response", {data: {user_info: user_info}, error: null});
@@ -482,7 +480,7 @@ io.on('connection', function (socket) {
             socket.emit("get_user_response", {data: null, error: e});
             console.log(e);
         }
-        getUser(user_id, password, callback, error_handler);
+        getUser(user_id, callback, error_handler);
     });
 });
 
