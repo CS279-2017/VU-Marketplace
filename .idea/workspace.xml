@@ -26,8 +26,8 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="120">
-              <caret line="96" column="20" selection-start-line="96" selection-start-column="20" selection-end-line="96" selection-end-column="20" />
+            <state relative-caret-position="139">
+              <caret line="867" column="46" selection-start-line="867" selection-start-column="46" selection-end-line="867" selection-end-column="46" />
               <folding />
             </state>
           </provider>
@@ -164,8 +164,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="97" />
-    <option name="y" value="23" />
+    <option name="x" value="74" />
+    <option name="y" value="56" />
     <option name="width" value="1101" />
     <option name="height" value="742" />
   </component>
@@ -368,10 +368,10 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="268669000" />
+    <option name="totallyTimeSpent" value="270956000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="97" y="23" width="1101" height="742" extended-state="0" />
+    <frame x="74" y="56" width="1101" height="742" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2361111" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -812,8 +812,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="96" column="20" selection-start-line="96" selection-start-column="20" selection-end-line="96" selection-end-column="20" />
+        <state relative-caret-position="139">
+          <caret line="867" column="46" selection-start-line="867" selection-start-column="46" selection-end-line="867" selection-end-column="46" />
           <folding />
         </state>
       </provider>

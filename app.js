@@ -863,14 +863,17 @@ function makeListing(user_id, password, title, description, location, expiration
 function removeListing(listing_id, callback, error_handler){
     var listing = active_listings.get(listing_id);
     console.log("removeListing called");
-    updateListings(listing, function(){
+    //TODO: updateListing removed because mongodb throws an error because of it for some reaosn, fix this later
+    //TODO: all this causes is that removed listings won't have the most up to date info, however since listings are
+    //TODO: never reused, this doesn't matter.
+    // updateListings(listing, function(){
         var user = active_users.get(listing.user_id)
         active_listings.remove(listing_id);
         user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
         if(callback != undefined){
             callback(listing_id);
         }
-    }, error_handler);
+    // }, error_handler);
 }
 
 
