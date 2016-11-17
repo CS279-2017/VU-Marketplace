@@ -94,7 +94,7 @@ server.listen(3000, function () {
     });
 
     //remove all expired active_listings once a minute
-    var interval = 5000;
+    var interval = 1000;
     setInterval(function() {
         var expired_listings_arr = active_listings.getExpiredListings();
         function error_handler(e){
