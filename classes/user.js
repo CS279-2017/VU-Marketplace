@@ -64,10 +64,10 @@ User.prototype = {
         return this.current_listings_ids;
     },
     addCurrentListingId: function(current_listing_id){
-        this.current_listings_ids.push(current_listing_id);
+        this.current_listings_ids.push(current_listing_id.toString());
     },
     removeCurrentListingId: function(current_listing_id){
-        var index = this.current_listings_ids.indexOf(current_listing_id);
+        var index = this.current_listings_ids.indexOf(current_listing_id.toString());
         if(index <= -1){
             throw {message: "listing id " + current_listing_id + " does not exist in current listing ids of user with id " + this._id};
         }
@@ -90,11 +90,11 @@ User.prototype = {
         return this.current_transactions_ids;
     },
     addCurrentTransactionId: function(current_transaction_id){
-        this.current_transactions_ids.push(current_transaction_id);  
+        this.current_transactions_ids.push(current_transaction_id.toString());
     },
     removeCurrentTransactionId: function(current_transaction_id){
         console.log(this);
-        var index = this.current_transactions_ids.indexOf(current_transaction_id);
+        var index = this.current_transactions_ids.indexOf(current_transaction_id.toString());
         if(index <= -1){
             throw {message: "transaction id " + current_transaction_id + " does not exist in current transactions ids of user with id " + this._id};
         }

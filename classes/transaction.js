@@ -49,6 +49,8 @@ var Transaction = function() {
         this.buyer_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
         this.seller_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
         //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
+
+        this.active = true;
     }
 
     function verifyTransactionNotActivatedThenSetAcceptRequest(user_id, value) {
@@ -155,24 +157,30 @@ var Transaction = function() {
             //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
             //we must use the call function in order to pass 'this' object to private function verifyTransactionNotActivated
             verifyTransactionNotActivatedThenSetAcceptRequest.call(this, user_id, false);
+            this.active = false;
         },
 
         confirm: function (user_id) {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
             //TODO: set the confirm to true for the appropriate user
             verifyTransactionActiveThenSetConfirmed.call(this, user_id, true);
+            if(isCompleted()){
+                this.active = false;
+            }
         },
         reject: function (user_id) {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
             //TODO: set the confirm to false for the appropriate user
             verifyTransactionActiveThenSetConfirmed.call(this, user_id, false);
+            this.active = false;
         },
         //returns whether transaction has been initiated
         isActive: function () {
-            var accepted = this.buyer_accepted_request && this.seller_accepted_request
-            var notRejected =  this.buyer_confirmed_meet_up != false && this.seller_confirmed_meet_up != false;
-            var notConfirmed = !(this.buyer_confirmed_meet_up == true && this.seller_confirmed_meet_up == true);
-            return accepted && notRejected && notConfirmed;
+            return this.active;
+            // var accepted = this.buyer_accepted_request && this.seller_accepted_request
+            // var notRejected =  this.buyer_confirmed_meet_up != false && this.seller_confirmed_meet_up != false;
+            // var notConfirmed = !(this.buyer_confirmed_meet_up == true && this.seller_confirmed_meet_up == true);
+            // return accepted && notRejected && notConfirmed;
         },
         //TODO: watch out for when both users confirm at the same time.
         isCompleted: function () {

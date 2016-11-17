@@ -15,6 +15,7 @@ var Listing = function() {
         this.price = price;
         this.buy = buy; //true or false whether this is a buy listing
         this.transaction_id = null;
+        this.active = true;
     }
 
     Listing.prototype = {

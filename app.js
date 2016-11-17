@@ -127,12 +127,12 @@ app.get('/', function (req, res) {
     res.send('Hello World!');
 });
 
-//TODO: when a user connects check if they are logged in, if not then tell them to login
+//TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
 io.on('connection', function (socket) {
     console.log("user has connected!");
     socket.emit('event', { data: 'server data' });
-    //TODO: should active_listings and transactions be terminated?
-    //TODO: log a user out only after they've been disconnected for 30 seconds
+    //TODO: should active_listings and transactions be terminated? no unless terminated by other party
+    //TODO: should user be logged out when disconnected? maybe
     //log the user out on disconnect
     //send 'logged_out_due_to_disconnect' event to user
     socket.on('disconnect', function() {
@@ -215,6 +215,13 @@ io.on('connection', function (socket) {
         logout(user_id, password, callback, error_handler);
     });
 
+
+    //TODO: the following API calls may involve message queues where he receiver of the message is offline
+    //TODO: or currently unavailable to respond to the message, in that case the message must be saved
+    //TODO: until the receiver is ready
+
+    //TODO: max number of listings per user?
+    //tODO: multiple listings of the same title?
     socket.on('make_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -236,6 +243,8 @@ io.on('connection', function (socket) {
         makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
     });
 
+    //TODO: what happens if a you try to remove a listing that transactions have been made from?
+    //TODO: what about trying to remove a listing where a transaction has already started?
     socket.on('remove_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -266,6 +275,11 @@ io.on('connection', function (socket) {
     //1. make the transaction
     //2. send transaction_request to user who owns the listing
     //3. await response from user
+
+    //TODO: making a transaction from a listing that is being removed i.e no longer exists
+    //TODO: making a transaction with a user that is offline or disconnected
+    //TODO: multiple transactions can be made on a single listing
+    //TODO: max number of transactions per user?
    socket.on('make_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -273,6 +287,7 @@ io.on('connection', function (socket) {
         function callback(transaction){
             //send transaction request to other user first then notify calling user of success
             try {
+                //Sends message to other user that a transaction has been made on their listing
                 var other_user = transaction.getOtherUser(user_id);
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
                 other_user_socket.emit("transaction_request_made", {data: {user_id: user_id, listing_id: listing_id}, error: null})
@@ -291,6 +306,9 @@ io.on('connection', function (socket) {
         makeTransactionRequest(user_id, password, listing_id, callback, error_handler);
     });
 
+    //TODO: accepting a transaction that's already been accepted
+    //TODO: accepting a transaction request on a transaction that no longer exists (there is no request object, only a transaction object) can the other user cancel a transaction requesT?
+    //TODO: max number of transactions per user?
     socket.on('accept_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -317,6 +335,9 @@ io.on('connection', function (socket) {
         acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler)
     });
 
+    //TODO: declining a transaction that no longer exists
+    //TODO: declining a transaction on a listing that no longer exists (i.e has been been accepted or removed)
+    //TODO: does this destroy the transaction? yes
     socket.on('decline_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -341,6 +362,8 @@ io.on('connection', function (socket) {
         declineTransactionRequest(user_id, password, transaction_id, callback, error_handler)
     });
 
+    //TODO: confirming a transaction that doesn't exist i.e not in active_transactions
+    //TODO: confirming a transaction thats already confirmed
    socket.on('confirm_transaction', function(json){
        var user_id = json.user_id;
        var password = json.password;
@@ -373,6 +396,8 @@ io.on('connection', function (socket) {
        confirmTransaction(user_id, password, transaction_id, callback, error_handler);
    });
 
+    //TODO: rejecting a transaction thats already been rejected
+    //TODO: rejecting a transaction that doesn't exist
    socket.on('reject_transaction', function(json){
        var user_id = json.user_id;
        var password = json.password;
@@ -404,6 +429,8 @@ io.on('connection', function (socket) {
     //1. tells client that their location has been successfully updated
     //*if successful update, then emit event to all clients in a transaction with this user that their location has changed
     //2. or sends error
+    //TODO: trying to update a location for a user that is offline
+    //TODO:
     socket.on('update_user_location', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -801,7 +828,9 @@ function authenticate(user_id, password, callback, error_handler){
 //2. add listing to database,
 //3. add listing to active_listings
 //4. add listing_id to user's current_listings
-//4. notify all that a new listing has been added 
+//5. notify all that a new listing has been added 
+
+//TODO: save the listing state i.e bool called active so that upon server crash, active_listings can be restored
 function makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler){
     authenticate(user_id, password, function(user){
         if(!validateTitle(title)){
@@ -860,26 +889,37 @@ function makeListing(user_id, password, title, description, location, expiration
 //4. remove listing_id from user's current listings
 //5. add listing_id to user's previous_listings
 //5. notify all that a listing has been removed
+
+//TODO: update the listing upon removal, i.e set active to false
 function removeListing(listing_id, callback, error_handler){
     var listing = active_listings.get(listing_id);
     console.log("removeListing called");
     //TODO: updateListing removed because mongodb throws an error because of it for some reaosn, fix this later
     //TODO: all this causes is that removed listings won't have the most up to date info, however since listings are
     //TODO: never reused, this doesn't matter.
-    // updateListings(listing, function(){
-        var user = active_users.get(listing.user_id)
-        active_listings.remove(listing_id);
-        user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
-        if(callback != undefined){
-            callback(listing_id);
-        }
-    // }, error_handler);
+    if(listing != undefined) {
+        listing.active = false; //deactivate the listing
+        updateListings(listing, function () {
+            var user = active_users.get(listing.user_id)
+            active_listings.remove(listing_id);
+            if (user != undefined) { //in case user has already logged out
+                user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
+            }
+            if (callback != undefined) {
+                callback(listing_id);
+            }
+        }, error_handler);
+    }
 }
 
 
 //makes a transaction from a listing and sends a transaction_request to the owner of the listing
 //adds transaction to the current_Transaction of initator
 //note we handle sending transaction request part in the router, since router has access to socket
+
+//TODO: save the transaction state, so active_transactions can be restored upon server crash
+//TODO: set active to true
+
 function makeTransactionRequest(user_id, password, listing_id, callback, error_handler){
     authenticate(user_id, password, function(user) {
         makeTransaction(user_id, listing_id, function (transaction) {
@@ -1009,18 +1049,27 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         }
         listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
         //update listing in database
-        updateListings(listing, function(){
-            active_listings.remove(transaction.listing_id);
-            //add transaction to current transaction of accepting user, user object returned by authenticate
-            user.addCurrentTransactionId(transaction_id);
-            //since transaction has started remove the listing from the current listing of the user
-            var listingOwner = active_users.get(user._id);
-            listingOwner.removeCurrentListingId(listing._id);
-            //send message to both users that transaction has begun
-            // sendTransactionStartedMessage(transaction, function(){
-                callback(transaction);
-            // }, error_handler);
-        });
+        removeListing(transaction.listing_id, function(){
+            if(user != undefined) { //in case user has logged out
+                user.addCurrentTransactionId(transaction_id);
+            }
+        }, error_handler)
+        // updateListings(listing, function(){
+        //     active_listings.remove(transaction.listing_id);
+        //     //add transaction to current transaction of accepting user, user object returned by authenticate
+        //     if(user != undefined) { //in case user has logged out
+        //         user.addCurrentTransactionId(transaction_id);
+        //     }
+        //     //since transaction has started remove the listing from the current listing of the user
+        //     //this is already taken care of in removeListing
+        //     // var listingOwner = active_users.get(user._id);
+        //     // if(listingOwner)
+        //     // listingOwner.removeCurrentListingId(listing._id);
+        //     //send message to both users that transaction has begun
+        //     // sendTransactionStartedMessage(transaction, function(){
+        //         callback(transaction);
+        //     // }, error_handler);
+        // });
 
 
     }, error_handler);
@@ -1031,6 +1080,8 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
 //6. update transaction in transaction database
 //7. remove transaction from active_transactions
 //8. message user that initiated request that their transaction has been declined
+
+//TODO: set active to false
 function declineTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
@@ -1075,6 +1126,8 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
 //4. check if the transaction ahs completed, sendTransactionCompletedMessage To Users
 //5. update transaction in database
 //6. remove transaction from active_transactions
+
+//TODO: set active to false
 function confirmTransaction(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
@@ -1116,6 +1169,8 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
 //2. get transaction, same as above
 //3. reject the transaction (call reject on the transaction), passing in user_id
 //4. check if transaction has completed, if so run appropriate methods
+
+//TODO: set active to false
 function rejectTransaction(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
@@ -1254,7 +1309,7 @@ function getListing(listing_id, callback, error_handler){
 
 function updateTransactions(transaction, callback, error_handler){
     var collection_transactions = database.collection('transactions');
-    collection_transactions.update({_id: transaction._id}, transaction, function (err, count, status) {
+    collection_transactions.update({_id: transaction._id}, transaction, {upsert: true}, function (err, count, status) {
         if(err){error_handler(err.message);}
         else{
             if(callback != undefined && callback != null){callback();}
@@ -1264,7 +1319,7 @@ function updateTransactions(transaction, callback, error_handler){
 
 function updateListings(listing, callback, error_handler){
     var collection_listings = database.collection('listings');
-    collection_listings.update({_id: listing._id}, listing, function (err, count, status) {
+    collection_listings.update({_id: listing._id}, listing, {upsert: true}, function (err, count, status) {
         if(err){error_handler(err.message);}
         else{
             if(callback != undefined && callback != null){callback();}

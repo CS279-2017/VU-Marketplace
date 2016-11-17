@@ -703,7 +703,7 @@ describe("Send message", function(){
     });
 });
 
-describe.only("Expired Listing Cleaner", function(){
+describe("Expired Listing Cleaner", function(){
     it("register two users, user 1 makes 2 listings that expire immediately, wait 10 seconds, see if listings have been cleaned up", function(done){
         var active_transactions = app.getActiveTransactions();
         var active_listings = app.getActiveListings();
