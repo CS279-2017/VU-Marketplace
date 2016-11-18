@@ -1,5 +1,7 @@
 module.exports = ActiveListings;
 
+var Listing = require("./listing.js");
+
 function ActiveListings(){
     //maintain a listings array so that listings are listed in some sequence
     this.listings = [];
@@ -10,6 +12,14 @@ function ActiveListings(){
 //always create transaction before deleting listing
 ActiveListings.prototype = {
     constructor: ActiveListings,
+    initFromDatabase: function(active_listings){
+        for(var listing in active_listings){
+            var new_listing = new Listing();
+            new_listing.initFromDatabase(listing);
+            this.listings.push(new_listing);
+            this.map[new_listing._id] = new_listing; 
+        }
+    },
     //add listing to both the array and the map (map is indexed by _id of listing)
     add: function(listing) {
         this.listings.push(listing);

@@ -31,6 +31,8 @@ var Listing = function() {
             this.price = listing.price;
             this.buy = listing.buy;
             this.transaction_id = listing.transaction_id;
+            
+            this.active = listing.active;
         },
         makeTransaction: function (user_initiate_id) {
             //user_intitate_id is the id of the user that clicks on the listing i.e initiates the transaction

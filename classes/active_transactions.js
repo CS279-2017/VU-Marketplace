@@ -1,5 +1,4 @@
-module.exports = ActiveTransactions;
-
+var Transaction = require("./transaction.js");
 //current active transactions, adds a transaction to database when a transaction is initiated
 //remove transaction from active_transactions when it has completed or has been declined and never intiated
 //transactions database contains both complete and incomplete transactions (can use Transaction variables to determine
@@ -11,6 +10,13 @@ function ActiveTransactions(){
 
 ActiveTransactions.prototype = {
     constructor: ActiveTransactions,
+    initFromDatabase: function(active_transactions){
+        for(var i = 0; i<active_transactions.length; i++){
+            var new_transaction = new Transaction();
+            new_transaction.initFromDatabase(active_transactions[i]);
+            this.transactions[new_transaction._id] = new_transaction;
+        }
+    },
     add: function(transaction){
         this.transactions[transaction._id] = transaction;
     },
@@ -30,7 +36,7 @@ ActiveTransactions.prototype = {
     size: function(){
         return Object.keys(this.transactions).length
     },
-    //gets all transactions involving a user with a given user_id 
+    //gets all transactions involving a user with a given user_id
     //TODO: find a better way to perform these searching functions
     getAllForUser: function(user_id){
         var transactions_arr = [];
@@ -65,3 +71,5 @@ ActiveTransactions.prototype = {
         this.transactions = {};
     },
 }
+
+module.exports = ActiveTransactions;

@@ -91,30 +91,25 @@ server.listen(3000, function () {
             return;
         }
         database = db;
+        
+        //restore all active_listings and active_transactions
+        getActiveListingsFromDatabase(function(listings){
+            active_listings.initFromDatabase(listings);
+        }, function(error){
+            console.log(error);
+        });
+
+        getActiveTransactionsFromDatabase(function(transactions){
+            active_transactions.initFromDatabase(transactions);
+            // console.log(active_transactions.getAll());
+        }, function(error){
+            console.log(error);
+        });
+        
     });
 
     //remove all expired active_listings once a minute
-    var interval = 1000;
-    setInterval(function() {
-        var expired_listings_arr = active_listings.getExpiredListings();
-        function error_handler(e){
-            console.log(e)
-        }
-        for(var i=0; i<expired_listings_arr.length; i++){
-            var listing = expired_listings_arr[i];
-            // var user = active_users.get(listing.user_id);
-            // console.log(user);
-            // console.log(listing);
-            // console.log("Expired Listings Before Removal");
-            console.log(active_listings.getExpiredListings());
-            removeListing(listing._id, function(listing_id){
-                // console.log("Expired Listings After Removal");
-                // console.log(active_listings.getExpiredListings());
-                io.emit("listing_removed", {data: {listing_id: listing_id}});
-                console.log("listing with id " + listing_id + " was removed because it has expired");
-            }, error_handler);
-        }
-    }, interval);
+    initExpiredListingGarbageCollector(1000);
 
     try {
 
@@ -228,6 +223,7 @@ io.on('connection', function (socket) {
                 while (user.event_queue.count > 0) {
                     var event = user.dequeueEvent();
                     socket.emit(event.name, event.message);
+                    console.log(socket.name + " emitted from event queue with data "+event.message.toString())
                 }
             }
         }
@@ -355,8 +351,19 @@ io.on('connection', function (socket) {
                 var seller = active_users.get(transaction.seller_user_id);
                 var buyer_socket = io.sockets.connected[buyer.socket_id];
                 var seller_socket = io.sockets.connected[seller.socket_id];
-                buyer_socket.emit("transaction_started", {transaction: transaction});
-                seller_socket.emit("transaction_started", {transaction: transaction});
+                var event = new Event("transaction_started", {transaction: transaction} , null)
+                if(buyer_socket != null) {
+                    buyer_socket.emit(event.name , event.message);
+                }
+                else{
+                    buyer.enqueueEvent(event);
+                }
+                if(seller_socket != null) {
+                    seller_socket.emit(event.name , event.message);
+                }
+                else{
+                    seller.enqueueEvent(event);
+                }
             }catch(e){
                 console.log(e);
                 return;
@@ -380,7 +387,13 @@ io.on('connection', function (socket) {
             try {
                 var other_user = transaction.getOtherUser(user_id);
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
-                other_user_socket.emit("transaction_declined", {data: {transaction_id: transaction._id}, error: null})
+                var event = new Event("transaction_declined", {transaction_id: transaction._id}, null);
+                if(other_user_socket != null) {
+                    other_user_socket.emit(event.name , event.message);
+                }
+                else{
+                    other_user.enqueueEvent(event);
+                }
             }catch(e){
                 console.log(e);
                 return;
@@ -1132,6 +1145,7 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
             error_handler(e.message);
             return;
         }
+        transaction.active = false;
         //update transaction in database before deleting it so we have a record of the failed transaction
         updateTransactions(transaction, function(){
             //send message to user that initiated request that request was declined
@@ -1180,6 +1194,7 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         console.log("checking is Confirmed inside transaction");
         console.log("isCompleted() == " + transaction.isCompleted());
         if(transaction.isCompleted() == true){
+            transaction.active = false;
             updateTransactions(transaction, function(){
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
@@ -1218,6 +1233,7 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
             error_handler(e.message);
             return;
         }
+            transaction.active = false; 
         // sendTransactionRejectedMessage(transaction, function(){
             updateTransactions(transaction, function(){
                 var user1 = active_users.get(transaction.buyer_user_id);
@@ -1361,10 +1377,49 @@ function updateListings(listing, callback, error_handler){
     });
 }
 
+function getActiveListingsFromDatabase(callback, error_handler){
+    var collection_listings = database.collection('listings');
+    collection_listings.find({active: true}).toArray(function(err, docs){
+        if(err){error_handler(err.message);}
+        else{callback(docs);}
+    });
+}
+
+function getActiveTransactionsFromDatabase(callback, error_handler){
+    var collection_transactions = database.collection('transactions');
+    // console.log(collection_transactions);
+    collection_transactions.find({active: true}).toArray(function(err, docs){
+        if(err){error_handler(err.message);}
+        else{callback(docs);}
+    });
+}
+
 //**********************************
 //**END Client->Server API methods**
 //**********************************
 
+function initExpiredListingGarbageCollector(interval_in_milliseconds){
+    setInterval(function() {
+        var expired_listings_arr = active_listings.getExpiredListings();
+        function error_handler(e){
+            console.log(e)
+        }
+        for(var i=0; i<expired_listings_arr.length; i++){
+            var listing = expired_listings_arr[i];
+            // var user = active_users.get(listing.user_id);
+            // console.log(user);
+            // console.log(listing);
+            // console.log("Expired Listings Before Removal");
+            console.log(active_listings.getExpiredListings());
+            removeListing(listing._id, function(listing_id){
+                // console.log("Expired Listings After Removal");
+                // console.log(active_listings.getExpiredListings());
+                io.emit("listing_removed", {data: {listing_id: listing_id}});
+                console.log("listing with id " + listing_id + " was removed because it has expired");
+            }, error_handler);
+        }
+    }, interval_in_milliseconds);
+}
 // function recoverUsername(email_address){
 //     //TODO: implement details below
 //     //query User database for user with the given email address

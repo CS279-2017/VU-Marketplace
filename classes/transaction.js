@@ -21,36 +21,41 @@ var Transaction = function() {
         //TODO: we can easily look up any id in the 'active' data structure or if not present then in the database
         //if the above two are null or if listing is null/undefined then transaction fails, ie every transaction must be created
         //from an active listing
-        if (listing == null || listing == undefined) {
-            throw {message: "transaction cannot be created from a listing that is " + listing};
-        }
-        if(user_buy_id.toString() == user_sell_id.toString()){
-            console.log(user_buy_id);
-            console.log(user_sell_id);
-            throw {message: "user with id " + user_buy_id + " tried to create a transaction with himself"};
-        }
-        this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
-        this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
-        this.price = listing.price
-        this.buyer_user_id = user_buy_id; //_id of User
-        this.seller_user_id = user_sell_id; //_id of Seller
-        this.buy = listing.buy;
-        this.listing_id = listing._id; //listing_id
-        this.conversation = new Conversation();
-        if (listing.buy == true) {
-            this.buyer_accepted_request = null;
-            this.seller_accepted_request = true;
-        }
-        else {
-            this.buyer_accepted_request = true;
-            this.seller_accepted_request = null;
-        } //booling containing with user_buy and user_sell have accepted the request, user that creates the transaction will
-        // set the bool to yes automatically
-        this.buyer_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
-        this.seller_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
-        //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
+        // if (listing == null || listing == undefined) {
+        //     throw {message: "transaction cannot be created from a listing that is " + listing};
+        // }
+        if (user_buy_id != undefined && user_sell_id != undefined) {
 
-        this.active = true;
+            if (user_buy_id.toString() == user_sell_id.toString()) {
+                console.log(user_buy_id);
+                console.log(user_sell_id);
+                throw {message: "user with id " + user_buy_id + " tried to create a transaction with himself"};
+            }
+        }
+        if(listing != undefined) {
+            this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
+            this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
+            this.price = listing.price
+            this.buyer_user_id = user_buy_id; //_id of User
+            this.seller_user_id = user_sell_id; //_id of Seller
+            this.buy = listing.buy;
+            this.listing_id = listing._id; //listing_id
+            this.conversation = new Conversation();
+            if (listing.buy == true) {
+                this.buyer_accepted_request = null;
+                this.seller_accepted_request = true;
+            }
+            else {
+                this.buyer_accepted_request = true;
+                this.seller_accepted_request = null;
+            } //booling containing with user_buy and user_sell have accepted the request, user that creates the transaction will
+            // set the bool to yes automatically
+            this.buyer_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
+            this.seller_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
+            //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
+
+            this.active = true;
+        }
     }
 
     function verifyTransactionNotActivatedThenSetAcceptRequest(user_id, value) {
@@ -125,6 +130,8 @@ var Transaction = function() {
             this.seller_accepted_request = transaction.seller_accepted_request;
             this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
             this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
+            
+            this.active = transaction.active;
         },
         //user is an instance of the user that's sending the message
         sendMessage: function (user, text) {
