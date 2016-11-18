@@ -117,12 +117,12 @@ var Transaction = function() {
     Transaction.prototype = {
         constructor: Transaction,
         initFromDatabase: function (transaction) {
-            this._id = transaction._id
+            this._id = transaction._id.toString()
             this.title = transaction.title;
             this.description = transaction.description;
             this.price = transaction.price
-            this.buyer_user_id = transaction.buyer_user_id;
-            this.seller_user_id = transaction.seller_user_id; //_id of Seller
+            this.buyer_user_id = transaction.buyer_user_id
+            this.seller_user_id = transaction.seller_user_id.toString(); //_id of Seller
             this.buy = transaction.buy
             this.listing_id = transaction.listing_id; //listing_id
             this.conversation = new Conversation(transaction.conversation);

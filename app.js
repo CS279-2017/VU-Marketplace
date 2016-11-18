@@ -95,13 +95,14 @@ server.listen(3000, function () {
         //restore all active_listings and active_transactions
         getActiveListingsFromDatabase(function(listings){
             active_listings.initFromDatabase(listings);
+            console.log(active_listings.getAll());
         }, function(error){
             console.log(error);
         });
 
         getActiveTransactionsFromDatabase(function(transactions){
             active_transactions.initFromDatabase(transactions);
-            // console.log(active_transactions.getAll());
+            console.log(active_transactions.getAll());
         }, function(error){
             console.log(error);
         });

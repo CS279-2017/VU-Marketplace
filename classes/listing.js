@@ -22,7 +22,7 @@ var Listing = function() {
         constructor: Listing,
         initFromDatabase: function (listing) {
             this._id = listing._id;
-            this.user_id = listing.user_id;
+            this.user_id = listing.user_id
             this.title = listing.title;
             this.description = listing.description;
             this.location = listing.location;

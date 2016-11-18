@@ -13,8 +13,10 @@ function ActiveListings(){
 ActiveListings.prototype = {
     constructor: ActiveListings,
     initFromDatabase: function(active_listings){
-        for(var listing in active_listings){
+        for(var i=0; i<active_listings.length; i++){
+            var listing = active_listings[i]
             var new_listing = new Listing();
+            console.log(listing);
             new_listing.initFromDatabase(listing);
             this.listings.push(new_listing);
             this.map[new_listing._id] = new_listing; 
