@@ -143,12 +143,13 @@ io.on('connection', function (socket) {
             console.log(e);
             return;
         }
-        if(disconnected_user != null) {
-            logout(disconnected_user._id, disconnected_user.password, function (user_id) {
-                console.log("user with id " + disconnected_user._id + " logged out due to disconnected")
-                socket.emit('logged_out_due_to_disconnect', {data: null, error: null});
-            }, error_handler)
-        }
+        //TODO: don't logout upon disconnect 
+        // if(disconnected_user != null) {
+        //     logout(disconnected_user._id, disconnected_user.password, function (user_id) {
+        //         console.log("user with id " + disconnected_user._id + " logged out due to disconnected")
+        //         socket.emit('logged_out_due_to_disconnect', {data: null, error: null});
+        //     }, error_handler)
+        // }
     });
 
     socket.on('register_email_address', function(json) {
@@ -219,7 +220,6 @@ io.on('connection', function (socket) {
     socket.on('authenticate', function(json){
         var user_id = json.user_id;
         var password = json.password;
-        console.log("authenticate called!");
 
         function callback(){
             socket.emit('authenticate_response', {data: null, error: null});
