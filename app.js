@@ -508,6 +508,39 @@ io.on('connection', function (socket) {
         updateUserLocation(user_id, password, new_location, callback, error_handler)
     });
 
+    socket.on('update_venmo_id', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var venmo_id = json.venmo_id;
+        function callback(updated_venmo_id){
+            socket.emit("update_venmo_id_response", {data: {updated_venmo_id: updated_venmo_id}, error: null});
+            //notify all users, or all users in the same transaction with user whose venmo_id was updated,
+            var user = active_users.get(user_id);
+            console.log(user);
+            var current_transaction_ids = user.current_transactions_ids;
+            try {
+                for (var key in current_transaction_ids) {
+                    var transaction_id = current_transaction_ids[key];
+                    var transaction = active_transactions.get(transaction_id);
+                    var other_user = transaction.getOtherUser(user_id);
+                    var other_user_socket = io.sockets.connected[other_user.socket_id];
+                    other_user_socket.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id, updated_location: updated_location}, error: null});
+                }
+            }catch(e){
+                console.log(e);
+                error_handler(e);
+                return;
+            }
+        }
+        function error_handler(e){
+            socket.emit("update_venmo_id_response", {data: null, error: e});
+            console.log(e);
+        }
+        authenticate(user_id, password, function(user){
+            updateVenmoId(user_id, venmo_id, callback, error_handler)
+        })
+    });
+
     socket.on('send_chat_message', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -1267,6 +1300,17 @@ function updateUserLocation(user_id, password, new_location, callback, error_han
             error_handler("the location passed to update_user_location is invalid");
         }
     }, error_handler)
+}
+
+function updateVenmoId(user_id, venmo_id, callback, error_handler) {
+    var user = active_users.get(user_id);
+    if (user != undefined) {
+        user.venmo_id = venmo_id;
+        callback(venmo_id);
+    }
+    else{
+        error_handler("user is undefined i.e not logged in, cannot set venmo_id");
+    }
 }
 
 //1. authenticate
