@@ -215,6 +215,23 @@ io.on('connection', function (socket) {
         logout(user_id, password, callback, error_handler);
     });
 
+    //authenticates user_id and password info and sends back confirmation if valid
+    socket.on('authenticate', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        console.log("authenticate called!");
+
+        function callback(){
+            socket.emit('authenticate_response', {data: null, error: null});
+        }
+
+        function error_handler(e){
+            socket.emit('authenticate_response', {data: null, error:e});
+            console.log(e);
+        }
+        authenticate(user_id, password, callback, error_handler);
+    })
+
 
     //TODO: the following API calls may involve message queues where he receiver of the message is offline
     //TODO: or currently unavailable to respond to the message, in that case the message must be saved
@@ -276,6 +293,8 @@ io.on('connection', function (socket) {
     //2. send transaction_request to user who owns the listing
     //3. await response from user
 
+    //TODO: make a message queue of transaction_request_made events to send to user if user is disconnected
+    //TODO: can send push notifications to user
     //TODO: making a transaction from a listing that is being removed i.e no longer exists
     //TODO: making a transaction with a user that is offline or disconnected
     //TODO: multiple transactions can be made on a single listing
@@ -295,7 +314,6 @@ io.on('connection', function (socket) {
                 error_handler(e.message)
                 return;
             }
-
             socket.emit("make_transaction_request_response", {data: null, error: null});
             //notify user that owns listing that a user has requested a transaction
         }
