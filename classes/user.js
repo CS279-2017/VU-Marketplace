@@ -21,6 +21,7 @@ function User(first_name, last_name, password, email){
 
     this.location = null; // not saved onto db
     this.logged_in = null; //not saved onto db
+    this.event_queue = [];
 }
 
 User.prototype = {
@@ -37,31 +38,18 @@ User.prototype = {
         this.venmo_id = user.venmo_id;
         this.socket_id = null;
         this.current_listings_ids = user.current_listings_ids;
-        this.previous_listings_ids = user.previous_listings_ids;
+        // this.previous_listings_ids = user.previous_listings_ids;
         this.current_transactions_ids = user.current_transactions_ids
-        this.previous_transactions_ids = user.previous_transactions_ids;
-    },
-    getId: function(){
-        return this._id;
-    },
-    getUsername: function(){
-        return this.username;
-    },
-    getPassword: function(){
-        return this.password;
-    },
-    getEmailAddress: function(){
-        return this.email_address;
-    },
-    getVenmoId: function(){
-        return this.venmo_id;
-    },
-    setVenmoId: function(venmo_id){
-        this.venmo_id = venmo_id;
-        //some function that does an update in the db in table Users
-    },
-    getCurrentListingsIds: function(){
-        return this.current_listings_ids;
+        // this.previous_transactions_ids = user.previous_transactions_ids;
+        
+        //initializes the event queue using data passed from database
+        if(user.event_queue != undefined) {
+            for (var i = 0; i < user.event_queue.count; i++) {
+                var event = user.event_queue[i];
+                user.event_queue[i] = new Event(event.name, event.message.data, event.message.error);
+            }
+        }
+        this.event_queue = user.event_queue;
     },
     addCurrentListingId: function(current_listing_id){
         this.current_listings_ids.push(current_listing_id.toString());
@@ -73,22 +61,16 @@ User.prototype = {
         }
         this.current_listings_ids.splice(index, 1);
     },
-    getPreviousListingsIds: function(){
-        return this.previous_listings_ids;
-    },
-    addPreviousListingId: function(previous_listing_id){
-        this.previous_listings_ids.push(previous_listing_id);
-    },
-    removePreviousListingId: function(previous_listing_id){
-        var index = this.previous_listings_ids.indexOf(previous_listing_id);
-        if(index <= -1){
-            throw {message: "listing id " + previous_listing_id + " does not exist in previous listings ids of user with id " + this._id};
-        }
-        this.previous_listings_ids.splice(index, 1);
-    },
-    getCurrentTransactionIds: function(){
-        return this.current_transactions_ids;
-    },
+    // addPreviousListingId: function(previous_listing_id){
+    //     this.previous_listings_ids.push(previous_listing_id);
+    // },
+    // removePreviousListingId: function(previous_listing_id){
+    //     var index = this.previous_listings_ids.indexOf(previous_listing_id);
+    //     if(index <= -1){
+    //         throw {message: "listing id " + previous_listing_id + " does not exist in previous listings ids of user with id " + this._id};
+    //     }
+    //     this.previous_listings_ids.splice(index, 1);
+    // },
     addCurrentTransactionId: function(current_transaction_id){
         this.current_transactions_ids.push(current_transaction_id.toString());
     },
@@ -100,29 +82,35 @@ User.prototype = {
         }
         this.current_transactions_ids.splice(index, 1);
     },
-    getPreviousTransactionsIds: function(){
-        return this.previous_transactions_ids;
-    },
-    addPreviousTransactionId: function(previous_transaction_id){
-        this.previous_transactions_ids.add(previous_transaction_id);
-    },
-    removePreviousTransactionId: function(previous_transaction_id){
-        var index = this.previous_transactions_ids.indexOf(previous_transaction_id);
-        if(index <= -1){
-            throw {message: "transaction id " + previous_transaction_id+ " does not exist in previous transaction ids of user with id " + this._id};
-        }
-        this.previous_transactions_ids.splice(index, 1);
-    },
-    makeListing: function(title, description, location, expiration_time, price, buy){
-        var creation_time = new Date(); //should we use Date? Can date we converted to JSON and then converted back to date?
-        // how should we determine id of new listing? should we pass it in as a parameter?
-        return new Listing (this._id, title, description, location, creation_time, expiration_time, price, buy)
-        //location might have to be modified into appropriate structure
-    },
+    // addPreviousTransactionId: function(previous_transaction_id){
+    //     this.previous_transactions_ids.add(previous_transaction_id);
+    // },
+    // removePreviousTransactionId: function(previous_transaction_id){
+    //     var index = this.previous_transactions_ids.indexOf(previous_transaction_id);
+    //     if(index <= -1){
+    //         throw {message: "transaction id " + previous_transaction_id+ " does not exist in previous transaction ids of user with id " + this._id};
+    //     }
+    //     this.previous_transactions_ids.splice(index, 1);
+    // },
+    // makeListing: function(title, description, location, expiration_time, price, buy){
+    //     var creation_time = new Date(); //should we use Date? Can date we converted to JSON and then converted back to date?
+    //     // how should we determine id of new listing? should we pass it in as a parameter?
+    //     return new Listing (this._id, title, description, location, creation_time, expiration_time, price, buy)
+    //     //location might have to be modified into appropriate structure
+    // },
     //TODO: make Transaction should call make Transaction on the listing
-    makeTransaction:function(listing){
-        //TODO:
-        return listing.makeTransaction(this._id);
+    // makeTransaction:function(listing){
+    //     //TODO:
+    //     return listing.makeTransaction(this._id);
+    //
+    // }
 
+    enqueueEvent: function(event){
+        this.event_queue.push(event);
+    },
+    dequeueEvent: function(){
+        var top_event = event_queue[0];
+        this.event_queue.shift();
+        return top_event;
     }
 }

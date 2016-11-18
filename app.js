@@ -143,7 +143,7 @@ io.on('connection', function (socket) {
             console.log(e);
             return;
         }
-        //TODO: don't logout upon disconnect 
+        //TODO: don't logout upon disconnect
         // if(disconnected_user != null) {
         //     logout(disconnected_user._id, disconnected_user.password, function (user_id) {
         //         console.log("user with id " + disconnected_user._id + " logged out due to disconnected")
@@ -191,7 +191,7 @@ io.on('connection', function (socket) {
         var callback = function(user){
             //send user_id back to user
             //notify necessary clients that a user has logged in
-            user.socket_id = socket.id; //store the socket_id of the user
+            user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
             socket.emit("login_response", {data: {user_id: user._id}, error: null});
         };
         var error_handler = function(e) {
@@ -221,8 +221,15 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
 
-        function callback(){
+        function callback(user){
+            user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
             socket.emit('authenticate_response', {data: null, error: null});
+            if(user.event_queue != undefined) {
+                while (user.event_queue.count > 0) {
+                    var event = user.dequeueEvent();
+                    socket.emit(event.name, event.message);
+                }
+            }
         }
 
         function error_handler(e){
@@ -230,7 +237,7 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         authenticate(user_id, password, callback, error_handler);
-    })
+    });
 
 
     //TODO: the following API calls may involve message queues where he receiver of the message is offline
@@ -309,7 +316,16 @@ io.on('connection', function (socket) {
                 //Sends message to other user that a transaction has been made on their listing
                 var other_user = transaction.getOtherUser(user_id);
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
-                other_user_socket.emit("transaction_request_made", {data: {user_id: user_id, listing_id: listing_id}, error: null})
+                var event = new Event("transaction_request_made", {
+                    user_id: user_id,
+                    listing_id: listing_id
+                }, null)
+                if(socket != null) {
+                    other_user_socket.emit(event.name , event.message);
+                }
+                else{
+                    other_user.enqueueEvent(event);
+                }
             }catch(e){
                 error_handler(e.message)
                 return;
@@ -457,7 +473,7 @@ io.on('connection', function (socket) {
             socket.emit("update_user_location_response", {data: {updated_location: updated_location}, error: null});
             //notify all users, or all users in the same transaction with user whose location was updated,
             var user = active_users.get(user_id);
-            var current_transaction_ids = user.getCurrentTransactionIds();
+            var current_transaction_ids = user.current_transactions_ids;
             try {
                 for (var key in current_transaction_ids) {
                     var transaction_id = current_transaction_ids[key];
@@ -833,7 +849,7 @@ function authenticate(user_id, password, callback, error_handler){
     if(user == undefined){
         error_handler("tried to authenticate an invalid user_id/password combination");
     }
-    else if(user.getPassword() != password){
+    else if(user.password != password){
         error_handler("tried to authenticate an invalid user_id/password combination");
     }
     else{
