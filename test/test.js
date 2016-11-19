@@ -453,7 +453,7 @@ describe("Transaction", function(){
             }
         });
 
-        it.only("register 2 user/ login both/ user 1 makes listing/ user 2 tries to make 2 transactions/", function (done) {
+        it("register 2 user/ login both/ user 1 makes listing/ user 2 tries to make 2 transactions/", function (done) {
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
             var active_transactions = app.getActiveTransactions();

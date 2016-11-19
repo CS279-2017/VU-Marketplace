@@ -399,8 +399,9 @@ io.on('connection', function (socket) {
                     other_user_socket.emit(event.name , event.message);
                 }
                 else{
-                    other_user.
-                    other_user.enqueueEvent(event);
+                    if(other_user != undefined) {
+                        other_user.enqueueEvent(event);
+                    }
                 }
             }catch(e){
                 console.log(e);
@@ -426,16 +427,46 @@ io.on('connection', function (socket) {
        function callback(transaction){
            //notify both users in the transaction that this user has confirmed
            try {
+               var event = new Event("transaction_confirmed", {user_id: user_id, transaction_id: transaction_id}, null);
                var buyer = active_users.get(transaction.buyer_user_id);
                var seller = active_users.get(transaction.seller_user_id);
                var buyer_socket = io.sockets.connected[buyer.socket_id];
                var seller_socket = io.sockets.connected[seller.socket_id];
-               buyer_socket.emit("transaction_confirmed", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
-               seller_socket.emit("transaction_confirmed", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
+               if(buyer_socket != undefined) {
+                   buyer_socket.emit(event.name , event.message);
+               }
+               else{
+                   if(buyer != undefined) {
+                       buyer.enqueueEvent(event);
+                   }
+               }
+               if(seller_socket != undefined) {
+                   seller_socket.emit(event.name , event.message);
+               }
+               else{
+                   if(seller != undefined) {
+                       seller.enqueueEvent(event);
+                   }
+               }
                if(transaction.isCompleted()){
                    //notify users that transaction is completed
-                   buyer_socket.emit("transaction_completed", {data: {transaction_id: transaction_id}, error: null});
-                   seller_socket.emit("transaction_completed", {data: {transaction_id: transaction_id}, error: null});
+                   var event = new Event("transaction_completed", {transaction_id: transaction_id}, null);
+                   if(buyer_socket != undefined) {
+                       buyer_socket.emit(event.name , event.message);
+                   }
+                   else{
+                       if(buyer != undefined) {
+                           buyer.enqueueEvent(event);
+                       }
+                   }
+                   if(seller_socket != undefined) {
+                       seller_socket.emit(event.name , event.message);
+                   }
+                   else{
+                       if(seller != undefined) {
+                           seller.enqueueEvent(event);
+                       }
+                   }
                }
            }catch(e){
                console.log(e);
