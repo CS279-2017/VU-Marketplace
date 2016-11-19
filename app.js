@@ -318,8 +318,7 @@ io.on('connection', function (socket) {
                 var other_user = active_transactions.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
                 var event = new Event("transaction_request_made", {
-                    user_id: user_id,
-                    listing_id: listing_id
+                    transaction: transaction
                 }, null)
                 if(other_user_socket != undefined) {
                     other_user_socket.emit(event.name , event.message);
@@ -358,7 +357,7 @@ io.on('connection', function (socket) {
                 var seller = active_users.get(transaction.seller_user_id);
                 var buyer_socket = io.sockets.connected[buyer.socket_id];
                 var seller_socket = io.sockets.connected[seller.socket_id];
-                var event = new Event("transaction_started", {transaction: transaction} , null)
+                var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
                 if(buyer_socket != undefined) {
                     buyer_socket.emit(event.name , event.message);
                 }
@@ -394,7 +393,7 @@ io.on('connection', function (socket) {
             try {
                 var other_user = active_users.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
-                var event = new Event("transaction_declined", {transaction_id: transaction._id}, null);
+                var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
                 if(other_user_socket != undefined) {
                     other_user_socket.emit(event.name , event.message);
                 }
@@ -427,7 +426,7 @@ io.on('connection', function (socket) {
        function callback(transaction){
            //notify both users in the transaction that this user has confirmed
            try {
-               var event = new Event("transaction_confirmed", {user_id: user_id, transaction_id: transaction_id}, null);
+               var event = new Event("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, null);
                var buyer = active_users.get(transaction.buyer_user_id);
                var seller = active_users.get(transaction.seller_user_id);
                var buyer_socket = io.sockets.connected[buyer.socket_id];
