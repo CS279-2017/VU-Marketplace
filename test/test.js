@@ -414,7 +414,7 @@ describe("Transaction", function(){
             }
         });
 
-        it.only("register 2 user/ login both/ user 1 makes listing/ user1 log outs/ user 2 makes transaction/", function (done) {
+        it("register 2 user/ login both/ user 1 makes listing/ user1 log outs/ user 2 makes transaction/", function (done) {
             var active_users = app.getActiveUsers();
             var active_listings = app.getActiveListings();
             var active_transactions = app.getActiveTransactions();
@@ -443,6 +443,41 @@ describe("Transaction", function(){
                             // }, error_handler);
                         }, error_handler);
                     }, error_handler())
+                }, error_handler);
+
+            })
+
+            function error_handler(message) {
+                console.log(message);
+                // assert(message.indexOf("tried to create a transaction with") != -1, true);
+            }
+        });
+
+        it.only("register 2 user/ login both/ user 1 makes listing/ user 2 tries to make 2 transactions/", function (done) {
+            var active_users = app.getActiveUsers();
+            var active_listings = app.getActiveListings();
+            var active_transactions = app.getActiveTransactions();
+            registerTwoEmailAddresses(function (user_id_arr) {
+                var user_id1 = user_id_arr[0];
+                var user_id2 = user_id_arr[1];
+                var user1 = active_users.get(user_id1);
+                var user2 = active_users.get(user_id2);
+                app.makeListing(user_id1, user1.password, "user 1 listing", "listing made by user 1", "some location", new Date().getTime() + 100000, 5.00, true, function (listing) {
+                    var listing = active_listings.get(listing._id);
+                    console.log("User 1 made a listing: ");
+                    console.log(listing);
+                    app.makeTransactionRequest(user2._id, user2.password, listing._id, function (transaction) {
+                        console.log("makeTransactionRequest, made first transaction");
+                        console.log(transaction)
+                        console.log(active_transactions)
+                        app.makeTransactionRequest(user2._id, user2.password, listing._id, function (transaction) {
+                            console.log("makeTransactionRequest, made second transaction:");
+                            console.log(transaction)
+
+                            console.log(active_transactions)
+                        }, error_handler);
+                        // }, error_handler);
+                    }, error_handler);
                 }, error_handler);
 
             })

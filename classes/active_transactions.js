@@ -18,18 +18,18 @@ ActiveTransactions.prototype = {
         }
     },
     add: function(transaction){
-        this.transactions[transaction._id] = transaction;
+        this.transactions[transaction._id.toString()] = transaction;
     },
     remove: function(transaction_id){
         delete this.transactions[transaction_id];
     },
     get: function (transaction_id){
-        var transaction = this.transactions[transaction_id];
+        var transaction = this.transactions[transaction_id.toString()];
         if(typeof transaction == 'undefined'){
             console.log("transaction not found: ")
             console.log(transaction_id);
             console.log(this.transactions)
-            throw {message: "transaction with id " + transaction_id + " wasn't found"};
+            throw {message: "active_listing.get: transaction with id " + transaction_id + " wasn't found"};
         }
         return transaction;
     },

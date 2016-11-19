@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/event.js" afterPath="$PROJECT_DIR$/classes/event.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/transaction.js" afterPath="$PROJECT_DIR$/classes/transaction.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/active_transactions.js" afterPath="$PROJECT_DIR$/classes/active_transactions.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/test.js" afterPath="$PROJECT_DIR$/test/test.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
@@ -27,11 +25,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="app.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="198">
-              <caret line="979" column="22" selection-start-line="979" selection-start-column="9" selection-end-line="979" selection-end-column="22" />
+              <caret line="43" column="17" selection-start-line="43" selection-start-column="16" selection-end-line="43" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -87,11 +85,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="test.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="test.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/test/test.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="438">
-              <caret line="433" column="31" selection-start-line="433" selection-start-column="31" selection-end-line="433" selection-end-column="31" />
+            <state relative-caret-position="333">
+              <caret line="962" column="22" selection-start-line="962" selection-start-column="22" selection-end-line="962" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -100,8 +98,8 @@
       <file leaf-file-name="active_transactions.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/active_transactions.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="480">
-              <caret line="32" column="9" selection-start-line="32" selection-start-column="9" selection-end-line="32" selection-end-column="9" />
+            <state relative-caret-position="165">
+              <caret line="15" column="40" selection-start-line="15" selection-start-column="40" selection-end-line="15" selection-end-column="40" />
               <folding />
             </state>
           </provider>
@@ -152,11 +150,11 @@
         <option value="$PROJECT_DIR$/classes/location.js" />
         <option value="$PROJECT_DIR$/classes/active_users.js" />
         <option value="$PROJECT_DIR$/classes/user.js" />
-        <option value="$PROJECT_DIR$/classes/active_transactions.js" />
         <option value="$PROJECT_DIR$/classes/listing.js" />
         <option value="$PROJECT_DIR$/classes/active_listings.js" />
         <option value="$PROJECT_DIR$/classes/event.js" />
         <option value="$PROJECT_DIR$/classes/transaction.js" />
+        <option value="$PROJECT_DIR$/classes/active_transactions.js" />
         <option value="$PROJECT_DIR$/test/test.js" />
         <option value="$PROJECT_DIR$/app.js" />
       </list>
@@ -369,12 +367,12 @@
       <workItem from="1478836951825" duration="6520000" />
       <workItem from="1479002534858" duration="3326000" />
       <workItem from="1479244860390" duration="3584000" />
-      <workItem from="1479449377116" duration="19598000" />
+      <workItem from="1479449377116" duration="21452000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="297786000" />
+    <option name="totallyTimeSpent" value="299640000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="64" y="23" width="1101" height="741" extended-state="0" />
@@ -755,14 +753,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/active_transactions.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="480">
-          <caret line="32" column="9" selection-start-line="32" selection-start-column="9" selection-end-line="32" selection-end-column="9" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/listing.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="240">
@@ -813,10 +803,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/test.js">
+    <entry file="file://$PROJECT_DIR$/classes/active_transactions.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="438">
-          <caret line="433" column="31" selection-start-line="433" selection-start-column="31" selection-end-line="433" selection-end-column="31" />
+        <state relative-caret-position="165">
+          <caret line="15" column="40" selection-start-line="15" selection-start-column="40" selection-end-line="15" selection-end-column="40" />
           <folding />
         </state>
       </provider>
@@ -824,7 +814,15 @@
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="198">
-          <caret line="979" column="22" selection-start-line="979" selection-start-column="9" selection-end-line="979" selection-end-column="22" />
+          <caret line="43" column="17" selection-start-line="43" selection-start-column="16" selection-end-line="43" selection-end-column="17" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/test.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="333">
+          <caret line="962" column="22" selection-start-line="962" selection-start-column="22" selection-end-line="962" selection-end-column="22" />
           <folding />
         </state>
       </provider>

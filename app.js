@@ -266,6 +266,8 @@ io.on('connection', function (socket) {
     });
 
     //TODO: what happens if a you try to remove a listing that transactions have been made from?
+    //TODO: listings are only templates for creating transactions, thus once a transaction has been created 
+    //TODO: it is only loosely related to the listing through the listing_id but otherwise has a life of its own
     //TODO: what about trying to remove a listing where a transaction has already started?
     socket.on('remove_listing', function(json){
         var user_id = json.user_id;
@@ -300,6 +302,7 @@ io.on('connection', function (socket) {
 
     //TODO: make a message queue of transaction_request_made events to send to user if user is disconnected
     //TODO: can send push notifications to user
+    //tODO: what if same user makes multiple transactions on one listing?
     //TODO: making a transaction from a listing that is being removed i.e no longer exists
     //TODO: making a transaction with a user that is offline or disconnected
     //TODO: multiple transactions can be made on a single listing
@@ -1006,10 +1009,25 @@ function removeListing(listing_id, callback, error_handler){
 //TODO: save the transaction state, so active_transactions can be restored upon server crash
 //TODO: set active to true
 
+//TODO: make sure user hasn't already made a transaction on this listing
 function makeTransactionRequest(user_id, password, listing_id, callback, error_handler){
     authenticate(user_id, password, function(user) {
+        console.log("checking if transaction is a duplicate on a listing")
+        var transaction_already_made_on_listing = false;
+        for (var key in user.current_transactions_ids) {
+            console.log("entering for loop");
+            var transaction = active_transactions.get(user.current_transactions_ids[key]);
+            if (transaction.listing_id.toString() == listing_id.toString()) {
+                console.log("the user has already made a transaction on this listing")
+                error_handler("the user has already made a transaction on this listing");
+                return;
+            }
+        }
+        console.log("no duplicate found calling makeTransaction")
         makeTransaction(user_id, listing_id, function (transaction) {
-            callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
+                console.log("user that made that transaction (is the transaction_id in current_transaciton ids?:");
+                console.log(active_users.get(user_id));
+                callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
         }, error_handler)
     }, error_handler);
     //called on a user (using user_id) and a listing (using listing_id)
@@ -1169,7 +1187,6 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
 //7. remove transaction from active_transactions
 //8. message user that initiated request that their transaction has been declined
 
-//TODO: set active to false
 function declineTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
@@ -1216,7 +1233,6 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
 //5. update transaction in database
 //6. remove transaction from active_transactions
 
-//TODO: set active to false
 function confirmTransaction(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
@@ -1260,7 +1276,6 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
 //3. reject the transaction (call reject on the transaction), passing in user_id
 //4. check if transaction has completed, if so run appropriate methods
 
-//TODO: set active to false
 function rejectTransaction(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
