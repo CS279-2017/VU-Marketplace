@@ -199,7 +199,7 @@ var Transaction = function() {
         },
         //given a user_id if it matches one of the two user_ids
         //then return the user_id of the other user in the transaction
-        getOtherUser: function(user_id){
+        getOtherUserId: function(user_id){
             if(user_id.toString() == this.buyer_user_id.toString()){
                 return this.seller_user_id;
             }

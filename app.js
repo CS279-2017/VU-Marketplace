@@ -21,6 +21,7 @@ var Conversation = require("./classes/conversation.js");
 var Location = require("./classes/location.js")
 var UserInfo = require("./classes/user_info.js")
 var ListingInfo = require("./classes/listing_info.js")
+var Event = require("./classes/event.js");
 
 
 var ActiveUsers = require("./classes/active_users.js");
@@ -311,17 +312,19 @@ io.on('connection', function (socket) {
             //send transaction request to other user first then notify calling user of success
             try {
                 //Sends message to other user that a transaction has been made on their listing
-                var other_user = transaction.getOtherUser(user_id);
+                var other_user = active_transactions.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
                 var event = new Event("transaction_request_made", {
                     user_id: user_id,
                     listing_id: listing_id
                 }, null)
-                if(socket != null) {
+                if(other_user_socket != undefined) {
                     other_user_socket.emit(event.name , event.message);
                 }
                 else{
-                    other_user.enqueueEvent(event);
+                    if(other_user != undefined) {
+                        other_user.enqueueEvent(event);
+                    }
                 }
             }catch(e){
                 error_handler(e.message)
@@ -353,13 +356,13 @@ io.on('connection', function (socket) {
                 var buyer_socket = io.sockets.connected[buyer.socket_id];
                 var seller_socket = io.sockets.connected[seller.socket_id];
                 var event = new Event("transaction_started", {transaction: transaction} , null)
-                if(buyer_socket != null) {
+                if(buyer_socket != undefined) {
                     buyer_socket.emit(event.name , event.message);
                 }
                 else{
                     buyer.enqueueEvent(event);
                 }
-                if(seller_socket != null) {
+                if(seller_socket != undefined) {
                     seller_socket.emit(event.name , event.message);
                 }
                 else{
@@ -386,13 +389,14 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         function callback(transaction){
             try {
-                var other_user = transaction.getOtherUser(user_id);
+                var other_user = active_users.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
                 var event = new Event("transaction_declined", {transaction_id: transaction._id}, null);
-                if(other_user_socket != null) {
+                if(other_user_socket != undefined) {
                     other_user_socket.emit(event.name , event.message);
                 }
                 else{
+                    other_user.
                     other_user.enqueueEvent(event);
                 }
             }catch(e){
@@ -492,7 +496,8 @@ io.on('connection', function (socket) {
                 for (var key in current_transaction_ids) {
                     var transaction_id = current_transaction_ids[key];
                     var transaction = active_transactions.get(transaction_id);
-                    var other_user = transaction.getOtherUser(user_id);
+                    var other_user_id = transaction.getOtherUserId(user_id);
+                    var other_user = active_users.get(other_user_id);
                     var other_user_socket = io.sockets.connected[other_user.socket_id];
                     other_user_socket.emit("user_location_updated", {data: {user_id: user._id, transaction_id: transaction_id, updated_location: updated_location}, error: null});
                 }
@@ -522,7 +527,7 @@ io.on('connection', function (socket) {
                 for (var key in current_transaction_ids) {
                     var transaction_id = current_transaction_ids[key];
                     var transaction = active_transactions.get(transaction_id);
-                    var other_user = transaction.getOtherUser(user_id);
+                    var other_user = active_users.get(transaction.getOtherUserId(user_id));
                     var other_user_socket = io.sockets.connected[other_user.socket_id];
                     other_user_socket.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id, updated_location: updated_location}, error: null});
                 }
@@ -1068,6 +1073,8 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                     collection_transactions.find(new_transaction).toArray(function(err, docs){
                         if(docs.length == 1){
                             new_transaction.initFromDatabase(docs[0]);
+                            console.log(new_transaction);
+                            console.log("transaction added and initialized from database");
                             if(callback != undefined){ callback(new_transaction);}
                         }
                         else{
@@ -1214,7 +1221,7 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == undefined){
-            error_handler("transaction with id " + transaction_id + " was not found");
+            error_handler("confirmTransaction: transaction with id " + transaction_id + " was not found");
             return;
         }
         try {
@@ -1258,7 +1265,7 @@ function rejectTransaction(user_id, password, transaction_id, callback, error_ha
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == undefined){
-            error_handler("transaction with id " + transaction_id + " was not found");
+            error_handler("rejectTransaction: transaction with id " + transaction_id + " was not found");
             return;
         }
         try{

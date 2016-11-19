@@ -4,11 +4,11 @@ var Event = function() {
         //this._id (this will be initialized when listing retrieved from database)
         this.name = name;
         this.message = {data: data, error: error};
-        this.creation_time = Date().getTime();
+        this.creation_time = new Date().getTime();
     }
 
     Event.prototype = {
-        constructor: Listing,
+        constructor: Event,
         initFromDatabase: function (event) {
             this.name = event.name;
             this.message = event.message
