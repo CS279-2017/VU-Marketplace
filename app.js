@@ -206,6 +206,7 @@ io.on('connection', function (socket) {
 
         function callback(){
             //notify necessary clients that a sure has logged out
+            active_listings.
             socket.emit("logout_response", {data: null, error: null});
         }
         function error_handler(e){
@@ -424,6 +425,7 @@ io.on('connection', function (socket) {
                         other_user.enqueueEvent(event);
                     }
                 }
+                //TODO: add some 
             }catch(e){
                 console.log(e);
                 return;
@@ -955,6 +957,13 @@ function logout(user_id, password, callback, error_handler){
                 console.log(user.email_address + " has logged out");
                 if(callback != undefined){ callback(); }
             });
+            //removes all of the users_current_listings
+            // for(var i=0; i<user.current_listings_ids.length; i++){
+            //     var listing_id = user.current_listings_ids[i];
+            //     removeListing(listing_id, function(){
+            //         io.emit("listing_removed", {data: {listing_id: listing_id}});
+            //     }, error_handler)
+            // }
                 //update database with new user info
             active_users.remove(user_id);
         }catch(e){
@@ -1134,13 +1143,13 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                         var other_user_id = transaction.getOtherUserId(user_id);
                         console.log("other_user_id " + other_user_id)
                         var collection = database.collection('users');
-                        collection.find({_id: other_user_id}).toArray(function(err, docs) {
+                        collection.find({_id: new require('mongodb').ObjectID(other_user_id.toString())}).toArray(function(err, docs) {
                             if (docs.length > 0) {
                                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                                 var user = new User();
                                 user.initFromDatabase(docs[0]);
                                 declineTransactionRequest(user._id, user.password, transaction._id, function(){
-                                    print("transaction declined due to exceeding time limit for response")
+                                    console.log("transaction declined due to exceeding time limit for response")
                                 }, error_handler)
                             }
                             else {
