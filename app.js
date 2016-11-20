@@ -136,6 +136,7 @@ io.on('connection', function (socket) {
         console.log('user has disconnected!');
         var socket_id = socket.id
         var disconnected_user = active_users.getUserBySocketId(socket_id);
+        // disconnected_user.sockets
         var error_handler = function (e) {
             console.log(e);
             return;
@@ -195,6 +196,7 @@ io.on('connection', function (socket) {
             socket.emit("login_response", {data: null, error: e});
             console.log(e);
         }
+        //TODO: should we allow logging in from multiple devices at once? for now yes
         login(email_address, password, callback, error_handler);
     });
 
@@ -287,12 +289,18 @@ io.on('connection', function (socket) {
             var listing = active_listings.get(listing_id);
             console.log(listing)
             console.log(listing_id);
-            if(listing.user_id.toString() == user_id.toString()){
-                removeListing(listing_id, callback, error_handler)
+            if(listing != undefined){
+                if(listing.user_id.toString() == user_id.toString()){
+                    removeListing(listing_id, callback, error_handler)
+                }
+                else{
+                    error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
+                }
             }
             else{
-                error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
+                error_handler("listing was not found in active_listings");
             }
+
         }, error_handler);
     });
     //initiate_transaction_request:
@@ -307,15 +315,20 @@ io.on('connection', function (socket) {
     //TODO: making a transaction with a user that is offline or disconnected
     //TODO: multiple transactions can be made on a single listing
     //TODO: max number of transactions per user?
+
+    //make_transcation_request creates the transaction object and passes it to both users
    socket.on('make_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
         var listing_id = json.listing_id; 
         function callback(transaction){
             //send transaction request to other user first then notify calling user of success
+            //upon receiving the make_transaction_request_response the intial calling user can make a transaction object
             try {
                 //Sends message to other user that a transaction has been made on their listing
-                var other_user = active_transactions.get(transaction.getOtherUserId(user_id));
+                // var this_user = active_users.get(user_id);
+                // var this_user_socket = io.sockets.connected[this_user.socket_id];
+                var other_user = active_users.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
                 var event = new Event("transaction_request_made", {
                     transaction: transaction
@@ -328,12 +341,21 @@ io.on('connection', function (socket) {
                         other_user.enqueueEvent(event);
                     }
                 }
+                // if(this_user_socket != undefined) {
+                //     this_user_socket.emit(event.name , event.message);
+                // }
+                // else{
+                //     if(other_user != undefined) {
+                //         other_user.enqueueEvent(event);
+                //     }
+                // }
             }catch(e){
                 error_handler(e.message)
                 return;
             }
-            socket.emit("make_transaction_request_response", {data: null, error: null});
-            //notify user that owns listing that a user has requested a transaction
+            socket.emit("make_transaction_request_response", {data: transaction, error: null});
+            //notify user that initiated the transaction that transaction request was successful, passes back
+            //transaction object so user can create a transaction object on the client side
         }
         function error_handler(e) {
             socket.emit("make_transaction_request_response", {data: null, error: e});
@@ -619,6 +641,20 @@ io.on('connection', function (socket) {
         }
         getAllActiveListings(user_id, password, callback, error_handler)
     });
+
+    socket.on('get_users_active_transactions', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        function callback(users_active_transactions){
+            //send all_active_listings back to client
+            socket.emit("get_users_active_transactions_response", {data: {users_active_transactions: users_active_transactions}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_users_active_transactions_response", {data: null, error: e});
+            console.log(e);
+        }
+        getUsersActiveTransactions(user_id, password, callback, error_handler)
+    });
     
     socket.on('get_listing', function(json){
         var listing_id = json.listing_id;
@@ -884,7 +920,10 @@ function login(email_address, password, callback, error_handler){
             var user = new User();
             user.initFromDatabase(docs[0]);
             try {
-                active_users.add(user);
+                //if not already logged in then add user to active_users
+                if(active_users.get(user._id) == undefined) {
+                    active_users.add(user);
+                }
             }catch(error){
                 error_handler(error.message);
                 return;
@@ -928,6 +967,12 @@ function logout(user_id, password, callback, error_handler){
 //check active_users using user_id key, check if password matches password of the user, if so call callback,
 //passes user object from active_users with user_id to the callback method
 // otherwise call error_handler
+
+//note we do not want allow a single user to connect from multiple devices or maintain multiple connections
+//since that would cause inconsistent location data, thus we want to only maintain a single socket connnection
+//for each user thus socket_id is set upon login
+
+//TODO: implement device_id
 function authenticate(user_id, password, callback, error_handler){
     var user = active_users.get(user_id);
     console.log("trying to authenticate user_id: " + user_id + " password: " + password);
@@ -1022,7 +1067,11 @@ function removeListing(listing_id, callback, error_handler){
             var user = active_users.get(listing.user_id)
             active_listings.remove(listing_id);
             if (user != undefined) { //in case user has already logged out
-                user.removeCurrentListingId(listing_id); //does this remove it for the user object in active_users? test for this
+                try {
+                    user.removeCurrentListingId(listing_id);
+                }catch(e){
+                    error_handler(e.message)
+                }
             }
             if (callback != undefined) {
                 callback(listing_id);
@@ -1078,6 +1127,28 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
             try {
                 console.log("adding to active_transactions");
                 active_transactions.add(new_transaction);
+                //Set 30 second time to respond to transaction_request
+                setTimeout(function(){
+                    var transaction = active_transactions.get(new_transaction._id);
+                    if(transaction != undefined) {
+                        var other_user_id = transaction.getOtherUserId(user_id);
+                        console.log("other_user_id " + other_user_id)
+                        var collection = database.collection('users');
+                        collection.find({_id: other_user_id}).toArray(function(err, docs) {
+                            if (docs.length > 0) {
+                                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                                var user = new User();
+                                user.initFromDatabase(docs[0]);
+                                declineTransactionRequest(user._id, user.password, transaction._id, function(){
+                                    print("transaction declined due to exceeding time limit for response")
+                                }, error_handler)
+                            }
+                            else {
+                                error_handler("user with user_id " + other_user_id + " was not found");
+                            }
+                        });
+                    }
+                }, 30000)
                 var user = active_users.get(user_id);
                 user.addCurrentTransactionId(new_transaction._id); //adds transaction_id to user that initiates
                 //user object is returned by authenticate
@@ -1395,6 +1466,13 @@ function getAllActiveListings(user_id, password, callback, error_handler){
         var all_active_listings = active_listings.getAll();
         callback(all_active_listings);
     }, error_handler)
+}
+
+function getUsersActiveTransactions(user_id, password, callback, error_handler){
+    authenticate(user_id, password, function(user){
+        var users_active_transactions = active_transactions.getAllForUser(user._id);
+        callback(users_active_transactions);
+    }, error_handler);
 }
 
 //Finds user in active_users if not found, searches database, returns a UserInfo object made from the User

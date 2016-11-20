@@ -152,6 +152,28 @@ The error parameter will contain the error message, will be null if successful
 10. chat_message_sent(transaction_id, message){
   * updates the chat in the transaction by adding the message to it
     * message should contain the user_id and message_content as well as date
+    
+    
+    
+###device_id
+* the mealplanapp can only be used from one device at a time otherwise location data would be messed up
+* therefore the mealplanapp will only only authenticate one device
+* to enforce this, login and authenticate will accept an additional parameter called device_id
+
+* Upon Login
+    * if the email and password are correct
+        * if device_id = "" (empty string)
+            * server will send back a randomly generated unique device key and update the device_id to the the new device_id
+            * the client should save this
+        * if device key is not "" then the device_id will be updated
+            * this way future authentications on the old device will be invalid
+    * if email and password are incorrect then reject login as before
+    
+* Upon Authentication
+    * all three user_id, password, and device_id must be correct
+
+
+
 
 
 

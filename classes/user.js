@@ -12,6 +12,7 @@ function User(first_name, last_name, password, email){
     this.last_name = last_name;
     this.password = password;
     this.email_address = email
+    this.device_id = null
     this.venmo_id = null;
     this.socket_id = null;
     this.current_listings_ids = [];
@@ -22,6 +23,8 @@ function User(first_name, last_name, password, email){
     this.location = null; // not saved onto db
     this.logged_in = null; //not saved onto db
     this.event_queue = [];
+
+    this.active = true; //used for restoring logged in users after database crash
 }
 
 User.prototype = {
@@ -34,6 +37,7 @@ User.prototype = {
         this.last_name = user.last_name;
         this.password = user.password;
         this.email_address = user.email_address;
+        this.device_id = user.device_id;
         this.location = user.location;
         this.venmo_id = user.venmo_id;
         this.socket_id = null;
@@ -59,7 +63,9 @@ User.prototype = {
         if(index <= -1){
             throw {message: "listing id " + current_listing_id + " does not exist in current listing ids of user with id " + this._id};
         }
-        this.current_listings_ids.splice(index, 1);
+        else {
+            this.current_listings_ids.splice(index, 1);
+        }
     },
     // addPreviousListingId: function(previous_listing_id){
     //     this.previous_listings_ids.push(previous_listing_id);

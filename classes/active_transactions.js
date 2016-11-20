@@ -29,7 +29,7 @@ ActiveTransactions.prototype = {
             console.log("transaction not found: ")
             console.log(transaction_id);
             console.log(this.transactions)
-            throw {message: "active_listing.get: transaction with id " + transaction_id + " wasn't found"};
+            throw {message: "active_transactions.get: transaction with id " + transaction_id + " wasn't found"};
         }
         return transaction;
     },
