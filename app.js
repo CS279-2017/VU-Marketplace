@@ -1481,7 +1481,7 @@ function getUser(user_id, callback, error_handler){
     //if user is not in active_users, search database
     if(user == undefined){
         var collection = database.collection('users');
-        collection.find({_id: user_id}).toArray(function(err, docs) {
+        collection.find({_id: new require('mongodb').ObjectID(user_id.toString())}).toArray(function(err, docs) {
             if (docs.length > 0) {
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 var user = new User();
