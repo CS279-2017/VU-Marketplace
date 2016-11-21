@@ -1174,6 +1174,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                                 var user = new User();
                                 user.initFromDatabase(docs[0]);
                                 declineTransactionRequest(user._id, user.password, transaction._id, function(){
+                                    emitEvent("transaction_declined", {transaction_id: transaction._id.toString()}, [other_user_id, user_id]);
                                     console.log("transaction declined due to exceeding time limit for response")
                                 }, error_handler)
                             }
@@ -1634,6 +1635,25 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
 //     //query User database for user with the given email address
 //     //send email containing username to the email address
 // }
+
+//accepts an event string and an array of user_ids, emits the event to each one of those users
+//also accepts data which is a javascript object that holds the data that will passed in the event
+function emitEvent(event, data, user_id_arr){
+    for(var i=0; i<users.length; i++){
+        var user = active_users.get(user_id_arr[i]);
+        var user_socket = io.sockets.connected[user.socket_id];
+        var event = new Event(event, data, null);
+        if(user_socket != undefined) {
+            user_socket.emit(event.name , event.message);
+        }
+        else{
+            if(user != undefined) {
+                user.enqueueEvent(event);
+            }
+        }
+
+    }
+}
 
 
 function resetPassword(email_address){
