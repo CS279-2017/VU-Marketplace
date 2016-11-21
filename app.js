@@ -206,11 +206,15 @@ io.on('connection', function (socket) {
 
         function callback(){
             //notify necessary clients that a sure has logged out
-            active_listings.
-            socket.emit("logout_response", {data: null, error: null});
+            // active_listings.
+            if(socket != undefined){
+                socket.emit("logout_response", {data: null, error: null});
+            }socket.emit("logout_response", {data: null, error: null});
         }
         function error_handler(e){
-            socket.emit("logout_response", {data: null, error: e});
+            if(socket != undefined){
+                socket.emit("logout_response", {data: null, error: e});
+            }
             console.log(e);
         }
         logout(user_id, password, callback, error_handler);
@@ -327,19 +331,30 @@ io.on('connection', function (socket) {
             //upon receiving the make_transaction_request_response the intial calling user can make a transaction object
             try {
                 //Sends message to other user that a transaction has been made on their listing
-                // var this_user = active_users.get(user_id);
+                // var this_user = active_users.get(user_id)
                 // var this_user_socket = io.sockets.connected[this_user.socket_id];
+                var user = active_users.get(user_id);
+                var user_socket = io.sockets.connected[user.socket_id];
                 var other_user = active_users.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
                 var event = new Event("transaction_request_made", {
                     transaction: transaction
                 }, null)
+                //emit the event to both users, causes them to make cells
                 if(other_user_socket != undefined) {
                     other_user_socket.emit(event.name , event.message);
                 }
                 else{
                     if(other_user != undefined) {
                         other_user.enqueueEvent(event);
+                    }
+                }
+                if(user_socket != undefined) {
+                    user_socket.emit(event.name , event.message);
+                }
+                else{
+                    if(user != undefined) {
+                        user.enqueueEvent(event);
                     }
                 }
                 // if(this_user_socket != undefined) {
@@ -414,6 +429,8 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         function callback(transaction){
             try {
+                var user = active_users.get(user_id);
+                var user_socket = io.sockets.connected[user.socket_id];
                 var other_user = active_users.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
                 var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
@@ -425,7 +442,15 @@ io.on('connection', function (socket) {
                         other_user.enqueueEvent(event);
                     }
                 }
-                //TODO: add some 
+                if(user_socket != undefined) {
+                    user_socket.emit(event.name , event.message);
+                }
+                else{
+                    if(user != undefined) {
+                        user.enqueueEvent(event);
+                    }
+                }
+                //TODO: add some
             }catch(e){
                 console.log(e);
                 return;
@@ -951,7 +976,7 @@ function logout(user_id, password, callback, error_handler){
         try {
             var collection = database.collection('users');
             //this saves the user data to the database before logging out
-            collection.update({_id:user._id}, active_users.get(user_id), function(err, result) {
+            collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, active_users.get(user_id), function(err, result) {
                 if(err){error_handler(err); return;}
                 console.log(user_id + " info saved to database");
                 console.log(user.email_address + " has logged out");
