@@ -1,11 +1,11 @@
 module.exports = Location;
 
-function Location(x,y){
-    this.x = x;
-    this.y = y; //must be username rather than user to avoid circular reference
+function Location(latitude,longitude){
+    this.latitude = latitude;
+    this.longitude = longitude; //must be username rather than user to avoid circular reference
     //if we ever need the user's info we can look up the user using this username;
     // 
-    this.last_update = new Date().getTime();
+    this.last_update_time = new Date().getTime();
 }
 
 Location.prototype = {
@@ -13,6 +13,6 @@ Location.prototype = {
     update: function(latitude, longitude){
         this.latitude = latitude;
         this.longitude = longitude;
-        this.last_update = new Date().getTime();
+        this.last_update_time = new Date().getTime();
     }
 }

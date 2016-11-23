@@ -3,10 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/active_transactions.js" afterPath="$PROJECT_DIR$/classes/active_transactions.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/conversation.js" afterPath="$PROJECT_DIR$/classes/conversation.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/transaction.js" afterPath="$PROJECT_DIR$/classes/transaction.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/location.js" afterPath="$PROJECT_DIR$/classes/location.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,20 +28,46 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="196">
-              <caret line="445" column="67" selection-start-line="445" selection-start-column="39" selection-end-line="445" selection-end-column="67" />
+            <state relative-caret-position="436">
+              <caret line="1073" column="34" selection-start-line="1073" selection-start-column="34" selection-end-line="1073" selection-end-column="34" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="event.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/classes/event.js">
+      <file leaf-file-name="location.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/classes/location.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="75">
-              <caret line="5" column="35" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
+            <state relative-caret-position="105">
+              <caret line="7" column="13" selection-start-line="7" selection-start-column="13" selection-end-line="7" selection-end-column="13" />
               <folding />
             </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="listing.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/classes/listing.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="196">
+              <caret line="27" column="44" selection-start-line="27" selection-start-column="36" selection-end-line="27" selection-end-column="44" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+            <state split_layout="FIRST">
+              <first_editor relative-caret-position="177">
+                <caret line="99" column="5" selection-start-line="99" selection-start-column="4" selection-end-line="99" selection-end-column="5" />
+                <folding />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+          <provider editor-type-id="MarkdownFxPreviewEditor">
+            <state />
           </provider>
         </entry>
       </file>
@@ -97,31 +121,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="package.json" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/package.json">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="6" column="6" selection-start-line="6" selection-start-column="6" selection-end-line="6" selection-end-column="6" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="active_transactions.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/active_transactions.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="197">
               <caret line="28" column="16" selection-start-line="28" selection-start-column="15" selection-end-line="28" selection-end-column="16" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="active_listings.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/classes/active_listings.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="506">
-              <caret line="66" column="6" selection-start-line="66" selection-start-column="6" selection-end-line="66" selection-end-column="6" />
               <folding />
             </state>
           </provider>
@@ -144,18 +148,18 @@
         <option value="$PROJECT_DIR$/classes/database.js" />
         <option value="$PROJECT_DIR$/classes/user_info.js" />
         <option value="$PROJECT_DIR$/../mealplanappiOS/README.md" />
-        <option value="$PROJECT_DIR$/classes/location.js" />
         <option value="$PROJECT_DIR$/classes/active_users.js" />
         <option value="$PROJECT_DIR$/classes/listing.js" />
         <option value="$PROJECT_DIR$/classes/event.js" />
         <option value="$PROJECT_DIR$/test/test.js" />
         <option value="$PROJECT_DIR$/classes/message.js" />
-        <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/classes/user.js" />
         <option value="$PROJECT_DIR$/classes/active_listings.js" />
         <option value="$PROJECT_DIR$/classes/active_transactions.js" />
         <option value="$PROJECT_DIR$/classes/conversation.js" />
         <option value="$PROJECT_DIR$/classes/transaction.js" />
+        <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/classes/location.js" />
         <option value="$PROJECT_DIR$/app.js" />
       </list>
     </option>
@@ -167,8 +171,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="84" />
-    <option name="y" value="23" />
+    <option name="x" value="28" />
+    <option name="y" value="38" />
     <option name="width" value="1101" />
     <option name="height" value="735" />
   </component>
@@ -368,15 +372,15 @@
       <workItem from="1479002534858" duration="3326000" />
       <workItem from="1479244860390" duration="3584000" />
       <workItem from="1479449377116" duration="38467000" />
-      <workItem from="1479695357178" duration="20983000" />
+      <workItem from="1479695357178" duration="24102000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="337638000" />
+    <option name="totallyTimeSpent" value="340757000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="84" y="23" width="1101" height="735" extended-state="1" />
+    <frame x="28" y="38" width="1101" height="735" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2361111" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -686,13 +690,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/location.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="11" column="17" selection-start-line="11" selection-start-column="17" selection-end-line="11" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/listing_info.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="225">
@@ -701,41 +698,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/listing.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="23" column="34" selection-start-line="23" selection-start-column="34" selection-end-line="23" selection-end-column="34" />
-          <folding>
-            <element signature="n#!!doc" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/user_info.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="12" column="17" selection-start-line="12" selection-start-column="17" selection-end-line="12" selection-end-column="17" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="362">
-          <caret line="88" column="71" selection-start-line="88" selection-start-column="71" selection-end-line="88" selection-end-column="71" />
-          <folding />
-        </state>
-      </provider>
-      <provider editor-type-id="MarkdownFxPreviewEditor">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-        <state split_layout="FIRST">
-          <first_editor relative-caret-position="2355">
-            <caret line="157" column="12" selection-start-line="157" selection-start-column="12" selection-end-line="157" selection-end-column="12" />
-            <folding />
-          </first_editor>
-          <second_editor />
         </state>
       </provider>
     </entry>
@@ -819,10 +786,46 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app.js">
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider editor-type-id="text-editor">
+        <state relative-caret-position="362">
+          <caret line="88" column="71" selection-start-line="88" selection-start-column="71" selection-end-line="88" selection-end-column="71" />
+          <folding />
+        </state>
+      </provider>
+      <provider editor-type-id="MarkdownFxPreviewEditor">
+        <state />
+      </provider>
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="177">
+            <caret line="99" column="5" selection-start-line="99" selection-start-column="4" selection-end-line="99" selection-end-column="5" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/classes/location.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="105">
+          <caret line="7" column="13" selection-start-line="7" selection-start-column="13" selection-end-line="7" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/classes/listing.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="196">
-          <caret line="445" column="67" selection-start-line="445" selection-start-column="39" selection-end-line="445" selection-end-column="67" />
+          <caret line="27" column="44" selection-start-line="27" selection-start-column="36" selection-end-line="27" selection-end-column="44" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="436">
+          <caret line="1073" column="34" selection-start-line="1073" selection-start-column="34" selection-end-line="1073" selection-end-column="34" />
           <folding />
         </state>
       </provider>

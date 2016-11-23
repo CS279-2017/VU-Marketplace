@@ -1,5 +1,10 @@
 # mealplanserverapp
 
+##TODO:
+* add ability to upload profile picture
+
+* add ability to add tags
+
 ###Events Received by Server from Client (Client -> Server)
 1. register_email_address({email_address:String}) -> register_email_address_response({data: null, error: null})
     * registers an email_address that must then be verified
