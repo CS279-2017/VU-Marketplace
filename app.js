@@ -43,7 +43,7 @@ exports.makeTransactionRequest = makeTransactionRequest;
 exports.acceptTransactionRequest = acceptTransactionRequest;
 exports.declineTransactionRequest = declineTransactionRequest;
 exports.confirmTransaction = confirmTransaction;
-exports.rejectTransaction = rejectTransaction;
+exports.terminateTransaction = terminateTransaction;
 
 exports.updateUserLocation = updateUserLocation;
 
@@ -388,26 +388,36 @@ io.on('connection', function (socket) {
         var password = json.password;
         var transaction_id = json.transaction_id;
         function callback(transaction){
+            console.log("emitting accept_transaction_response");
             socket.emit("accept_transaction_request_response", {data: null, error: null});
             //notify users involved in the transaction that transaction has been accepted, will start
             try {
+                //notify all users that a listing was removed
+                io.emit("listing_removed", {data: {listing_id: transaction.listing_id}});
+                console.log("transaction:")
+                console.log(transaction);
                 var buyer = active_users.get(transaction.buyer_user_id);
                 var seller = active_users.get(transaction.seller_user_id);
                 var buyer_socket = io.sockets.connected[buyer.socket_id];
                 var seller_socket = io.sockets.connected[seller.socket_id];
-                var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
-                if(buyer_socket != undefined) {
-                    buyer_socket.emit(event.name , event.message);
+                emitEvent("transaction_request_accepted", {transaction_id: transaction_id.toString(), user_id: user_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
+                if(transaction.isAccepted()){
+                    console.log("emitting transaction_started");
+                    emitEvent("transaction_started", {transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
                 }
-                else{
-                    buyer.enqueueEvent(event);
-                }
-                if(seller_socket != undefined) {
-                    seller_socket.emit(event.name , event.message);
-                }
-                else{
-                    seller.enqueueEvent(event);
-                }
+                // var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
+                // if(buyer_socket != undefined) {
+                //     buyer_socket.emit(event.name , event.message);
+                // }
+                // else{
+                //     buyer.enqueueEvent(event);
+                // }
+                // if(seller_socket != undefined) {
+                //     seller_socket.emit(event.name , event.message);
+                // }
+                // else{
+                //     seller.enqueueEvent(event);
+                // }
             }catch(e){
                 console.log(e);
                 return;
@@ -433,7 +443,7 @@ io.on('connection', function (socket) {
                 var user_socket = io.sockets.connected[user.socket_id];
                 var other_user = active_users.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
-                var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
+                var event = new Event("transaction_request_declined", {transaction_id: transaction._id.toString()}, null);
                 if(other_user_socket != undefined) {
                     other_user_socket.emit(event.name , event.message);
                 }
@@ -532,7 +542,7 @@ io.on('connection', function (socket) {
 
     //TODO: rejecting a transaction thats already been rejected
     //TODO: rejecting a transaction that doesn't exist
-   socket.on('reject_transaction', function(json){
+   socket.on('terminate_transaction', function(json){
        var user_id = json.user_id;
        var password = json.password;
        var transaction_id = json.transaction_id;
@@ -543,19 +553,19 @@ io.on('connection', function (socket) {
                var seller = active_users.get(transaction.seller_user_id);
                var buyer_socket = io.sockets.connected[buyer.socket_id];
                var seller_socket = io.sockets.connected[seller.socket_id];
-               buyer_socket.emit("transaction_rejected", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
-               seller_socket.emit("transaction_rejected", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
+               buyer_socket.emit("transaction_terminated", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
+               seller_socket.emit("transaction_terminated", {data: {user_id: user_id, transaction_id: transaction_id}, error: null});
            }catch(e){
                console.log(e);
                return;
            }
-           socket.emit("reject_transaction_response", {data: null, error: null});
+           socket.emit("terminate_transaction_response", {data: null, error: null});
        }
        function error_handler(e){
-           socket.emit("reject_transaction_response", {data: null, error: e});
+           socket.emit("terminate_transaction_response", {data: null, error: e});
            console.log(e);
        }
-       rejectTransaction(user_id, password, transaction_id, callback, error_handler)
+       terminateTransaction(user_id, password, transaction_id, callback, error_handler)
    });
 
 
@@ -577,11 +587,19 @@ io.on('connection', function (socket) {
             try {
                 for (var key in current_transaction_ids) {
                     var transaction_id = current_transaction_ids[key];
-                    var transaction = active_transactions.get(transaction_id);
-                    var other_user_id = transaction.getOtherUserId(user_id);
-                    var other_user = active_users.get(other_user_id);
-                    var other_user_socket = io.sockets.connected[other_user.socket_id];
-                    other_user_socket.emit("user_location_updated", {data: {user_id: user._id, transaction_id: transaction_id, updated_location: updated_location}, error: null});
+                    try {
+                        var transaction = active_transactions.get(transaction_id);
+                        var other_user_id = transaction.getOtherUserId(user_id);
+                        var other_user = active_users.get(other_user_id);
+                        var other_user_socket = io.sockets.connected[other_user.socket_id];
+                        other_user_socket.emit("user_location_updated", {
+                            data: {
+                                user_id: user._id,
+                                transaction_id: transaction_id,
+                                updated_location: updated_location
+                            }, error: null
+                        });
+                    }catch(e){error_handler(e.message)}
                 }
             }catch(e){
                 console.log(e);
@@ -638,12 +656,13 @@ io.on('connection', function (socket) {
             //notify all user in the transaction that a new message has been sent
             try {
                 var transaction = active_transactions.get(transaction_id);
-                var buyer = transaction.buyer_user_id;
-                var seller = transaction.seller_user_id;
-                var buyer_socket = io.sockets.connected[buyer.socket_id];
-                var seller_socket = io.sockets.connected[seller.socket_id];
-                buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
-                seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+                // var buyer = transaction.buyer_user_id;
+                // var seller = transaction.seller_user_id;
+                // var buyer_socket = io.sockets.connected[buyer.socket_id];
+                // var seller_socket = io.sockets.connected[seller.socket_id];
+                // buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+                // seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+                emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
             }catch(e){
                 console.log(e);
                 return;
@@ -1104,7 +1123,7 @@ function removeListing(listing_id, callback, error_handler){
                 try {
                     user.removeCurrentListingId(listing_id);
                 }catch(e){
-                    error_handler(e.message)
+                    // error_handler(e.message)
                 }
             }
             if (callback != undefined) {
@@ -1129,12 +1148,14 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
         var transaction_already_made_on_listing = false;
         for (var key in user.current_transactions_ids) {
             console.log("entering for loop");
-            var transaction = active_transactions.get(user.current_transactions_ids[key]);
-            if (transaction.listing_id.toString() == listing_id.toString()) {
-                console.log("the user has already made a transaction on this listing")
-                error_handler("the user has already made a transaction on this listing");
-                return;
-            }
+            try {
+                var transaction = active_transactions.get(user.current_transactions_ids[key]);
+                if (transaction.listing_id.toString() == listing_id.toString()) {
+                    console.log("the user has already made a transaction on this listing")
+                    error_handler("the user has already made a transaction on this listing");
+                    return;
+                }
+            }catch(e){error_handler(e.message)}
         }
         console.log("no duplicate found calling makeTransaction")
         makeTransaction(user_id, listing_id, function (transaction) {
@@ -1166,17 +1187,18 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                     var transaction = active_transactions.get(new_transaction._id);
                     if(transaction != undefined) {
                         var other_user_id = transaction.getOtherUserId(user_id);
-                        console.log("other_user_id " + other_user_id)
                         var collection = database.collection('users');
                         collection.find({_id: new require('mongodb').ObjectID(other_user_id.toString())}).toArray(function(err, docs) {
                             if (docs.length > 0) {
                                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                                 var user = new User();
                                 user.initFromDatabase(docs[0]);
-                                declineTransactionRequest(user._id, user.password, transaction._id, function(){
-                                    emitEvent("transaction_declined", {transaction_id: transaction._id.toString()}, [other_user_id, user_id]);
-                                    console.log("transaction declined due to exceeding time limit for response")
-                                }, error_handler)
+                                if (transaction.isAccepted() != true) {
+                                    declineTransactionRequest(user._id, user.password, transaction._id, function () {
+                                        emitEvent("transaction_declined", {transaction_id: transaction._id.toString()}, [other_user_id, user_id]);
+                                        console.log("transaction declined due to exceeding time limit for response")
+                                    }, error_handler);
+                                }
                             }
                             else {
                                 error_handler("user with user_id " + other_user_id + " was not found");
@@ -1273,6 +1295,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
             error_handler(e.message);
             return;
         }
+        console.log("transaction.acceptRequest called");
         var listing = active_listings.get(transaction.listing_id);
         //throws error if transaction_id has already been set
         //or listing has already been deleted, means listing has already been accepted
@@ -1294,6 +1317,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         removeListing(transaction.listing_id, function(){
             if(user != undefined) { //in case user has logged out
                 user.addCurrentTransactionId(transaction_id);
+                callback(transaction);
             }
         }, error_handler)
         // updateListings(listing, function(){
@@ -1412,15 +1436,15 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
 //3. reject the transaction (call reject on the transaction), passing in user_id
 //4. check if transaction has completed, if so run appropriate methods
 
-function rejectTransaction(user_id, password, transaction_id, callback, error_handler){
+function terminateTransaction(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == undefined){
-            error_handler("rejectTransaction: transaction with id " + transaction_id + " was not found");
+            error_handler("terminateTransaction: transaction with id " + transaction_id + " was not found");
             return;
         }
         try{
-            transaction.reject(user_id)
+            transaction.terminate(user_id)
         }catch(e){
             error_handler(e.message);
             return;
@@ -1480,7 +1504,7 @@ function sendChatMessage(user_id, password, transaction_id, message_text, callba
         var transaction = active_transactions.get(transaction_id);
         if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
             try {
-                var message = transaction.sendMessage(user, message_text);
+                var message = transaction.sendChatMessage(user, message_text);
                 callback(message);
             }catch(e){
                 error_handler(e.message);
@@ -1638,16 +1662,25 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
 
 //accepts an event string and an array of user_ids, emits the event to each one of those users
 //also accepts data which is a javascript object that holds the data that will passed in the event
-function emitEvent(event, data, user_id_arr){
-    for(var i=0; i<users.length; i++){
+function emitEvent(event_name, data, user_id_arr){
+    for(var i=0; i<user_id_arr.length; i++){
+        console.log(user_id_arr[i]);
+        console.log("user_id_arr.length = " + user_id_arr.length);
+        console.log("attempting to emit event to " + user_id_arr[i].toString())
         var user = active_users.get(user_id_arr[i]);
+        console.log("the users first name is " + user.first_name);
         var user_socket = io.sockets.connected[user.socket_id];
-        var event = new Event(event, data, null);
+        var event = new Event(event_name, data, null);
+        console.log(event);
+        // var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
+
         if(user_socket != undefined) {
+            console.log("event emitted to " + user.first_name);
             user_socket.emit(event.name , event.message);
         }
         else{
             if(user != undefined) {
+                console.log("event enqueued for " + user.first_name);
                 user.enqueueEvent(event);
             }
         }

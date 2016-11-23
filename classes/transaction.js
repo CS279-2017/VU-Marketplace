@@ -134,19 +134,19 @@ var Transaction = function() {
             this.active = transaction.active;
         },
         //user is an instance of the user that's sending the message
-        sendMessage: function (user, text) {
+        sendChatMessage: function (user, text) {
             //sends a message to the current conversation
             //current_transaction cannot be null
             if (this.conversation == null) {
-                throw {message: "sendMessage: tried to send message to null Conversation"};
+                throw {message: "sendChatMessage: tried to send message to null Conversation"};
             }
 
             if(user._id.toString() != this.buyer_user_id.toString() && user._id.toString() != this.seller_user_id.toString()){
-                throw {message: "sendMessage: user with id " + user._id + " doesn't match either user_id of the users in the transaction"}
+                throw {message: "sendChatMessage: user with id " + user._id + " doesn't match either user_id of the users in the transaction"}
             }
             //(Message(text, username, time_sent)
-            var message = new Message(text, user.username, new Date().getTime());
-            this.conversation.sendMessage(message);
+            var message = new Message(text, user._id, new Date().getTime());
+            this.conversation.sendChatMessage(message);
             return message;
         },
         //TODO: the below modifications should be done atomically so as the avoid race conditions
@@ -171,11 +171,11 @@ var Transaction = function() {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
             //TODO: set the confirm to true for the appropriate user
             verifyTransactionActiveThenSetConfirmed.call(this, user_id, true);
-            if(isCompleted()){
+            if(this.isCompleted()){
                 this.active = false;
             }
         },
-        reject: function (user_id) {
+        terminate: function (user_id) {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
             //TODO: set the confirm to false for the appropriate user
             verifyTransactionActiveThenSetConfirmed.call(this, user_id, false);
@@ -188,6 +188,9 @@ var Transaction = function() {
             // var notRejected =  this.buyer_confirmed_meet_up != false && this.seller_confirmed_meet_up != false;
             // var notConfirmed = !(this.buyer_confirmed_meet_up == true && this.seller_confirmed_meet_up == true);
             // return accepted && notRejected && notConfirmed;
+        },
+        isAccepted: function(){
+            return this.buyer_accepted_request && this.seller_accepted_request;
         },
         //TODO: watch out for when both users confirm at the same time.
         isCompleted: function () {
