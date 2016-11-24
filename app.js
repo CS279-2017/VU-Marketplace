@@ -168,18 +168,18 @@ io.on('connection', function (socket) {
         // var username = json.username;
         var password = json.password;
         
-        var first_name = json.first_name;
-        var last_name = json.last_name;
+        // var first_name = json.first_name;
+        // var last_name = json.last_name;
         // var confirm_password = json.confirm_password;
         var email_address = json.email_address.toLowerCase();
         var callback = function(){
-            socket.emit("register_verification_code_response", {data: {first_name: first_name, last_name: last_name}, error: null});
+            socket.emit("register_verification_code_response", {data: null, error: null});
         };
         var error_handler = function(e) {
             socket.emit("register_verification_code_response", {data: null, error: e});
             console.log(e);
         }
-        registerVerificationCode(verification_code, email_address, password, first_name, last_name, callback, error_handler);
+        registerVerificationCode(verification_code, email_address, password, callback, error_handler);
     });
 
     socket.on('login', function(json){
@@ -846,7 +846,8 @@ function registerEmailAddress(email_address, callback, error_handler){
 
 //this causes a race condition is two users registerVerification code within about .5 seconds of each other
 //fixed: by adding an index to database before inserting
-function registerVerificationCode(verification_code, email_address, password, first_name, last_name, callback, error_handler){
+//TODO: automatically infer first and last name from email_address
+function registerVerificationCode(verification_code, email_address, password, callback, error_handler){
     console.log("called registerVerificationCode");
 
     //adds a function to String prototype to capitalize first letter
@@ -854,6 +855,26 @@ function registerVerificationCode(verification_code, email_address, password, fi
         return this.charAt(0).toUpperCase() + this.slice(1);
     }
     email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
+    if(!validateEmail(email_address)){
+        error_handler("invalid password");
+        return;
+    }
+    var first_name;
+    var last_name;
+    var nameString = email_address.substring(0, email_address.indexOf("@"));
+    var nameStringSplit = nameString.split(".");
+    if(nameStringSplit.length == 2){
+        first_name = nameStringSplit[0];
+        last_name = nameStringSplit[1];
+    }
+    else if(nameStringSplit.length ==3){
+        first_name = nameStringSplit[0];
+        last_name = nameStringSplit[2];
+    }
+    else{
+        error_handler("the vanderbilt email is of invalid format");
+        return;
+    }
     first_name = first_name.toLowerCase(); //converts first name to lower case
     first_name = first_name.capitalizeFirstLetter(); //then capitalizes first letter
     last_name = last_name.toLowerCase(); //converts last name to lower case
@@ -1350,6 +1371,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
 function declineTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
+        console.log(active_transactions.getAll());
         if(transaction == null || transaction == undefined){
             error_handler({message: "unable to find transaction with transaction_id: " + transaction_id});
             return;
@@ -1730,39 +1752,33 @@ function validateUsername(username){
 }
 
 function validatePassword(password){
-    //must be atleast 6 characters long
-    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(password);
+    //must be atleast 1 character long
+    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,}$/.test(password);
 }
 
 //user_id, title, description, location, expiration_time, price, buy
 
 function validateTitle(title){
-    // return typeof title == 'string' && title.length > 0 && title.length <=30;
-    return true;
+    return typeof title == 'string' && /^[A-Za-z0-9\s\-_,\.;:()]+$/.test(title) && title.length <= 30 && title.length > 0;
 }
 
 function validateDescription(description){
-    // return description.length > 0 && description.length <= 140;
-    return true;
+    return description.length > 0 && description.length <= 140;
 }
 
 function validateLocation(location){
-    // return (typeof location == 'object') && (location.x != undefined) && (location.y != undefined) && (typeof location.x == 'number') && (typeof location.y == 'number');
-    return true;
+    return (typeof location == 'object') && (location.latitude != undefined) && (location.longitude != undefined) && (typeof location.latitude == 'number') && (typeof location.longitude == 'number');
 }
 
 
 function validateExpirationTime(expiration_time){
-    // return typeof expiration_time == 'number';
-    return true;
+    return typeof expiration_time == 'number' && expiration_time >= new Date().getTime() && expiration_time <= 1606243112000;
 }
 
 function validatePrice(price){
-    // return typeof price == 'number';
-    return true;
+    return typeof price == 'number';
 }
 
 function validateBuy(buy){
-    // return typeof buy == 'boolean';
-    return true;
+    return typeof buy == 'boolean';
 }
