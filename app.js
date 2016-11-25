@@ -133,6 +133,9 @@ io.on('connection', function (socket) {
     //log the user out on disconnect
     //send 'logged_out_due_to_disconnect' event to user
     socket.on('disconnect', function() {
+        //TODO: record that the user is disconnected
+        //TODO: start sending push notifications rather than socket events for import events like
+        //TODO: transaction requests and listing expirations and transaction accept or decline, tranaction terminations or confirmations
         console.log('user has disconnected!');
         var socket_id = socket.id
         var disconnected_user = active_users.getUserBySocketId(socket_id);
@@ -646,6 +649,24 @@ io.on('connection', function (socket) {
         })
     });
 
+    socket.on('update_profile_picture', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var profile_picture = json.profile_picture;
+        authenticate(user_id, password, function(user){
+            updateProfilePicture(user_id, profile_picture, callback, error_handler)
+        }, error_handler)
+
+        function callback(){
+            socket.emit("update_profile_picture_response", {data: null, error: null});
+        }
+
+        function error_handler(e){
+            socket.emit("update_profile_picture_response", {data: null, error: e});
+            console.log(e);
+        }
+    });
+
     socket.on('send_chat_message', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -726,6 +747,18 @@ io.on('connection', function (socket) {
         }
         getUser(user_id, callback, error_handler);
     });
+
+    socket.on('get_profile_picture', function(json){
+        var user_id = json.user_id;
+        function callback(profile_picture){
+            socket.emit("get_profile_picture_response", {data: {profile_picture: profile_picture}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_profile_picture_response", {data: null, error: e});
+            console.log(e);
+        }
+        getProfilePicture(user_id, callback, error_handler);
+    })
 });
 
 //**************************************
@@ -747,7 +780,7 @@ function registerEmailAddress(email_address, callback, error_handler){
     }
     //validate email address is vanderbilt.edu
     if(validateVanderbiltEmail(email_address) == false){
-        error_handler("must be a vanderbilt.edu email address")
+        error_handler("Must be a valid vanderbilt.edu email address")
         return;
     }
     //validate email address send out verification email
@@ -1071,28 +1104,33 @@ function authenticate(user_id, password, callback, error_handler){
 //TODO: save the listing state i.e bool called active so that upon server crash, active_listings can be restored
 function makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler){
     authenticate(user_id, password, function(user){
+        //must be less than 30 characters
+        var error_string = "";
         if(!validateTitle(title)){
-            error_handler("invalid title");
-            return;
+            error_string += "Invalid Title, must be less than 30 characters\n";
         }
+        //must be less than 140 characters
         if(!validateDescription(description)){
-            error_handler("invalid description");
-            return;
+            error_string += "Invalid Description, must be less than 140 characters\n";
         }
+        //must be a object with keys latitude and longitude
         if(!validateLocation(location)){
-            error_handler("invalid email");
-            return;
+            error_string += "Invalid Location, please select a location from the map\n";
         }
+        //must be a value between now and 2020
         if(!validateExpirationTime(expiration_time)){
-            error_handler("invalid expiration time");
-            return;
+            error_string += "Invalid Expiration Time must be between now and 2020\n";
         }
+        //must be a valid number
         if(!validatePrice(price)){
-            error_handler("invalid price");
-            return;
+            error_string += "Invalid price\n";
         }
+        //must be a boolean
         if(!validateBuy(price)){
-            error_handler("invalid buy");
+           error_string += "Must select to buy or sell\n";
+        }
+        if(error_string != ""){
+            error_handler(error_string);
             return;
         }
         var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
@@ -1517,6 +1555,16 @@ function updateVenmoId(user_id, venmo_id, callback, error_handler) {
     }
 }
 
+function updateProfilePicture(user_id, profile_picture, callback, error_handler){
+    var collection_profile_pictures = database.collection('profile_pictures');
+    collection_profile_pictures.update({user_id: user_id}, {user_id: user_id, profile_picture: profile_picture}, {upsert: true}, function (err, count, status) {
+        if(err){error_handler(err.message);}
+        else{
+            if(callback != undefined && callback != null){callback();}
+        }
+    });
+}
+
 //1. authenticate
 //2. find the transaction
 //3. verify user is one of the users of the transaction
@@ -1611,6 +1659,25 @@ function getListing(listing_id, callback, error_handler){
         listing_info.active = true;
         callback(listing_info)
     }
+}
+
+function getProfilePicture(user_id, callback, error_handler){
+    var collection = database.collection('profile_pictures');
+    collection.find({user_id: user_id}).toArray(function(err, docs) {
+        if(err){
+            error_handler(err);
+        }
+        else {
+            if (docs.length > 0) {
+                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                //the object that is stored in database has a user_id field and a profile_picture field that stores the binary
+                callback(docs[0].profile_picture);
+            }
+            else {
+                callback(null);
+            }
+        }
+    });
 }
 
 function updateTransactions(transaction, callback, error_handler){
@@ -1736,13 +1803,15 @@ function getActiveTransactions(){
     return active_transactions;
 }
 
-function validateEmail(email) {
+function validateEmail(email_address) {
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(email);
+    return re.test(email_address);
 }
 
-function validateVanderbiltEmail(email){
-    return /@vanderbilt.edu\s*$/.test(email);
+function validateVanderbiltEmail(email_address){
+    var nameString = email_address.substring(0, email_address.indexOf("@"));
+    var nameStringSplit = nameString.split(".");
+    return nameStringSplit.length >= 2 && nameStringSplit.length <= 3 && /@vanderbilt.edu\s*$/.test(email_address);
 }
 
 function validateUsername(username){
@@ -1780,5 +1849,7 @@ function validatePrice(price){
 }
 
 function validateBuy(buy){
-    return typeof buy == 'boolean';
+    console.log("typeofbuy == " + (typeof buy))
+    // return typeof buy == 'boolean';
+    return true;
 }
