@@ -752,6 +752,7 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         function callback(profile_picture){
             socket.emit("get_profile_picture_response", {data: {profile_picture: profile_picture}, error: null});
+            console.log("get_profile_picture_response emitted!");
         }
         function error_handler(e){
             socket.emit("get_profile_picture_response", {data: null, error: e});
@@ -1557,6 +1558,8 @@ function updateVenmoId(user_id, venmo_id, callback, error_handler) {
 
 function updateProfilePicture(user_id, profile_picture, callback, error_handler){
     var collection_profile_pictures = database.collection('profile_pictures');
+    console.log(typeof profile_picture);
+    console.log(profile_picture);
     collection_profile_pictures.update({user_id: user_id}, {user_id: user_id, profile_picture: profile_picture}, {upsert: true}, function (err, count, status) {
         if(err){error_handler(err.message);}
         else{
@@ -1671,10 +1674,12 @@ function getProfilePicture(user_id, callback, error_handler){
             if (docs.length > 0) {
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 //the object that is stored in database has a user_id field and a profile_picture field that stores the binary
-                callback(docs[0].profile_picture);
+                console.log(docs[0]);
+                console.log(docs[0].profile_picture.buffer)
+                callback(docs[0].profile_picture.buffer);
             }
             else {
-                callback(null);
+                error_handler("getProfilePicture: unable to find profile_picture");
             }
         }
     });
