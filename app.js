@@ -1105,30 +1105,30 @@ function authenticate(user_id, password, callback, error_handler){
 //TODO: save the listing state i.e bool called active so that upon server crash, active_listings can be restored
 function makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler){
     authenticate(user_id, password, function(user){
-        //must be less than 30 characters
         var error_string = "";
-        if(!validateTitle(title)){
-            error_string += "Invalid Title, must be less than 30 characters\n";
+        //must be less than 30 characters
+        if(validateTitle(title) != ""){
+            error_string += (validateTitle(title) + "\n");
         }
         //must be less than 140 characters
-        if(!validateDescription(description)){
-            error_string += "Invalid Description, must be less than 140 characters\n";
+        if(validateDescription(description) != ""){
+            error_string += (validateDescription(description) + "\n");
         }
         //must be a object with keys latitude and longitude
-        if(!validateLocation(location)){
-            error_string += "Invalid Location, please select a location from the map\n";
+        if(validateLocation(location) != ""){
+            error_string += (validateLocation(location) + "\n");
         }
         //must be a value between now and 2020
-        if(!validateExpirationTime(expiration_time)){
-            error_string += "Invalid Expiration Time must be between now and 2020\n";
+        if(validateExpirationTime(expiration_time) != ""){
+            error_string += (validateExpirationTime(expiration_time) + "\n");
         }
         //must be a valid number
-        if(!validatePrice(price)){
-            error_string += "Invalid price\n";
+        else if(validatePrice(price) != ""){
+            error_string += (validatePrice(price) + "\n");
         }
         //must be a boolean
-        if(!validateBuy(price)){
-           error_string += "Must select to buy or sell\n";
+        if(validateBuy(price) != ""){
+           error_string += (validateBuy(price) + "\n");
         }
         if(error_string != ""){
             error_handler(error_string);
@@ -1533,7 +1533,7 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
 //3. update the users location to the new_location
 function updateUserLocation(user_id, password, new_location, callback, error_handler){
     authenticate(user_id, password, function(user){
-        if(validateLocation(new_location) == true){
+        if(validateLocation(new_location) == ""){
             //transform the ordered pair into a Location object (regardless of whether it was a Location or just a normal
             //object)
             user.location = new Location(new_location.latitude, new_location.longitude);
@@ -1833,28 +1833,73 @@ function validatePassword(password){
 //user_id, title, description, location, expiration_time, price, buy
 
 function validateTitle(title){
-    return typeof title == 'string' && /^[A-Za-z0-9\s\-_,\.;:()]+$/.test(title) && title.length <= 30 && title.length > 0;
+    if(!(typeof title == 'string' && /^[A-Za-z0-9\s\-_,\.;:()]+$/.test(title))){
+        return "That's an invalid title!"
+    }
+    else if(!(title.length <= 30)){
+        return "Title must be less than 30 characters!"
+    }
+    else if(!( title.length > 0)){
+        return "You didn't enter a title!"
+    }
+    return "";
 }
 
 function validateDescription(description){
-    return description.length > 0 && description.length <= 140;
+    if(!(description.length > 0 )){
+        return "Looks like you didn't enter a description!"
+    }
+    else if(!(description.length <= 140)){
+        return "Description must be 140 characters or less!"
+    }
+    else{
+        return "";
+    }
 }
 
 function validateLocation(location){
-    return (typeof location == 'object') && (location.latitude != undefined) && (location.longitude != undefined) && (typeof location.latitude == 'number') && (typeof location.longitude == 'number');
+    if(!((typeof location == 'object') && (location.latitude != undefined) && (location.longitude != undefined) && (typeof location.latitude == 'number') && (typeof location.longitude == 'number'))){
+        return "Please enter a valid location!"
+    }
+    else{
+        return "";
+    }
 }
 
 
 function validateExpirationTime(expiration_time){
-    return typeof expiration_time == 'number' && expiration_time >= new Date().getTime() && expiration_time <= 1606243112000;
+    // return typeof expiration_time == 'number' && expiration_time >= new Date().getTime() && expiration_time <= 1606243112000;
+    if(!(typeof expiration_time == 'number')) {
+        return "Please enter a valid date using the Date Input!";
+    }else if( !(expiration_time >= new Date().getTime())){
+        return "You can't go back in time! Set a time in the future!"
+    }else if(!(expiration_time <= new Date().getTime() + 86400000)){
+       return "Ain't nobody got time for that! Set a time within the next 24 hours!"
+    }
+    else{
+        return "";
+    }
+
 }
 
+//returns a string if "" then no error otherwise its an error
 function validatePrice(price){
-    return typeof price == 'number';
+    if(!typeof price == 'number'){
+        return "Price must be a number!"
+    }
+    else if(!(price >= 0)){
+        return "You can't make the price less than free! "
+    }
+    else if(!(price <= 500)){
+        return "We can only buy or sell items of value less than or equal to $500!"
+    }
+    else{
+        return "";
+    }
 }
 
 function validateBuy(buy){
     console.log("typeofbuy == " + (typeof buy))
     // return typeof buy == 'boolean';
-    return true;
+    return "";
 }
