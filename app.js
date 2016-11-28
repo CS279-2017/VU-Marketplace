@@ -127,7 +127,7 @@ app.get('/', function (req, res) {
 //TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
 io.on('connection', function (socket) {
     console.log("user has connected!");
-    socket.emit('event', { data: 'server data' });
+    // socket.emit('event', { data: 'server data' });
     //TODO: should active_listings and transactions be terminated? no unless terminated by other party
     //TODO: should user be logged out when disconnected? maybe
     //log the user out on disconnect
@@ -749,15 +749,25 @@ io.on('connection', function (socket) {
     });
 
     socket.on('get_profile_picture', function(json){
+        console.log("get_profile_picture called!")
         var user_id = json.user_id;
         function callback(profile_picture){
-            socket.emit("get_profile_picture_response", {data: {profile_picture: profile_picture}, error: null});
+            var end0 = new Date().getTime();
+            console.log("Call to getProfilePicture took " + (end0 - start0) + " milliseconds.")
+            console.log("getProfilePicture returned!")
+            var start1 = new Date().getTime();
+            socket.emit("get_profile_picture_response", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
+            socket.emit("profile_picture_gotten", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
+            var end1 = new Date().getTime();
+            console.log("emitting profile_picture_gotten took " + (end1 - start1) + " milliseconds.")
             console.log("get_profile_picture_response emitted!");
         }
         function error_handler(e){
             socket.emit("get_profile_picture_response", {data: null, error: e});
             console.log(e);
         }
+        console.log("getProfilePicture called!")
+        var start0 = new Date().getTime();
         getProfilePicture(user_id, callback, error_handler);
     })
 });
@@ -1029,7 +1039,7 @@ function login(email_address, password, callback, error_handler){
                 error_handler(error.message);
                 return;
             }
-            console.log(user.email_address + " is logged in");
+            // console.log(user.email_address + " is logged in");
             //return user._id, use this to authenticate, thus login is independent of login credentials
             if(callback != undefined){ callback(user); }
 
@@ -1083,7 +1093,7 @@ function logout(user_id, password, callback, error_handler){
 //TODO: implement device_id
 function authenticate(user_id, password, callback, error_handler){
     var user = active_users.get(user_id);
-    console.log("trying to authenticate user_id: " + user_id + " password: " + password);
+    // console.log("trying to authenticate user_id: " + user_id + " password: " + password);
     if(user == undefined){
         error_handler("tried to authenticate an invalid user_id/password combination");
     }
@@ -1091,7 +1101,7 @@ function authenticate(user_id, password, callback, error_handler){
         error_handler("tried to authenticate an invalid user_id/password combination");
     }
     else{
-        console.log("authentication success!!")
+        // console.log("authentication success!!")
         callback(user);
     }
 }
