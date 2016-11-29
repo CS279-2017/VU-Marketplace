@@ -653,6 +653,7 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var profile_picture = json.profile_picture;
+        console.log(profile_picture.length);
         authenticate(user_id, password, function(user){
             updateProfilePicture(user_id, profile_picture, callback, error_handler)
         }, error_handler)
