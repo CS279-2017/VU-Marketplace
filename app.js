@@ -275,6 +275,34 @@ io.on('connection', function (socket) {
         makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
     });
 
+    socket.on('update_listing', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var listing_id = json.listing_id
+        var title = json.title;
+        var description = json.description;
+        var location = json.location;
+        var expiration_time = json.expiration_time;
+        var price = json.price;
+        var buy = json.buy;
+
+        authenticate(user_id, password, function(user){
+            var listing = active_listings.get(listing_id);
+            var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
+            updateListing(listing, new_listing, callback, error_handler)
+        }, error_handler)
+        function callback(listing){
+            socket.emit("update_listing_response", {data: null, error: null});
+            //emit event to all users that a new listing has been made
+            io.emit("listing_updated", {data: {listing: listing}});
+        }
+        function error_handler(e){
+            socket.emit("update_listing_response", {data: null, error: e});
+            console.log(e);
+        }
+        makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
+    });
+
     //TODO: what happens if a you try to remove a listing that transactions have been made from?
     //TODO: listings are only templates for creating transactions, thus once a transaction has been created 
     //TODO: it is only loosely related to the listing through the listing_id but otherwise has a life of its own
@@ -1138,8 +1166,8 @@ function makeListing(user_id, password, title, description, location, expiration
             error_string += (validatePrice(price) + "\n");
         }
         //must be a boolean
-        if(validateBuy(price) != ""){
-           error_string += (validateBuy(price) + "\n");
+        if(validateBuy(buy) != ""){
+           error_string += (validateBuy(buy) + "\n");
         }
         if(error_string != ""){
             error_handler(error_string);
@@ -1171,6 +1199,49 @@ function makeListing(user_id, password, title, description, location, expiration
     }, error_handler)
 }
 
+function updateListing(listing, new_listing, callback, error_handler){
+    console.log("updateListing called");
+    if(new_listing != undefined && old_listing != undefined) {
+        var error_string = "";
+        //must be less than 30 characters
+        if(validateTitle(title) != ""){
+            error_string += (validateTitle(new_listing.title) + "\n");
+        }
+        //must be less than 140 characters
+        if(validateDescription(description) != ""){
+            error_string += (validateDescription(new_listing.description) + "\n");
+        }
+        //must be a object with keys latitude and longitude
+        if(validateLocation(location) != ""){
+            error_string += (validateLocation(new_listing.location) + "\n");
+        }
+        //must be a value between now and 2020
+        if(validateExpirationTime(expiration_time) != ""){
+            error_string += (validateExpirationTime(new_listing.expiration_time) + "\n");
+        }
+        //must be a valid number
+        else if(validatePrice(price) != ""){
+            error_string += (validatePrice(new_listing.price) + "\n");
+        }
+        //must be a boolean
+        if(validateBuy(buy) != ""){
+            error_string += (validateBuy(new_listing.buy) + "\n");
+        }
+        if(error_string != ""){
+            error_handler(error_string);
+            return;
+        }
+        listing.update(new_listing);
+        var collection_listings = database.collection('listings');
+        collection_listings.update({_id: listing._id}, listing, {upsert: true}, function (err, count, status) {
+            if(err){error_handler(err.message);}
+            else{
+                if(callback != undefined && callback != null){callback();}
+            }
+        });
+    }
+}
+
 //1. authenticate if not successful pass message to error_handler
 //2. get listing from active_listings using listing_id, if not found pass message to error handler
 //3. if user_id of listing matches user_id, then remove listing from active_listings
@@ -1187,7 +1258,7 @@ function removeListing(listing_id, callback, error_handler){
     //TODO: never reused, this doesn't matter.
     if(listing != undefined) {
         listing.active = false; //deactivate the listing
-        updateListings(listing, function () {
+        updateListingInDatabase(listing, function () {
             var user = active_users.get(listing.user_id)
             active_listings.remove(listing_id);
             if (user != undefined) { //in case user has already logged out
@@ -1391,7 +1462,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
                 callback(transaction);
             }
         }, error_handler)
-        // updateListings(listing, function(){
+        // updateListingInDatabase(listing, function(){
         //     active_listings.remove(transaction.listing_id);
         //     //add transaction to current transaction of accepting user, user object returned by authenticate
         //     if(user != undefined) { //in case user has logged out
@@ -1437,7 +1508,7 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
         }
         transaction.active = false;
         //update transaction in database before deleting it so we have a record of the failed transaction
-        updateTransactions(transaction, function(){
+        updateTransactionInDatabase(transaction, function(){
             //send message to user that initiated request that request was declined
             // remove transaction_id from initiating user (transaction_id was never added to declining user)
             var buyer = active_users.get(transaction.buyer_user_id);
@@ -1484,7 +1555,7 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         console.log("isCompleted() == " + transaction.isCompleted());
         if(transaction.isCompleted() == true){
             transaction.active = false;
-            updateTransactions(transaction, function(){
+            updateTransactionInDatabase(transaction, function(){
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
                 if(user1 != undefined){
@@ -1523,7 +1594,7 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
         }
             transaction.active = false; 
         // sendTransactionRejectedMessage(transaction, function(){
-            updateTransactions(transaction, function(){
+            updateTransactionInDatabase(transaction, function(){
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
                 if(user1 != undefined){
@@ -1696,7 +1767,7 @@ function getProfilePicture(user_id, callback, error_handler){
     });
 }
 
-function updateTransactions(transaction, callback, error_handler){
+function updateTransactionInDatabase(transaction, callback, error_handler){
     var collection_transactions = database.collection('transactions');
     collection_transactions.update({_id: transaction._id}, transaction, {upsert: true}, function (err, count, status) {
         if(err){error_handler(err.message);}
@@ -1706,7 +1777,7 @@ function updateTransactions(transaction, callback, error_handler){
     });
 }
 
-function updateListings(listing, callback, error_handler){
+function updateListingInDatabase(listing, callback, error_handler){
     var collection_listings = database.collection('listings');
     collection_listings.update({_id: listing._id}, listing, {upsert: true}, function (err, count, status) {
         if(err){error_handler(err.message);}
@@ -1902,7 +1973,7 @@ function validatePrice(price){
         return "You can't make the price less than free! "
     }
     else if(!(price <= 500)){
-        return "We can only buy or sell items of value less than or equal to $500!"
+        return "You can only buy or sell items of value less than or equal to $500!"
     }
     else{
         return "";
@@ -1910,7 +1981,8 @@ function validatePrice(price){
 }
 
 function validateBuy(buy){
-    console.log("typeofbuy == " + (typeof buy))
+    console.log("typeofbuy == " + (typeof buy));
     // return typeof buy == 'boolean';
     return "";
 }
+

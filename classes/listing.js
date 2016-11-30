@@ -34,6 +34,14 @@ var Listing = function() {
             
             this.active = listing.active;
         },
+        update: function(listing){
+            this.title = listing.title;
+            this.description = listing.description;
+            this.location = listing.location;
+            this.expiration_time = listing.expiration_time;
+            this.price = listing.price;
+            this.buy = listing.buy;
+        },
         makeTransaction: function (user_initiate_id) {
             //user_intitate_id is the id of the user that clicks on the listing i.e initiates the transaction
             if (_id == undefined) {
