@@ -300,7 +300,6 @@ io.on('connection', function (socket) {
             socket.emit("update_listing_response", {data: null, error: e});
             console.log(e);
         }
-        makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
     });
 
     //TODO: what happens if a you try to remove a listing that transactions have been made from?
@@ -1201,30 +1200,30 @@ function makeListing(user_id, password, title, description, location, expiration
 
 function updateListing(listing, new_listing, callback, error_handler){
     console.log("updateListing called");
-    if(new_listing != undefined && old_listing != undefined) {
+    if(new_listing != undefined && listing != undefined) {
         var error_string = "";
         //must be less than 30 characters
-        if(validateTitle(title) != ""){
+        if(validateTitle(new_listing.title) != ""){
             error_string += (validateTitle(new_listing.title) + "\n");
         }
         //must be less than 140 characters
-        if(validateDescription(description) != ""){
+        if(validateDescription(new_listing.description) != ""){
             error_string += (validateDescription(new_listing.description) + "\n");
         }
         //must be a object with keys latitude and longitude
-        if(validateLocation(location) != ""){
+        if(validateLocation(new_listing.location) != ""){
             error_string += (validateLocation(new_listing.location) + "\n");
         }
         //must be a value between now and 2020
-        if(validateExpirationTime(expiration_time) != ""){
+        if(validateExpirationTime(new_listing.expiration_time) != ""){
             error_string += (validateExpirationTime(new_listing.expiration_time) + "\n");
         }
         //must be a valid number
-        else if(validatePrice(price) != ""){
+        else if(validatePrice(new_listing.price) != ""){
             error_string += (validatePrice(new_listing.price) + "\n");
         }
         //must be a boolean
-        if(validateBuy(buy) != ""){
+        if(validateBuy(new_listing.buy) != ""){
             error_string += (validateBuy(new_listing.buy) + "\n");
         }
         if(error_string != ""){
