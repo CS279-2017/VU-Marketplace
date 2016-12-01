@@ -294,6 +294,8 @@ io.on('connection', function (socket) {
         function callback(listing){
             socket.emit("update_listing_response", {data: null, error: null});
             //emit event to all users that a new listing has been made
+            console.log("updatedListing returned: ");
+            console.log(listing);
             io.emit("listing_updated", {data: {listing: listing}});
         }
         function error_handler(e){
@@ -1235,7 +1237,7 @@ function updateListing(listing, new_listing, callback, error_handler){
         collection_listings.update({_id: listing._id}, listing, {upsert: true}, function (err, count, status) {
             if(err){error_handler(err.message);}
             else{
-                if(callback != undefined && callback != null){callback();}
+                if(callback != undefined && callback != null){callback(listing);}
             }
         });
     }
@@ -1914,10 +1916,10 @@ function validatePassword(password){
 //user_id, title, description, location, expiration_time, price, buy
 
 function validateTitle(title){
-    if(!(typeof title == 'string' && /^[A-Za-z0-9\s\-_,\.;:()]+$/.test(title))){
-        return "That's an invalid title!"
-    }
-    else if(!(title.length <= 30)){
+    // if(!(typeof title == 'string' && /^[A-Za-z0-9\s\-_,\.;:()]+$/.test(title))){
+    //     return "That's an invalid title!"
+    // }
+    if(!(title.length <= 30)){
         return "Title must be less than 30 characters!"
     }
     else if(!( title.length > 0)){
