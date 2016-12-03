@@ -44,14 +44,18 @@ ActiveTransactions.prototype = {
             var transaction = this.transactions[transaction_id];
             if(user_id == transaction.buyer_user_id || user_id == transaction.seller_user_id){
                 transactions_arr.push(transaction);
+
             }
         }
+        console.log("getAllForUser:");
+        console.log(transactions_arr)
         return transactions_arr;
     },
     getAllForListingId: function(listing_id){
         var transactions_arr = [];
         for(transaction_id in this.transactions){
             var transaction = this.transactions[transaction_id];
+            console.log(transaction)
             if(transaction.listing_id == listing_id){
                 transactions_arr.push(transaction);
             }

@@ -187,11 +187,10 @@ var Transaction = function() {
         },
         //returns whether transaction has been initiated
         isActive: function () {
-            return this.active;
-            // var accepted = this.buyer_accepted_request && this.seller_accepted_request
-            // var notRejected =  this.buyer_confirmed_meet_up != false && this.seller_confirmed_meet_up != false;
-            // var notConfirmed = !(this.buyer_confirmed_meet_up == true && this.seller_confirmed_meet_up == true);
-            // return accepted && notRejected && notConfirmed;
+            var accepted = this.buyer_accepted_request && this.seller_accepted_request
+            var notRejected =  this.buyer_confirmed_meet_up != false && this.seller_confirmed_meet_up != false;
+            var notConfirmed = !(this.buyer_confirmed_meet_up == true && this.seller_confirmed_meet_up == true);
+            return accepted && notRejected && notConfirmed;
         },
         isAccepted: function(){
             return this.buyer_accepted_request && this.seller_accepted_request;

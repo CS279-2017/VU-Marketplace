@@ -4,6 +4,7 @@
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/active_transactions.js" afterPath="$PROJECT_DIR$/classes/active_transactions.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/transaction.js" afterPath="$PROJECT_DIR$/classes/transaction.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -27,8 +28,8 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="331">
-              <caret line="1783" column="1" selection-start-line="1783" selection-start-column="1" selection-end-line="1783" selection-end-column="1" />
+            <state relative-caret-position="436">
+              <caret line="498" column="17" selection-start-line="498" selection-start-column="17" selection-end-line="498" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -83,8 +84,8 @@
       <file leaf-file-name="transaction.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/transaction.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1860">
-              <caret line="124" column="25" selection-start-line="124" selection-start-column="17" selection-end-line="124" selection-end-column="25" />
+            <state relative-caret-position="1770">
+              <caret line="120" column="13" selection-start-line="120" selection-start-column="12" selection-end-line="120" selection-end-column="13" />
               <folding />
             </state>
           </provider>
@@ -93,8 +94,8 @@
       <file leaf-file-name="active_transactions.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/active_transactions.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="525">
-              <caret line="56" column="13" selection-start-line="56" selection-start-column="13" selection-end-line="56" selection-end-column="13" />
+            <state relative-caret-position="183">
+              <caret line="57" column="35" selection-start-line="57" selection-start-column="35" selection-end-line="57" selection-end-column="35" />
               <folding />
             </state>
           </provider>
@@ -375,12 +376,12 @@
       <workItem from="1480107721921" duration="11638000" />
       <workItem from="1480397730771" duration="5282000" />
       <workItem from="1480629785670" duration="638000" />
-      <workItem from="1480699192539" duration="6925000" />
+      <workItem from="1480699192539" duration="10720000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="385124000" />
+    <option name="totallyTimeSpent" value="388919000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="51" y="23" width="1101" height="735" extended-state="0" />
@@ -435,7 +436,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="6" />
+      <option name="time" value="7" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -793,14 +794,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/active_transactions.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="525">
-          <caret line="56" column="13" selection-start-line="56" selection-start-column="13" selection-end-line="56" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/listing.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
@@ -811,16 +804,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/classes/transaction.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1860">
-          <caret line="124" column="25" selection-start-line="124" selection-start-column="17" selection-end-line="124" selection-end-column="25" />
+        <state relative-caret-position="1770">
+          <caret line="120" column="13" selection-start-line="120" selection-start-column="12" selection-end-line="120" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/classes/active_transactions.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="183">
+          <caret line="57" column="35" selection-start-line="57" selection-start-column="35" selection-end-line="57" selection-end-column="35" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="331">
-          <caret line="1783" column="1" selection-start-line="1783" selection-start-column="1" selection-end-line="1783" selection-end-column="1" />
+        <state relative-caret-position="436">
+          <caret line="498" column="17" selection-start-line="498" selection-start-column="17" selection-end-line="498" selection-end-column="17" />
           <folding />
         </state>
       </provider>
