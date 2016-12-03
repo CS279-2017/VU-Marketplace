@@ -1,9 +1,12 @@
 # mealplanserverapp
 
 ##TODO:
-* add ability to upload profile picture
-
+* 1 minute countdown timer for accepting a transaction request
 * add ability to add tags
+
+##COMPLETED:
+* ~add ability to upload profile picture~
+
 
 ###Events Received by Server from Client (Client -> Server)
 1. register_email_address({email_address:String}) -> register_email_address_response({data: null, error: null})
