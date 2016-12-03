@@ -42,7 +42,7 @@ ActiveTransactions.prototype = {
         var transactions_arr = [];
         for(transaction_id in this.transactions){
             var transaction = this.transactions[transaction_id];
-            if(user_id == transaction.user_id_buy || user_id == transaction.user_id_sell){
+            if(user_id == transaction.buyer_user_id || user_id == transaction.seller_user_id){
                 transactions_arr.push(transaction);
             }
         }

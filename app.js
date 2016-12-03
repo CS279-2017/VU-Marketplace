@@ -1775,7 +1775,7 @@ function getProfilePicture(user_id, callback, error_handler){
 
 function updateTransactionInDatabase(transaction, callback, error_handler){
     var collection_transactions = database.collection('transactions');
-    collection_transactions.update({_id: transaction._id}, transaction, {upsert: true}, function (err, count, status) {
+    collection_transactions.update({_id: require('mongodb').ObjectID(transaction._id)}, transaction, function (err, count, status) {
         if(err){error_handler(err.message);}
         else{
             if(callback != undefined && callback != null){callback();}
@@ -1785,7 +1785,7 @@ function updateTransactionInDatabase(transaction, callback, error_handler){
 
 function updateListingInDatabase(listing, callback, error_handler){
     var collection_listings = database.collection('listings');
-    collection_listings.update({_id: listing._id}, listing, {upsert: true}, function (err, count, status) {
+    collection_listings.update({_id: require('mongodb').ObjectID(listing._id)}, listing, function (err, count, status) {
         if(err){error_handler(err.message);}
         else{
             if(callback != undefined && callback != null){callback();}
