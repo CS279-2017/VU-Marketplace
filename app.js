@@ -365,6 +365,11 @@ io.on('connection', function (socket) {
                 //Sends message to other user that a transaction has been made on their listing
                 // var this_user = active_users.get(user_id)
                 // var this_user_socket = io.sockets.connected[this_user.socket_id];
+                // setTimeout(function(){
+                //     declineTransactionRequest(transaction.getOtherUserId(user_id), password, transaction._id, function(){
+                //        
+                //     }, error_handler)
+                // }, 60000)
                 var user = active_users.get(user_id);
                 var user_socket = io.sockets.connected[user.socket_id];
                 var other_user = active_users.get(transaction.getOtherUserId(user_id));
@@ -1325,7 +1330,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
             try {
                 console.log("adding to active_transactions");
                 active_transactions.add(new_transaction);
-                //Set 30 second time to respond to transaction_request
+                //Set 60 second time to respond to transaction_request
                 setTimeout(function(){
                     var transaction = active_transactions.get(new_transaction._id);
                     if(transaction != undefined) {
@@ -1348,7 +1353,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                             }
                         });
                     }
-                }, 30000)
+                }, 60000)
                 var user = active_users.get(user_id);
                 user.addCurrentTransactionId(new_transaction._id); //adds transaction_id to user that initiates
                 //user object is returned by authenticate
