@@ -586,6 +586,7 @@ io.on('connection', function (socket) {
        function callback(transaction){
            //notify both users in the transaction that this user has rejected the transaction
            try {
+               console.log(transaction)
                var buyer = active_users.get(transaction.buyer_user_id);
                var seller = active_users.get(transaction.seller_user_id);
                var buyer_socket = io.sockets.connected[buyer.socket_id];
@@ -1343,7 +1344,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                                 user.initFromDatabase(docs[0]);
                                 if (transaction.isAccepted() != true) {
                                     declineTransactionRequest(user._id, user.password, transaction._id, function () {
-                                        emitEvent("transaction_declined", {transaction_id: transaction._id.toString()}, [other_user_id, user_id]);
+                                        emitEvent("transaction_request_declined", {transaction_id: transaction._id.toString()}, [other_user_id, user_id]);
                                         console.log("transaction declined due to exceeding time limit for response")
                                     }, error_handler);
                                 }
@@ -1515,6 +1516,8 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
         transaction.active = false;
         //update transaction in database before deleting it so we have a record of the failed transaction
         updateTransactionInDatabase(transaction, function(){
+            console.log("updateTransaction completed");
+            console.log(transaction)
             //send message to user that initiated request that request was declined
             // remove transaction_id from initiating user (transaction_id was never added to declining user)
             var buyer = active_users.get(transaction.buyer_user_id);
@@ -1562,6 +1565,8 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         if(transaction.isCompleted() == true){
             transaction.active = false;
             updateTransactionInDatabase(transaction, function(){
+                console.log("updateTransaction completed");
+                console.log(transaction)
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
                 if(user1 != undefined){
@@ -1601,6 +1606,7 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
             transaction.active = false; 
         // sendTransactionRejectedMessage(transaction, function(){
             updateTransactionInDatabase(transaction, function(){
+                console.log(transaction)
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
                 if(user1 != undefined){
@@ -1610,7 +1616,7 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
                     user2.removeCurrentTransactionId(transaction_id);
                 }
                 active_transactions.remove(transaction_id);
-                callback();
+                callback(transaction);
             }, error_handler)
         // }, error_handler)
     }, error_handler)
@@ -1775,6 +1781,7 @@ function getProfilePicture(user_id, callback, error_handler){
 
 function updateTransactionInDatabase(transaction, callback, error_handler){
     console.log("updateTransactionInDatabase called!")
+    console.log(transaction);
     var collection_transactions = database.collection('transactions');
     collection_transactions.update({_id:new require('mongodb').ObjectID(transaction._id.toString())}, transaction, function (err, count, status) {
         if(err){error_handler(err.message);}
