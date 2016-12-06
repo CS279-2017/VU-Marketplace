@@ -632,8 +632,8 @@ io.on('connection', function (socket) {
                         var other_user_socket = io.sockets.connected[other_user.socket_id];
                         other_user_socket.emit("user_location_updated", {
                             data: {
-                                user_id: user._id,
-                                transaction_id: transaction_id,
+                                user_id: user._id.toString(),
+                                transaction_id: transaction_id.toString(),
                                 updated_location: updated_location
                             }, error: null
                         });
@@ -757,6 +757,22 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         getUsersActiveTransactions(user_id, password, callback, error_handler)
+    });
+
+    socket.on('get_users_previous_transactions', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        function callback(users_previous_transactions){
+            //send all_active_listings back to client
+            socket.emit("get_users_previous_transactions_response", {data: {users_previous_transactions: users_previous_transactions}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_users_previous_transactions_response", {data: null, error: e});
+            console.log(e);
+        }
+        authenticate(user_id, password, function(user){
+            getUsersPreviousTransactions(user_id, callback, error_handler)
+        }, error_handler);
     });
     
     socket.on('get_listing', function(json){
@@ -1699,6 +1715,25 @@ function getUsersActiveTransactions(user_id, password, callback, error_handler){
         var users_active_transactions = active_transactions.getAllForUser(user._id);
         callback(users_active_transactions);
     }, error_handler);
+}
+
+function getUsersPreviousTransactions(user_id, callback, error_handler){
+    var collection_transactions = database.collection('transactions');
+    var mongo = new require('mongodb');
+    var user_id = mongo.ObjectID(user_id.toString())
+    collection_transactions.find({active: false, $or: [{buyer_user_id: user_id}, {seller_user_id: user_id}]}).toArray(function(err, docs){
+        if(err){error_handler(err.message);}
+        else{
+            //retrieves all transactions where active = false from database and sends it back in array;
+            var previous_transactions_arr = [];
+            for(var i=0; i<docs.length; i++){
+                var transaction = new Transaction();
+                transaction.initFromDatabase(docs[i]);
+                previous_transactions_arr.push(transaction);
+            }
+            callback(previous_transactions_arr);
+        }
+    });
 }
 
 //Finds user in active_users if not found, searches database, returns a UserInfo object made from the User

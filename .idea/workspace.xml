@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/transaction.js" afterPath="$PROJECT_DIR$/classes/transaction.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,8 +28,8 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="196">
-              <caret line="1865" column="54" selection-start-line="1865" selection-start-column="34" selection-end-line="1865" selection-end-column="54" />
+            <state relative-caret-position="256">
+              <caret line="767" column="9" selection-start-line="767" selection-start-column="9" selection-end-line="767" selection-end-column="9" />
               <folding />
             </state>
           </provider>
@@ -86,7 +84,7 @@
       <file leaf-file-name="transaction.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/transaction.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1670">
+            <state relative-caret-position="1425">
               <caret line="127" column="59" selection-start-line="127" selection-start-column="59" selection-end-line="127" selection-end-column="59" />
               <folding />
             </state>
@@ -173,8 +171,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="167" />
-    <option name="y" value="23" />
+    <option name="x" value="90" />
+    <option name="y" value="89" />
     <option name="width" value="1101" />
     <option name="height" value="735" />
   </component>
@@ -379,15 +377,15 @@
       <workItem from="1480397730771" duration="5282000" />
       <workItem from="1480629785670" duration="638000" />
       <workItem from="1480699192539" duration="10981000" />
-      <workItem from="1480904037673" duration="2657000" />
+      <workItem from="1480904037673" duration="5290000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="391837000" />
+    <option name="totallyTimeSpent" value="394470000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="167" y="23" width="1101" height="735" extended-state="0" />
+    <frame x="90" y="89" width="1101" height="735" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2361111" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -810,7 +808,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/classes/transaction.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1670">
+        <state relative-caret-position="1425">
           <caret line="127" column="59" selection-start-line="127" selection-start-column="59" selection-end-line="127" selection-end-column="59" />
           <folding />
         </state>
@@ -818,8 +816,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="196">
-          <caret line="1865" column="54" selection-start-line="1865" selection-start-column="34" selection-end-line="1865" selection-end-column="54" />
+        <state relative-caret-position="256">
+          <caret line="767" column="9" selection-start-line="767" selection-start-column="9" selection-end-line="767" selection-end-column="9" />
           <folding />
         </state>
       </provider>
