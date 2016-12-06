@@ -760,10 +760,14 @@ io.on('connection', function (socket) {
     });
 
     socket.on('get_users_previous_transactions', function(json){
+        console.log("get_users_previous_transactions called");
         var user_id = json.user_id;
         var password = json.password;
         function callback(users_previous_transactions){
             //send all_active_listings back to client
+            console.log("get_users_previous_transactions successful!");
+            console.log(users_previous_transactions);
+
             socket.emit("get_users_previous_transactions_response", {data: {users_previous_transactions: users_previous_transactions}, error: null});
         }
         function error_handler(e){
@@ -1719,8 +1723,8 @@ function getUsersActiveTransactions(user_id, password, callback, error_handler){
 
 function getUsersPreviousTransactions(user_id, callback, error_handler){
     var collection_transactions = database.collection('transactions');
-    var mongo = new require('mongodb');
-    var user_id = mongo.ObjectID(user_id.toString())
+    // var mongo = new require('mongodb');
+    // var user_id = mongo.ObjectID(user_id.toString())
     collection_transactions.find({active: false, $or: [{buyer_user_id: user_id}, {seller_user_id: user_id}]}).toArray(function(err, docs){
         if(err){error_handler(err.message);}
         else{
