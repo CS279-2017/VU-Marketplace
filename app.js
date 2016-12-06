@@ -96,14 +96,14 @@ server.listen(3000, function () {
         //restore all active_listings and active_transactions
         getActiveListingsFromDatabase(function(listings){
             active_listings.initFromDatabase(listings);
-            console.log(active_listings.getAll());
+            // console.log(active_listings.getAll());
         }, function(error){
             console.log(error);
         });
 
         getActiveTransactionsFromDatabase(function(transactions){
             active_transactions.initFromDatabase(transactions);
-            console.log(active_transactions.getAll());
+            // console.log(active_transactions.getAll());
         }, function(error){
             console.log(error);
         });
@@ -688,7 +688,7 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var profile_picture = json.profile_picture;
-        console.log(profile_picture.length);
+        // console.log(profile_picture.length);
         authenticate(user_id, password, function(user){
             updateProfilePicture(user_id, profile_picture, callback, error_handler)
         }, error_handler)
@@ -766,7 +766,7 @@ io.on('connection', function (socket) {
         function callback(users_previous_transactions){
             //send all_active_listings back to client
             console.log("get_users_previous_transactions successful!");
-            console.log(users_previous_transactions);
+            // console.log(users_previous_transactions);
 
             socket.emit("get_users_previous_transactions_response", {data: {users_previous_transactions: users_previous_transactions}, error: null});
         }
@@ -1519,7 +1519,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
 function declineTransactionRequest(user_id, password, transaction_id, callback, error_handler){
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
-        console.log(active_transactions.getAll());
+        // console.log(active_transactions.getAll());
         if(transaction == null || transaction == undefined){
             error_handler({message: "unable to find transaction with transaction_id: " + transaction_id});
             return;
@@ -1672,8 +1672,8 @@ function updateVenmoId(user_id, venmo_id, callback, error_handler) {
 
 function updateProfilePicture(user_id, profile_picture, callback, error_handler){
     var collection_profile_pictures = database.collection('profile_pictures');
-    console.log(typeof profile_picture);
-    console.log(profile_picture);
+    // console.log(typeof profile_picture);
+    // console.log(profile_picture);
     collection_profile_pictures.update({user_id: user_id}, {user_id: user_id, profile_picture: profile_picture}, {upsert: true}, function (err, count, status) {
         if(err){error_handler(err.message);}
         else{
@@ -1807,8 +1807,8 @@ function getProfilePicture(user_id, callback, error_handler){
             if (docs.length > 0) {
                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                 //the object that is stored in database has a user_id field and a profile_picture field that stores the binary
-                console.log(docs[0]);
-                console.log(docs[0].profile_picture.buffer)
+                // console.log(docs[0]);
+                // console.log(docs[0].profile_picture.buffer)
                 callback(docs[0].profile_picture.buffer);
             }
             else {
@@ -1820,7 +1820,7 @@ function getProfilePicture(user_id, callback, error_handler){
 
 function updateTransactionInDatabase(transaction, callback, error_handler){
     console.log("updateTransactionInDatabase called!")
-    console.log(transaction);
+    // console.log(transaction);
     var collection_transactions = database.collection('transactions');
     collection_transactions.update({_id:new require('mongodb').ObjectID(transaction._id.toString())}, transaction, function (err, count, status) {
         if(err){error_handler(err.message);}
@@ -1874,7 +1874,7 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
             // console.log(user);
             // console.log(listing);
             // console.log("Expired Listings Before Removal");
-            console.log(active_listings.getExpiredListings());
+            // console.log(active_listings.getExpiredListings());
             removeListing(listing._id, function(listing_id){
                 // console.log("Expired Listings After Removal");
                 // console.log(active_listings.getExpiredListings());
@@ -1894,8 +1894,8 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
 //also accepts data which is a javascript object that holds the data that will passed in the event
 function emitEvent(event_name, data, user_id_arr){
     for(var i=0; i<user_id_arr.length; i++){
-        console.log(user_id_arr[i]);
-        console.log("user_id_arr.length = " + user_id_arr.length);
+        // console.log(user_id_arr[i]);
+        // console.log("user_id_arr.length = " + user_id_arr.length);
         console.log("attempting to emit event to " + user_id_arr[i].toString())
         var user = active_users.get(user_id_arr[i]);
         console.log("the users first name is " + user.first_name);
