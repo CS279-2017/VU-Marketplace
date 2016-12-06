@@ -646,7 +646,7 @@ io.on('connection', function (socket) {
         }
         function error_handler(e){
             socket.emit("update_user_location_response", {data: null, error: e});
-            console.log(e);
+            // console.log(e);
         }
         updateUserLocation(user_id, password, new_location, callback, error_handler)
     });
@@ -1452,7 +1452,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
     authenticate(user_id, password, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == null || transaction == undefined){
-            error_handler({message: "unable to find transaction with transaction_id: " + transaction_id});
+            error_handler("unable to find transaction with transaction_id: " + transaction_id);
             return;
         }
         try {
@@ -1469,7 +1469,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         //throws error if transaction_id has already been set
         //or listing has already been deleted, means listing has already been accepted
         if(listing == undefined || listing.transaction_id != null){
-            error_handler({message: "user with user id " + user_id + "has already accepted another transaction for this listing"});
+            error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
             return;
         }
         //decline all other transactions in based on this listing besides current transaction
@@ -1521,7 +1521,7 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
         var transaction = active_transactions.get(transaction_id);
         // console.log(active_transactions.getAll());
         if(transaction == null || transaction == undefined){
-            error_handler({message: "unable to find transaction with transaction_id: " + transaction_id});
+            error_handler("unable to find transaction with transaction_id: " + transaction_id);
             return;
         }
         try {
