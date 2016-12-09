@@ -29,14 +29,17 @@ ActiveListings.prototype = {
         this.listings.push(listing);
         this.map[listing._id] = listing;
         var hash_tags = listing.description.match(/(^|\s)(#[a-z\d-]+)/);
-        for(var i = 0; i < hash_tags.length; i++){
-            var hash_tag = hash_tags[i];
+        if(hash_tags != null && hash_tag != undefined){
+            for(var i = 0; i < hash_tags.length; i++){
+                var hash_tag = hash_tags[i];
 
-            if(this.hash_tag_map[hash_tag]  == undefined){
-                this.hash_tag_map[hash_tag] = [];
+                if(this.hash_tag_map[hash_tag]  == undefined){
+                    this.hash_tag_map[hash_tag] = [];
+                }
+                this.hash_tag_map[hash_tag].push(listing);
             }
-            this.hash_tag_map[hash_tag].push(listing);
         }
+
     },
     //remove listing from
     remove: function(listing_id){
@@ -51,16 +54,19 @@ ActiveListings.prototype = {
         // }
 
         var hash_tags = listing.description.match(/(^|\s)(#[a-z\d-]+)/);
-        for(var i = 0; i < hash_tags.length; i++){
-            var hash_tag = hash_tags[i];
+        if(hash_tags != null && hash_tag != undefined){
+            for(var i = 0; i < hash_tags.length; i++){
+                var hash_tag = hash_tags[i];
 
-            if(this.hash_tag_map[hash_tag] != undefined){
-                var index = this.hash_tag_map[hash_tag].indexOf(listing);
-                // if(index != -1){
+                if(this.hash_tag_map[hash_tag] != undefined){
+                    var index = this.hash_tag_map[hash_tag].indexOf(listing);
+                    // if(index != -1){
                     this.hash_tag_map[hash_tag].splice(index, 1);
-                // }
+                    // }
+                }
             }
         }
+
     },
     get: function(listing_id){
         return this.map[listing_id];
