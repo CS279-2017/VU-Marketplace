@@ -24,6 +24,8 @@ function User(first_name, last_name, password, email){
     this.logged_in = null; //not saved onto db
     this.event_queue = [];
 
+    this.device_id = null
+
     this.active = true; //used for restoring logged in users after database crash
 }
 
@@ -53,6 +55,7 @@ User.prototype = {
                 user.event_queue[i] = new Event(event.name, event.message.data, event.message.error);
             }
         }
+        this.device_id = user.device_id;
         this.event_queue = user.event_queue;
     },
     addCurrentListingId: function(current_listing_id){
@@ -112,11 +115,11 @@ User.prototype = {
     // }
 
     enqueueEvent: function(event){
-        this.event_queue.push(event);
+        // this.event_queue.push(event);
     },
     dequeueEvent: function(){
-        var top_event = event_queue[0];
-        this.event_queue.shift();
-        return top_event;
+        // var top_event = event_queue[0];
+        // this.event_queue.shift();
+        // return top_event;
     }
 }

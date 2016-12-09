@@ -210,9 +210,11 @@ io.on('connection', function (socket) {
         function callback(){
             //notify necessary clients that a sure has logged out
             // active_listings.
-            if(socket != undefined){
+            if(socket != undefined) {
                 socket.emit("logout_response", {data: null, error: null});
-            }socket.emit("logout_response", {data: null, error: null});
+            }
+            io.emit("user_logged_out", {data: {user_id: user_id}});
+            // }socket.emit("logout_response", {data: null, error: null});
         }
         function error_handler(e){
             if(socket != undefined){
@@ -231,13 +233,13 @@ io.on('connection', function (socket) {
         function callback(user){
             user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
             socket.emit('authenticate_response', {data: null, error: null});
-            if(user.event_queue != undefined) {
-                while (user.event_queue.count > 0) {
-                    var event = user.dequeueEvent();
-                    socket.emit(event.name, event.message);
-                    console.log(socket.name + " emitted from event queue with data "+event.message.toString())
-                }
-            }
+            // if(user.event_queue != undefined) {
+            //     while (user.event_queue.count > 0) {
+            //         var event = user.dequeueEvent();
+            //         socket.emit(event.name, event.message);
+            //         console.log(socket.name + " emitted from event queue with data "+event.message.toString())
+            //     }
+            // }
         }
 
         function error_handler(e){
@@ -621,6 +623,9 @@ io.on('connection', function (socket) {
             socket.emit("update_user_location_response", {data: {updated_location: updated_location}, error: null});
             //notify all users, or all users in the same transaction with user whose location was updated,
             var user = active_users.get(user_id);
+            // console.log("successfully updated user_location")
+            // console.log("users current transaction_ids")
+            // console.log(user.current_transactions_ids);
             var current_transaction_ids = user.current_transactions_ids;
             try {
                 for (var key in current_transaction_ids) {
@@ -630,6 +635,7 @@ io.on('connection', function (socket) {
                         var other_user_id = transaction.getOtherUserId(user_id);
                         var other_user = active_users.get(other_user_id);
                         var other_user_socket = io.sockets.connected[other_user.socket_id];
+                        // console.log("emitting user_location_updated");
                         other_user_socket.emit("user_location_updated", {
                             data: {
                                 user_id: user._id.toString(),
@@ -667,7 +673,9 @@ io.on('connection', function (socket) {
                     var transaction = active_transactions.get(transaction_id);
                     var other_user = active_users.get(transaction.getOtherUserId(user_id));
                     var other_user_socket = io.sockets.connected[other_user.socket_id];
-                    other_user_socket.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id, updated_location: updated_location}, error: null});
+                    if(other_user_socket != undefined){
+                        other_user_socket.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id, updated_location: updated_location}, error: null});
+                    }
                 }
             }catch(e){
                 console.log(e);
@@ -1376,7 +1384,12 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                     }
                 }, 60000)
                 var user = active_users.get(user_id);
-                user.addCurrentTransactionId(new_transaction._id); //adds transaction_id to user that initiates
+                try{
+                    user.addCurrentTransactionId(new_transaction._id);
+                }catch(e){
+                    error_handler(e.message);
+                }
+                //adds transaction_id to user that initiates
                 //user object is returned by authenticate
             }catch(e){error_handler(e.message)};
             if(callback != undefined && callback != null){
@@ -1486,6 +1499,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         removeListing(transaction.listing_id, function(){
             if(user != undefined) { //in case user has logged out
                 user.addCurrentTransactionId(transaction_id);
+                updateTransactionInDatabase(transaction, function(){}, function(){});
                 callback(transaction);
             }
         }, error_handler)
@@ -1543,10 +1557,22 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
             var buyer = active_users.get(transaction.buyer_user_id);
             var seller = active_users.get(transaction.seller_user_id);
             if(transaction.buyer_accepted_request == true){
-                buyer.removeCurrentTransactionId(transaction_id);
+                try{
+                    if(buyer != undefined){
+                        buyer.removeCurrentTransactionId(transaction_id);
+                    }
+                }catch(e){
+                    error_handler(e.message)
+                }
             }
             else{
-                seller.removeCurrentTransactionId(transaction_id);
+                try {
+                    if(seller != undefined) {
+                        seller.removeCurrentTransactionId(transaction_id);
+                    }
+                }catch(e){
+                    error_handler(e.message);
+                }
             }
             //remove transaction from active_transactions
             active_transactions.remove(transaction._id);
@@ -1636,6 +1662,7 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
                     user2.removeCurrentTransactionId(transaction_id);
                 }
                 active_transactions.remove(transaction_id);
+                console.log("Transaction terminated");
                 callback(transaction);
             }, error_handler)
         // }, error_handler)
@@ -1725,7 +1752,7 @@ function getUsersPreviousTransactions(user_id, callback, error_handler){
     var collection_transactions = database.collection('transactions');
     // var mongo = new require('mongodb');
     // var user_id = mongo.ObjectID(user_id.toString())
-    collection_transactions.find({active: false, $or: [{buyer_user_id: user_id}, {seller_user_id: user_id}]}).toArray(function(err, docs){
+    collection_transactions.find({active: false, buyer_accepted_request: true, seller_accepted_request: true, $or: [{buyer_user_id: user_id}, {seller_user_id: user_id}]}).toArray(function(err, docs){
         if(err){error_handler(err.message);}
         else{
             //retrieves all transactions where active = false from database and sends it back in array;
@@ -2038,5 +2065,12 @@ function validateBuy(buy){
     console.log("typeofbuy == " + (typeof buy));
     // return typeof buy == 'boolean';
     return "";
+}
+
+function getUUID(){
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+    });
 }
 
