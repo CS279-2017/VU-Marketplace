@@ -79,8 +79,10 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 
-server.listen(3000, function () {
-    console.log('Example app listening on port 3000!');
+var port = process.env.PORT || 3000;
+
+server.listen(port, function () {
+    console.log('Example app listening on port ' + port);
     //TODO: whenever active_listing, active_transactions, or active_users is changed i.e add/remove is called,
     // TODO: all users must be notified of this change
     active_listings = new ActiveListings();
