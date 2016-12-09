@@ -7,6 +7,8 @@ function ActiveListings(){
     this.listings = [];
     //maintain a map so that listings can be retrieved in constant time by _id
     this.map = {};
+
+    this.hash_tag_map = {};
 }
 
 //always create transaction before deleting listing
@@ -26,6 +28,15 @@ ActiveListings.prototype = {
     add: function(listing) {
         this.listings.push(listing);
         this.map[listing._id] = listing;
+        var hash_tags = listing.description.match(/(^|\s)(#[a-z\d-]+)/);
+        for(var i = 0; i < hash_tags.length; i++){
+            var hash_tag = hash_tags[i];
+
+            if(this.hash_tag_map[hash_tag]  == undefined){
+                this.hash_tag_map[hash_tag] = [];
+            }
+            this.hash_tag_map[hash_tag].push(listing);
+        }
     },
     //remove listing from
     remove: function(listing_id){
@@ -35,7 +46,21 @@ ActiveListings.prototype = {
         delete this.map[listing_id];
         //then delete listing from listings at the index
         var index = this.listings.indexOf(listing)
-        this.listings.splice(index, 1);
+        // if(index != -1){
+            this.listings.splice(index, 1);
+        // }
+
+        var hash_tags = listing.description.match(/(^|\s)(#[a-z\d-]+)/);
+        for(var i = 0; i < hash_tags.length; i++){
+            var hash_tag = hash_tags[i];
+
+            if(this.hash_tag_map[hash_tag] != undefined){
+                var index = this.hash_tag_map[hash_tag].indexOf(listing);
+                // if(index != -1){
+                    this.hash_tag_map[hash_tag].splice(index, 1);
+                // }
+            }
+        }
     },
     get: function(listing_id){
         return this.map[listing_id];
@@ -43,6 +68,13 @@ ActiveListings.prototype = {
     //returns an array of all the listings
     getAll: function(){
         return this.listings;
+    },
+    getListingsWithHashTag: function(hash_tag){
+        var listings = this.hash_tag_map[hash_tag];
+        if(listings = undefined){
+            return [];
+        }
+        return listings;
     },
     size: function(){
         return this.listings.length;

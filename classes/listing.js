@@ -31,7 +31,6 @@ var Listing = function() {
             this.price = listing.price;
             this.buy = listing.buy;
             this.transaction_id = listing.transaction_id;
-            
             this.active = listing.active;
         },
         update: function(listing){

@@ -799,6 +799,20 @@ io.on('connection', function (socket) {
         }
         getListing(listing_id, callback, error_handler);
     });
+
+    socket.on('get_listings_with_hash_tag', function(json){
+        // var login_info = json.login_info;
+       var hash_tag = json.hash_tag;
+        // authenticate()
+        function callback(listings){
+            socket.emit("get_listings_with_hash_tag_response", {data: {listings: listings}, error: null})
+        }
+        function error_handler(e){
+            socket.emit("get_listings_with_hash_tag_response", {data: null, error: e})
+        }
+        getListingsWithHashTag(hash_tag, callback, error_handler)
+    });
+
     socket.on('get_user', function(json){
         var user_id = json.user_id;
         function callback(user_info){
@@ -1739,6 +1753,16 @@ function getAllActiveListings(user_id, password, callback, error_handler){
         var all_active_listings = active_listings.getAll();
         callback(all_active_listings);
     }, error_handler)
+}
+
+function getListingsWithHashTag(hash_tag, callback, error_handler){
+    try {
+        var listings = active_listings.getListingsWithHashTag(hash_tag);
+    }catch(e){
+        error_handler(e.message);
+        return;
+    }
+    callback(listings);
 }
 
 function getUsersActiveTransactions(user_id, password, callback, error_handler){
