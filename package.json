@@ -4,7 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "start": "app.js"
   },
   "author": "Bowen Jin",
   "license": "ISC",
@@ -17,4 +18,5 @@
     "socket.io": "^1.5.1",
     "socket.io-client": "^1.5.1"
   }
+
 }
