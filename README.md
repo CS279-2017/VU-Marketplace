@@ -3,6 +3,7 @@
 ##TODO:
 * 1 minute countdown timer for accepting a transaction request
 * add ability to add tags
+* add limit on number of transactions per user to 3 and the number of listings to 5
 
 ##COMPLETED:
 * ~add ability to upload profile picture~
