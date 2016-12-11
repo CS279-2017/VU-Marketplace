@@ -8,8 +8,8 @@ var io = require('socket.io')(server);
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -124,7 +124,7 @@ server.listen(port, function () {
 });
 
 app.get('/', function (req, res) {
-    res.send('Hello World!');
+    res.send('If you have any questions about MealPlanApp, please email mealplanapp@gmail.com');
 });
 
 //TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
@@ -1707,7 +1707,9 @@ function updateVenmoId(user_id, venmo_id, callback, error_handler) {
     var user = active_users.get(user_id);
     if (user != undefined) {
         user.venmo_id = venmo_id;
-        callback(venmo_id);
+        updateUserInDatabase(user, function(){
+            callback(venmo_id);
+        }, error_handler)
     }
     else{
         error_handler("user is undefined i.e not logged in, cannot set venmo_id");
@@ -1885,13 +1887,23 @@ function updateTransactionInDatabase(transaction, callback, error_handler){
 }
 
 function updateListingInDatabase(listing, callback, error_handler){
-    console.log("updateListingIndatabaSe called!")
+    console.log("updateListingInDatabase called!")
     var collection_listings = database.collection('listings');
     collection_listings.update({_id:new require('mongodb').ObjectID(listing._id.toString())}, listing, function (err, count, status) {
         if(err){error_handler(err.message);}
         else{
             if(callback != undefined && callback != null){callback();}
         }
+    });
+}
+
+function updateUserInDatabase(user, callback, error_handler){
+    console.log("updateUserInDatabase called!")
+    var collection = database.collection('users');
+    collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, active_users.get(user_id), function(err, result) {
+        if(err){error_handler(err); return;}
+        console.log(user.email_address + " has been updated");
+        if(callback != undefined){ callback(); }
     });
 }
 
