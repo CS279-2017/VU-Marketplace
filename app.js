@@ -1900,7 +1900,7 @@ function updateListingInDatabase(listing, callback, error_handler){
 function updateUserInDatabase(user, callback, error_handler){
     console.log("updateUserInDatabase called!")
     var collection = database.collection('users');
-    collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, active_users.get(user_id), function(err, result) {
+    collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, active_users.get(user._id), function(err, result) {
         if(err){error_handler(err); return;}
         console.log(user.email_address + " has been updated");
         if(callback != undefined){ callback(); }
