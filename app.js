@@ -682,7 +682,7 @@ io.on('connection', function (socket) {
                 }
             }catch(e){
                 console.log(e);
-                error_handler(e);
+                error_handler(e.message);
                 return;
             }
         }
