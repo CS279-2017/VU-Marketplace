@@ -75,7 +75,7 @@ ActiveListings.prototype = {
     getAll: function(){
         return this.listings;
     },
-    getAllForUser: function(){
+    getAllForUser: function(user_id){
         var listings_arr = [];
         for(var i=0; i <this.listings.length; i++){
             var listing = this.listings[i];
