@@ -1225,6 +1225,12 @@ function makeListing(user_id, password, title, description, location, expiration
             error_handler(error_string);
             return;
         }
+
+        //limit the number of listings to 5
+        if(active_listings.getAllForUser(user_id).length >= 3){
+            error_handler("You cannot have more than 3 listings")
+            return;
+        }
         var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
         var collection_listings = database.collection('listings');
         collection_listings.insert(new_listing, function (err, count, status) {
@@ -1349,7 +1355,9 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                     error_handler("the user has already made a transaction on this listing");
                     return;
                 }
-            }catch(e){error_handler(e.message)}
+            } catch (e) {
+                error_handler(e.message)
+            }
         }
         console.log("no duplicate found calling makeTransaction")
         makeTransaction(user_id, listing_id, function (transaction) {
