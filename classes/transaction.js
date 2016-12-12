@@ -178,6 +178,7 @@ var Transaction = function() {
             //TODO: throw error if user_id doesn't match one of the two user_ids of the transactions
             //TODO: set the confirm to true for the appropriate user
             verifyTransactionActiveThenSetConfirmed.call(this, user_id, true);
+            console.log(this.title + " " + this.price);
             if(this.isCompleted()){
                 this.active = false;
             }
