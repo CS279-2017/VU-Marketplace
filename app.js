@@ -1685,7 +1685,8 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
             error_handler(e.message);
             return;
         }
-            transaction.active = false; 
+            transaction.active = false;
+            transaction.end_time = new Date().getTime();
         // sendTransactionRejectedMessage(transaction, function(){
             updateTransactionInDatabase(transaction, function(){
                 console.log(transaction)
