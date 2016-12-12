@@ -75,6 +75,18 @@ ActiveListings.prototype = {
     getAll: function(){
         return this.listings;
     },
+    getAllForUser: function(){
+        var listings_arr = [];
+        for(var i=0; i <this.listings.length(); i++){
+            var listing = this.listings[i];
+            if(user_id == listing.user_id ){
+                listings_arr.push(listing);
+            }
+        }
+        // console.log("active_listings,getAllForUser:");
+        // console.log(transactions_arr)
+        return listings_arr;
+    },
     getListingsWithHashTag: function(hash_tag){
         var listings = this.hash_tag_map[hash_tag];
         if(listings = undefined){
