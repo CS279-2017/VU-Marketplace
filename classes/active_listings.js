@@ -77,7 +77,7 @@ ActiveListings.prototype = {
     },
     getAllForUser: function(){
         var listings_arr = [];
-        for(var i=0; i <this.listings.length(); i++){
+        for(var i=0; i <this.listings.length; i++){
             var listing = this.listings[i];
             if(user_id == listing.user_id ){
                 listings_arr.push(listing);
