@@ -55,6 +55,7 @@ var Transaction = function() {
             this.buyer_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
             this.seller_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
             //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
+            this.end_time = null;
 
             this.active = true;
         }
@@ -134,6 +135,8 @@ var Transaction = function() {
             this.seller_accepted_request = transaction.seller_accepted_request;
             this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
             this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
+            
+            this.end_time = transaction.end_time;
             
             this.active = transaction.active;
         },

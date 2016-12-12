@@ -1642,6 +1642,7 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
         console.log("checking is Confirmed inside transaction");
         console.log("isCompleted() == " + transaction.isCompleted());
         if(transaction.isCompleted() == true){
+            transaction.end_time = new Date().getTime();
             transaction.active = false;
             updateTransactionInDatabase(transaction, function(){
                 console.log("updateTransaction completed");
@@ -1659,7 +1660,9 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
             }, error_handler)
         }
         else{
-            callback(transaction);
+            updateTransactionInDatabase(transaction, function(){
+                callback(transaction);
+            }, error_handler);
         }
     }, error_handler);
 }

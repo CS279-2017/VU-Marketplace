@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/transaction.js" afterPath="$PROJECT_DIR$/classes/transaction.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,8 +29,8 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="406">
-              <caret line="1367" column="91" selection-start-line="1367" selection-start-column="91" selection-end-line="1367" selection-end-column="91" />
+            <state relative-caret-position="646">
+              <caret line="1662" column="26" selection-start-line="1662" selection-start-column="26" selection-end-line="1662" selection-end-column="26" />
               <folding />
             </state>
           </provider>
@@ -69,7 +70,7 @@
         <entry file="file://$PROJECT_DIR$/classes/transaction.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="196">
-              <caret line="151" column="66" selection-start-line="151" selection-start-column="65" selection-end-line="151" selection-end-column="66" />
+              <caret line="57" column="25" selection-start-line="57" selection-start-column="25" selection-end-line="57" selection-end-column="25" />
               <folding />
             </state>
           </provider>
@@ -149,11 +150,11 @@
         <option value="$PROJECT_DIR$/classes/user_info.js" />
         <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/classes/active_transactions.js" />
-        <option value="$PROJECT_DIR$/classes/transaction.js" />
         <option value="$PROJECT_DIR$/classes/user.js" />
         <option value="$PROJECT_DIR$/classes/listing.js" />
         <option value="$PROJECT_DIR$/package.json" />
         <option value="$PROJECT_DIR$/classes/active_listings.js" />
+        <option value="$PROJECT_DIR$/classes/transaction.js" />
         <option value="$PROJECT_DIR$/app.js" />
       </list>
     </option>
@@ -380,7 +381,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="424534000" />
+    <option name="totallyTimeSpent" value="425410000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="35" y="23" width="1101" height="735" extended-state="0" />
@@ -742,14 +743,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/transaction.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="196">
-          <caret line="151" column="66" selection-start-line="151" selection-start-column="65" selection-end-line="151" selection-end-column="66" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/listing_info.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="225">
@@ -814,10 +807,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/classes/transaction.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="196">
+          <caret line="57" column="25" selection-start-line="57" selection-start-column="25" selection-end-line="57" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="406">
-          <caret line="1367" column="91" selection-start-line="1367" selection-start-column="91" selection-end-line="1367" selection-end-column="91" />
+        <state relative-caret-position="646">
+          <caret line="1662" column="26" selection-start-line="1662" selection-start-column="26" selection-end-line="1662" selection-end-column="26" />
           <folding />
         </state>
       </provider>
