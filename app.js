@@ -1359,6 +1359,10 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 error_handler(e.message)
             }
         }
+        if(active_transactions.getAllForUser(user_id).length >= 8){
+            error_handler("You are involved in too many transactions, please complete some of your current transactions before making new ones");
+            return;
+        }
         console.log("no duplicate found calling makeTransaction")
         makeTransaction(user_id, listing_id, function (transaction) {
                 console.log("user that made that transaction (is the transaction_id in current_transaciton ids?:");
