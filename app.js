@@ -8,8 +8,8 @@ var io = require('socket.io')(server);
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -1362,6 +1362,10 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
         if(active_transactions.getAllForUser(user_id).length >= 8){
             error_handler("You are involved in too many transactions, please complete some of your current transactions before making new ones");
             return;
+        }
+        var listing = active_listings.get(listing_id);
+        if(active_transactions.getAllForUser(listing.user_id).length >= 8){
+            error_handler("The other user is currently involved in too many transactions");
         }
         console.log("no duplicate found calling makeTransaction")
         makeTransaction(user_id, listing_id, function (transaction) {
