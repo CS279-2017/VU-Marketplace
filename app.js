@@ -1348,10 +1348,12 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
             console.log("entering for loop");
             try {
                 var transaction = active_transactions.get(user.current_transactions_ids[key]);
-                if (transaction.listing_id.toString() == listing_id.toString()) {
-                    console.log("the user has already made a transaction on this listing")
-                    error_handler("the user has already made a transaction on this listing");
-                    return;
+                if(transaction != undefined) {
+                    if (transaction.listing_id.toString() == listing_id.toString()) {
+                        console.log("the user has already made a transaction on this listing")
+                        error_handler("the user has already made a transaction on this listing");
+                        return;
+                    }
                 }
             } catch (e) {
                 error_handler(e.message)
