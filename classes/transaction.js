@@ -56,6 +56,7 @@ var Transaction = function() {
             this.seller_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
             //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
             this.end_time = null;
+            this.start_time = null;
 
             this.active = true;
         }
@@ -136,7 +137,14 @@ var Transaction = function() {
             this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
             this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
             
-            this.end_time = transaction.end_time;
+            if(transaction.end_time != undefined){
+                this.end_time = transaction.end_time;
+            }
+            //backwards capatability with transaction database entries without start_time
+            if(transaction.start_time != undefined) {
+                this.start_time = transaction.start_time;
+            }
+            
             
             this.active = transaction.active;
         },

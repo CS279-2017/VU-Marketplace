@@ -1533,6 +1533,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         removeListing(transaction.listing_id, function(){
             if(user != undefined) { //in case user has logged out
                 user.addCurrentTransactionId(transaction_id);
+                transaction.started = true;
                 updateTransactionInDatabase(transaction, function(){}, function(){});
                 callback(transaction);
             }
