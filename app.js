@@ -8,8 +8,8 @@ var io = require('socket.io')(server);
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-var url = 'mongodb://localhost:27017/mealplanappserver';
-// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+// var url = 'mongodb://localhost:27017/mealplanappserver';
+var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -292,10 +292,9 @@ io.on('connection', function (socket) {
         var buy = json.buy;
 
         authenticate(user_id, password, function(user){
-
             var listing = active_listings.get(listing_id);
             var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
-            if(user._id == listing.user_id){
+            if(user._id.toString() == listing.user_id.toString()){
                 updateListing(listing, new_listing, callback, error_handler)
             }
             else {
