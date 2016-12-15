@@ -16,6 +16,8 @@ var Listing = function() {
         this.buy = buy; //true or false whether this is a buy listing
         this.transaction_id = null;
         this.active = true;
+
+        this.removed_time = null;
     }
 
     Listing.prototype = {
@@ -27,11 +29,17 @@ var Listing = function() {
             this.description = listing.description;
             this.location = listing.location;
             this.creation_time = listing.creation_time;
-            this.expiration_time = listing.expiration_time;
+            this.expiration_time = listing.expiration_time
             this.price = listing.price;
             this.buy = listing.buy;
             this.transaction_id = listing.transaction_id;
             this.active = listing.active;
+
+            //backward compatability
+            if(listing.removed_time != undefined){
+                this.removed_time = listing.removed_time;
+            }
+
         },
         update: function(listing){
             this.title = listing.title;

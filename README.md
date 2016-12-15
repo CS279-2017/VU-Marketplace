@@ -1,12 +1,16 @@
 # mealplanserverapp
 
 ##TODO:
-* 1 minute countdown timer for accepting a transaction request
-* add ability to add tags
-* add limit on number of transactions per user to 3 and the number of listings to 5
+
+* add ability to comment on transactions
+* add ability to add hash_tags
 
 ##COMPLETED:
-* ~add ability to upload profile picture~
+* ~~add ability to upload profile picture~~
+* ~~add limit on number of transactions per user to 3 and the number of listings to 8~~
+* ~~1 minute countdown timer for accepting a transaction request~~
+
+
 
 
 ###Events Received by Server from Client (Client -> Server)
@@ -180,7 +184,9 @@ The error parameter will contain the error message, will be null if successful
     
 * Upon Authentication
     * all three user_id, password, and device_id must be correct
-
+    
+###listing
+* if a listing has a transaction_id then it turned into a transaction otherwise it was removed
 
 
 

@@ -8,8 +8,8 @@ var io = require('socket.io')(server);
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -292,9 +292,15 @@ io.on('connection', function (socket) {
         var buy = json.buy;
 
         authenticate(user_id, password, function(user){
+
             var listing = active_listings.get(listing_id);
             var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
-            updateListing(listing, new_listing, callback, error_handler)
+            if(user._id == listing.user_id){
+                updateListing(listing, new_listing, callback, error_handler)
+            }
+            else {
+                error_handler("This listing doesn't belong to you!");
+            }
         }, error_handler)
         function callback(listing){
             socket.emit("update_listing_response", {data: null, error: null});
@@ -1313,6 +1319,7 @@ function removeListing(listing_id, callback, error_handler){
     //TODO: all this causes is that removed listings won't have the most up to date info, however since listings are
     //TODO: never reused, this doesn't matter.
     if(listing != undefined) {
+        listing.removed_time = new Date().getTime();
         listing.active = false; //deactivate the listing
         updateListingInDatabase(listing, function () {
             var user = active_users.get(listing.user_id)
@@ -1528,12 +1535,13 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
                 }, error_handler)
             }
         }
+
         listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
         //update listing in database
         removeListing(transaction.listing_id, function(){
             if(user != undefined) { //in case user has logged out
                 user.addCurrentTransactionId(transaction_id);
-                transaction.started = true;
+                transaction.start_time = new Date().getTime();
                 updateTransactionInDatabase(transaction, function(){}, function(){});
                 callback(transaction);
             }
@@ -2093,11 +2101,11 @@ function validateLocation(location){
 function validateExpirationTime(expiration_time){
     // return typeof expiration_time == 'number' && expiration_time >= new Date().getTime() && expiration_time <= 1606243112000;
     if(!(typeof expiration_time == 'number')) {
-        return "Please enter a valid date using the Date Input!";
+        return "Please enter a valid date!";
     }else if( !(expiration_time >= new Date().getTime())){
         return "You can't go back in time! Set a time in the future!"
     }else if(!(expiration_time <= new Date().getTime() + 86400000)){
-       return "Ain't nobody got time for that! Set a time within the next 24 hours!"
+       return "Set a time within the next 24 hours!"
     }
     else{
         return "";
