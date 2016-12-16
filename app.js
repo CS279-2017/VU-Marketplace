@@ -4,12 +4,13 @@ var nodemailer = require('nodemailer');
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+var apn = require('apn');
 
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -70,6 +71,16 @@ var transporter = nodemailer.createTransport({
     }
 });
 
+// Set up apn with the APNs Auth Key
+var apnProvider = new apn.Provider({
+    token: {
+        key: 'apnkey.p8', // Path to the key p8 file
+        keyId: 'Y3M29GE5QJ', // The Key ID of the p8 file (available at https://developer.apple.com/account/ios/certificate/key)
+        teamId: 'DE4758AREF', // The Team ID of your Apple Developer Account (available at https://developer.apple.com/account/#/membership/)
+    },
+    production: false // Set to true if sending a notification to a production iOS app
+});
+
 var active_listings = null;
 var active_users = null;
 var active_transactions = null;
@@ -115,12 +126,6 @@ server.listen(port, function () {
 
     //remove all expired active_listings once a minute
     initExpiredListingGarbageCollector(1000);
-
-    try {
-
-    }catch(e){
-        console.log(e.message);
-    }
 });
 
 app.get('/', function (req, res) {
@@ -191,11 +196,14 @@ io.on('connection', function (socket) {
     socket.on('login', function(json){
         var email_address = json.email_address.toLowerCase();
         var password = json.password;
+        var device_token = json.device_token;
 
         var callback = function(user){
             //send user_id back to user
-            //notify necessary clients that a user has logged in
+            //notify necessary clients that a user has logged is
             user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
+            active_users.get(user._id).device_token = device_token;
+            console.log("new device token: " + device_token);
             socket.emit("login_response", {data: {user_id: user._id}, error: null});
         };
         var error_handler = function(e) {
@@ -232,6 +240,7 @@ io.on('connection', function (socket) {
     socket.on('authenticate', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token;
 
         function callback(user){
             user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
@@ -249,7 +258,17 @@ io.on('connection', function (socket) {
             socket.emit('authenticate_response', {data: null, error:e});
             console.log(e);
         }
-        authenticate(user_id, password, callback, error_handler);
+        console.log("user");
+        console.log(active_users.get(user_id));
+        console.log(device_token);
+        if(active_users.get(user_id) != undefined && (device_token != active_users.get(user_id).device_token)){
+            //actually its a device_token but that client ios app has a case that handles this string message;
+            error_handler("tried to authenticate an invalid user_id/password combination");
+        }
+        else{
+            console.log("device_token: " + device_token);
+            authenticate(user_id, password, callback, error_handler);
+        }
     });
 
 
@@ -393,7 +412,13 @@ io.on('connection', function (socket) {
                 }
                 else{
                     if(other_user != undefined) {
-                        other_user.enqueueEvent(event);
+                        // other_user.enqueueEvent(event);
+                        var alert = user.first_name + " " + user.last_name + " is requesting to " +
+                            (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + transaction.price;
+                        notification_info = {alert: alert};
+                        console.log("other_user");
+                        console.log(other_user);
+                        sendNotification(notification_info, other_user.device_token);
                     }
                 }
                 if(user_socket != undefined) {
@@ -452,19 +477,19 @@ io.on('connection', function (socket) {
                     console.log("emitting transaction_started");
                     emitEvent("transaction_started", {transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
                 }
-                // var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
-                // if(buyer_socket != undefined) {
-                //     buyer_socket.emit(event.name , event.message);
-                // }
-                // else{
-                //     buyer.enqueueEvent(event);
-                // }
-                // if(seller_socket != undefined) {
-                //     seller_socket.emit(event.name , event.message);
-                // }
-                // else{
-                //     seller.enqueueEvent(event);
-                // }
+                var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
+                if(buyer_socket != undefined) {
+                    buyer_socket.emit(event.name , event.message);
+                }
+                else{
+                    buyer.enqueueEvent(event);
+                }
+                if(seller_socket != undefined) {
+                    seller_socket.emit(event.name , event.message);
+                }
+                else{
+                    seller.enqueueEvent(event);
+                }
             }catch(e){
                 console.log(e);
                 return;
@@ -1895,7 +1920,7 @@ function getProfilePicture(user_id, callback, error_handler){
                 callback(docs[0].profile_picture.buffer);
             }
             else {
-                error_handler("getProfilePicture: unable to find profile_picture");
+                // error_handler("getProfilePicture: unable to find profile_picture");
             }
         }
     });
@@ -2140,4 +2165,38 @@ function getUUID(){
         return v.toString(16);
     });
 }
+
+function sendNotification(notification_info, device_token){
+    // Enter the device token from the Xcode console
+    var deviceToken = device_token;
+    console.log(device_token);
+
+    // Prepare a new notification
+    var notification = new apn.Notification();
+    // Specify your iOS app's Bundle ID (accessible within the project editor)
+    notification.topic = 'bowen.jin.mealplanappiOS';
+    // Set expiration to 1 hour from now (in case device is offline)
+    notification.expiry = Math.floor(Date.now() / 1000) + 3600;
+    notification_info.badge = 0;
+    // Set app badge indicator
+    if(notification_info.badge != undefined){
+        notification.badge = notification_info.badge;
+    }
+    if(notification_info.sound != undefined){
+        notification.sound = notification_info.sound;
+    }
+    if(notification_info.alert != undefined){
+        notification.alert = notification_info.alert;
+    }
+    if(notification_info.payload != undefined){
+        notification.payload = notification_info.payload;
+    }
+    // Actually send the notification
+    apnProvider.send(notification, deviceToken).then(function(result) {
+        // Check the result for any failed devices
+        console.log(result);
+    });
+}
+
+
 

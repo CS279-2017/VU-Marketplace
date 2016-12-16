@@ -25,6 +25,8 @@ function User(first_name, last_name, password, email){
     this.event_queue = [];
 
     this.device_id = null
+    
+    this.creation_time = new Date().getTime();
 
     this.active = true; //used for restoring logged in users after database crash
 }
@@ -57,6 +59,9 @@ User.prototype = {
         }
         this.device_id = user.device_id;
         this.event_queue = user.event_queue;
+        if(user.creation_time != undefined){
+            this.creation_time = user.creation_time;
+        }
     },
     addCurrentListingId: function(current_listing_id){
         this.current_listings_ids.push(current_listing_id.toString());

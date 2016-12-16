@@ -1,7 +1,7 @@
 # mealplanserverapp
 
 ##TODO:
-
+* add a login_info object that stores all login credentials 
 * add ability to comment on transactions
 * add ability to add hash_tags
 
