@@ -14,7 +14,7 @@ ActiveTransactions.prototype = {
         for(var i = 0; i<active_transactions.length; i++){
             var new_transaction = new Transaction();
             new_transaction.initFromDatabase(active_transactions[i]);
-            this.transactions[new_transaction._id] = new_transaction;
+            this.transactions[new_transaction._id.toString()] = new_transaction;
         }
     },
     add: function(transaction){

@@ -1327,6 +1327,9 @@ function makeListing(user_id, password, title, description, location, expiration
                             console.log(new_listing)
                             active_listings.add(new_listing);
                             user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
+                            updateUserInDatabase(user, function(){
+
+                            }, error_handler)
                         }catch(e){error_handler(e.message)};
                         if(callback != undefined){ callback(new_listing);}
                     }
@@ -1406,6 +1409,9 @@ function removeListing(listing_id, callback, error_handler){
             if (user != undefined) { //in case user has already logged out
                 try {
                     user.removeCurrentListingId(listing_id);
+                    updateUserInDatabase(user, function(){
+
+                    }, error_handler)
                 }catch(e){
                     error_handler(e.message)
                 }
@@ -1506,6 +1512,9 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 var user = active_users.get(user_id);
                 try{
                     user.addCurrentTransactionId(new_transaction._id);
+                    updateUserInDatabase(user, function(){
+
+                    }, error_handler)
                 }catch(e){
                     error_handler(e.message);
                 }
@@ -1620,6 +1629,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         removeListing(transaction.listing_id, function(){
             if(user != undefined) { //in case user has logged out
                 user.addCurrentTransactionId(transaction_id);
+                updateUserInDatabase(user, function(){}, error_handler)
                 transaction.start_time = new Date().getTime();
                 updateTransactionInDatabase(transaction, function(){}, function(){});
                 callback(transaction);
@@ -1682,6 +1692,9 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
                 try{
                     if(buyer != undefined){
                         buyer.removeCurrentTransactionId(transaction_id);
+                        updateUserInDatabase(buyer, function(){
+
+                        }, error_handler)
                     }
                 }catch(e){
                     error_handler(e.message)
@@ -1691,6 +1704,9 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
                 try {
                     if(seller != undefined) {
                         seller.removeCurrentTransactionId(transaction_id);
+                        updateUserInDatabase(seller, function(){
+
+                        }, error_handler)
                     }
                 }catch(e){
                     error_handler(e.message);
@@ -1738,13 +1754,25 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
                 console.log(transaction)
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
-                if(user1 != undefined){
-                    user1.removeCurrentTransactionId(transaction_id);
-                }
-                if(user2 != undefined){
-                    user2.removeCurrentTransactionId(transaction_id);
-                }
-                active_transactions.remove(transaction_id);
+                try {
+                    if (user1 != undefined) {
+                        user1.removeCurrentTransactionId(transaction_id);
+                        updateUserInDatabase(user1, function(){
+
+                        }, error_handler)
+                    }
+                }catch(e){ console.log(e.message)}
+                try {
+                    if (user2 != undefined) {
+                        user2.removeCurrentTransactionId(transaction_id);
+                        updateUserInDatabase(user2, function(){
+
+                        }, error_handler)
+                    }
+                }catch(e){console.log(e.message)}
+                try {
+                    active_transactions.remove(transaction_id);
+                }catch(e){console.log(e.message)}
                 callback(transaction);
             }, error_handler)
         }
@@ -1783,12 +1811,28 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
                 if (user1 != undefined) {
-                    user1.removeCurrentTransactionId(transaction_id);
+                    try {
+                        user1.removeCurrentTransactionId(transaction_id);
+                        updateUserInDatabase(user1, function(){
+
+                        }, error_handler)
+                    }catch(e){
+                        console.log(e.message)
+                    }
                 }
                 if (user2 != undefined) {
-                    user2.removeCurrentTransactionId(transaction_id);
+                    try{
+                        user2.removeCurrentTransactionId(transaction_id);
+                        updateUserInDatabase(user2, function(){
+
+                        }, error_handler)
+                    }catch(e){
+                        console.log(e.message)
+                    }
                 }
-                active_transactions.remove(transaction_id);
+                try {
+                    active_transactions.remove(transaction_id);
+                }catch(e){console.log(e.message)}
                 console.log("Transaction terminated");
                 callback(transaction);
             }, error_handler)
