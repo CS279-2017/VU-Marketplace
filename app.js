@@ -263,6 +263,8 @@ io.on('connection', function (socket) {
         console.log(device_token);
         if(active_users.get(user_id) != undefined && (device_token != active_users.get(user_id).device_token)){
             //actually its a device_token but that client ios app has a case that handles this string message;
+            console.log("entered device_token: " + device_token)
+            console.log("actual device_token: " + active_users.get(user_id).device_token);
             error_handler("tried to authenticate an invalid user_id/password combination");
         }
         else{
@@ -578,7 +580,7 @@ io.on('connection', function (socket) {
                var seller_socket = io.sockets.connected[seller.socket_id];
                var user = active_users.get(user_id);
                var user_name = user.first_name + " " + user.last_name;
-               var alert = user_name + " has confirmed the transaction for '" + transaction.title + "'";
+               var alert = user_name + " has confirmed the transaction '" + transaction.title + "'";
                var notification_info = {alert: alert};
                if(buyer_socket == undefined) {
                    sendNotification(notification_info, buyer.device_token);
@@ -649,7 +651,7 @@ io.on('connection', function (socket) {
                console.log(transaction)
                var user = active_users.get(user_id);
                var other_user = transaction.getOtherUserId(user_id);
-               var alert = user.first_name + " " + user.last_name + " has terminated transaction '" + transaction.title + "'";
+               var alert = user.first_name + " " + user.last_name + " has terminated the transaction '" + transaction.title + "'";
                var notification_info = {alert: alert};
                sendNotification(notification_info, other_user.device_token);
                emitEvent("transaction_terminated", {user_id: user_id, transaction_id: transaction_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
@@ -1239,9 +1241,11 @@ function authenticate(user_id, password, callback, error_handler){
     var user = active_users.get(user_id);
     // console.log("trying to authenticate user_id: " + user_id + " password: " + password);
     if(user == undefined){
+        // console.log("invalid user id: + " + user_id);
         error_handler("tried to authenticate an invalid user_id/password combination");
     }
     else if(user.password != password){
+        // console.log("invalid password");
         error_handler("tried to authenticate an invalid user_id/password combination");
     }
     else{
