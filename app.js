@@ -449,7 +449,11 @@ io.on('connection', function (socket) {
             socket.emit("make_transaction_request_response", {data: null, error: e});
             console.log(e);
         }
-        makeTransactionRequest(user_id, password, listing_id, callback, error_handler);
+        try {
+            makeTransactionRequest(user_id, password, listing_id, callback, error_handler);
+        }catch(e){
+            error_handler(e.message);
+        }
     });
 
     //TODO: accepting a transaction that's already been accepted
@@ -506,7 +510,11 @@ io.on('connection', function (socket) {
             socket.emit("accept_transaction_request_response", {data: null, error: e});
             console.log(e);
         }
-        acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler)
+        try {
+            acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler)
+        }catch(e){
+            error_handler(e.message);
+        }
     });
 
     //TODO: declining a transaction that no longer exists
@@ -635,7 +643,11 @@ io.on('connection', function (socket) {
            socket.emit("confirm_transaction_response", {data: null, error: e});
            console.log(e);
        }
-       confirmTransaction(user_id, password, transaction_id, callback, error_handler);
+       try {
+           confirmTransaction(user_id, password, transaction_id, callback, error_handler);
+       }catch(e){
+           error_handler(e.message);
+       }
    });
 
     //TODO: rejecting a transaction thats already been rejected
@@ -650,7 +662,7 @@ io.on('connection', function (socket) {
                console.log("terminate Transactinon successful!")
                console.log(transaction)
                var user = active_users.get(user_id);
-               var other_user = transaction.getOtherUserId(user_id);
+               var other_user = active_users.get(transaction.getOtherUserId(user_id));
                var alert = user.first_name + " " + user.last_name + " has terminated the transaction '" + transaction.title + "'";
                var notification_info = {alert: alert};
                sendNotification(notification_info, other_user.device_token);
@@ -665,7 +677,11 @@ io.on('connection', function (socket) {
            socket.emit("terminate_transaction_response", {data: null, error: e});
            console.log(e);
        }
-       terminateTransaction(user_id, password, transaction_id, callback, error_handler)
+       try {
+           terminateTransaction(user_id, password, transaction_id, callback, error_handler)
+       }catch(e){
+           error_handler(e.message);
+       }
    });
 
 
@@ -1486,7 +1502,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                             }
                         });
                     }
-                }, 60000)
+                }, 60000 * 10)
                 var user = active_users.get(user_id);
                 try{
                     user.addCurrentTransactionId(new_transaction._id);
@@ -1733,9 +1749,10 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
             }, error_handler)
         }
         else{
-            updateTransactionInDatabase(transaction, function(){
-                callback(transaction);
-            }, error_handler);
+                updateTransactionInDatabase(transaction, function () {
+                    callback(transaction);
+                }, error_handler);
+
         }
     }, error_handler);
 }
@@ -1760,20 +1777,24 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
         }
             transaction.active = false;
             transaction.end_time = new Date().getTime();
-            updateTransactionInDatabase(transaction, function(){
+        try {
+            updateTransactionInDatabase(transaction, function () {
                 console.log(transaction)
                 var user1 = active_users.get(transaction.buyer_user_id);
                 var user2 = active_users.get(transaction.seller_user_id);
-                if(user1 != undefined){
+                if (user1 != undefined) {
                     user1.removeCurrentTransactionId(transaction_id);
                 }
-                if(user2 != undefined){
+                if (user2 != undefined) {
                     user2.removeCurrentTransactionId(transaction_id);
                 }
                 active_transactions.remove(transaction_id);
                 console.log("Transaction terminated");
                 callback(transaction);
             }, error_handler)
+        }catch(e){
+            error_handler(e.message)
+        }
     }, error_handler)
 }
 
@@ -1969,12 +1990,20 @@ function updateTransactionInDatabase(transaction, callback, error_handler){
     console.log("updateTransactionInDatabase called!");
     console.log(transaction);
     var collection_transactions = database.collection('transactions');
-    collection_transactions.update({_id:new require('mongodb').ObjectID(transaction._id.toString())}, transaction, function (err, count, status) {
-        if(err){error_handler(err.message);}
-        else{
-            if(callback != undefined && callback != null){callback();}
-        }
-    });
+    try {
+        collection_transactions.update({_id: new require('mongodb').ObjectID(transaction._id.toString())}, transaction, function (err, count, status) {
+            if (err) {
+                error_handler(err.message);
+            }
+            else {
+                if (callback != undefined && callback != null) {
+                    callback();
+                }
+            }
+        });
+    }catch(e){
+        error_handler(e.message);
+    }
 }
 
 function updateListingInDatabase(listing, callback, error_handler){
@@ -2171,8 +2200,8 @@ function validateExpirationTime(expiration_time){
         return "Please enter a valid date!";
     }else if( !(expiration_time >= new Date().getTime())){
         return "You can't go back in time! Set a time in the future!"
-    }else if(!(expiration_time <= new Date().getTime() + 86400000)){
-       return "Set a time within the next 24 hours!"
+    }else if(!(expiration_time <= new Date().getTime() + 86400000 * 7)){
+       return "Set a time within the next week!"
     }
     else{
         return "";
@@ -2188,8 +2217,8 @@ function validatePrice(price){
     else if(!(price >= 0)){
         return "You can't make the price less than free! "
     }
-    else if(!(price <= 500)){
-        return "You can only buy or sell items of value less than or equal to $500!"
+    else if(!(price <= 10000)){
+        return "You can only buy or sell items of value less than or equal to $10000!"
     }
     else{
         return "";

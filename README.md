@@ -1,6 +1,7 @@
 # mealplanserverapp
 
 ##TODO:
+* I think reloading old active_transactions causes the server to crash when updateTransactionInDatabase is called
 * add a login_info object that stores all login credentials 
 * add ability to comment on transactions
 * add ability to add hash_tags
