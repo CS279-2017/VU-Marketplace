@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/active_transactions.js" afterPath="$PROJECT_DIR$/classes/active_transactions.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,7 +29,7 @@
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="106">
-              <caret line="1641" column="13" selection-start-line="1641" selection-start-column="13" selection-end-line="1641" selection-end-column="13" />
+              <caret line="592" column="94" selection-start-line="592" selection-start-column="94" selection-end-line="592" selection-end-column="94" />
               <folding />
             </state>
           </provider>
@@ -87,8 +86,8 @@
       <file leaf-file-name="transaction.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/transaction.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1395">
-              <caret line="93" column="75" selection-start-line="93" selection-start-column="73" selection-end-line="93" selection-end-column="75" />
+            <state relative-caret-position="873">
+              <caret line="151" column="48" selection-start-line="151" selection-start-column="48" selection-end-line="151" selection-end-column="48" />
               <folding />
             </state>
           </provider>
@@ -385,12 +384,12 @@
       <workItem from="1481127424715" duration="438000" />
       <workItem from="1481209857977" duration="10359000" />
       <workItem from="1481411343373" duration="5205000" />
-      <workItem from="1481915101487" duration="16278000" />
+      <workItem from="1481915101487" duration="23272000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="457002000" />
+    <option name="totallyTimeSpent" value="463996000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="78" y="23" width="1101" height="735" extended-state="0" />
@@ -815,14 +814,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/transaction.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1395">
-          <caret line="93" column="75" selection-start-line="93" selection-start-column="73" selection-end-line="93" selection-end-column="75" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/user_info.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="225">
@@ -839,10 +830,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/classes/transaction.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="873">
+          <caret line="151" column="48" selection-start-line="151" selection-start-column="48" selection-end-line="151" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="106">
-          <caret line="1641" column="13" selection-start-line="1641" selection-start-column="13" selection-end-line="1641" selection-end-column="13" />
+          <caret line="592" column="94" selection-start-line="592" selection-start-column="94" selection-end-line="592" selection-end-column="94" />
           <folding />
         </state>
       </provider>
