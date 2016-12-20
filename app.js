@@ -796,7 +796,7 @@ io.on('connection', function (socket) {
                 var other_user_socket = io.sockets.connected[other_user.socket_id];
                 if(other_user_socket == undefined){
                     var alert = user.first_name + " " + user.last_name + ": " + message_text;
-                    var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT"};
+                    var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction: transaction}};
                     sendNotification(notification_info, other_user.device_token);
                 }
                 emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
