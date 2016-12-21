@@ -417,7 +417,7 @@ io.on('connection', function (socket) {
                         // other_user.enqueueEvent(event);
                         var alert = user.first_name + " " + user.last_name + " is requesting to " +
                             (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + transaction.price;
-                        notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE"};
+                        notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE", payload: {transaction_id: transaction._id}};
                         sendNotification(notification_info, other_user.device_token);
                     }
                 }
@@ -489,7 +489,10 @@ io.on('connection', function (socket) {
                     var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
                     + "'" + transaction.title + "'";
                     notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
-                    sendNotification(notification_info, buyer.device_token);
+                    if(buyer != undefined) {
+                        sendNotification(notification_info, buyer.device_token);
+                    }
+
                 }
                 if(seller_socket == undefined) {
                     var other_user = active_users.get(transaction.getOtherUserId(user_id));
@@ -497,8 +500,12 @@ io.on('connection', function (socket) {
                     var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
                     var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
                         + "'" + transaction.title + "'";
+                    // notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
                     notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
-                    sendNotification(notification_info, buyer.device_token);
+
+                    if(seller != undefined){
+                        sendNotification(notification_info, seller.device_token);
+                    }
                     // seller.enqueueEvent(event);
                 }
             }catch(e){
@@ -530,7 +537,10 @@ io.on('connection', function (socket) {
                 var user = active_users.get(user_id);
                 var user_socket = io.sockets.connected[user.socket_id];
                 var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                var other_user_socket = io.sockets.connected[other_user.socket_id];
+                var other_user_socket = undefined;
+                if(other_user != undefined){
+                   other_user_socket = io.sockets.connected[other_user.socket_id];
+                }
                 // var event = new Event("transaction_request_declined", , null);
                 if(other_user_socket == undefined) {
                     // var other_user = active_users.get(transaction.getOtherUserId(user_id));
@@ -539,7 +549,10 @@ io.on('connection', function (socket) {
                     var user_name = user.first_name + " " + user.last_name;
                     var alert = "Your transaction request for '" + transaction.title + "' was declined by " + user_name;
                     notification_info = {alert: alert, category: "TRANSACTION_REQUEST_DECLINED"};
-                    sendNotification(notification_info, other_user.device_token);
+                    if(other_user != undefined){
+                        sendNotification(notification_info, other_user.device_token);
+
+                    }
                 //     other_user_socket.emit(event.name , event.message);
                 // }
                 // else{
@@ -591,10 +604,10 @@ io.on('connection', function (socket) {
                if(!transaction.isCompleted()){
                    var alert = user_name + " has confirmed the transaction '" + transaction.title + "'";
                    var notification_info = {alert: alert, payload: {transaction: transaction}, category: "TRANSACTION_CONFIRMED"};
-                   if(buyer_socket == undefined) {
+                   if(buyer_socket == undefined && buyer != undefined) {
                        sendNotification(notification_info, buyer.device_token);
                    }
-                   if(seller_socket != undefined) {
+                   if(seller_socket != undefined && seller != undefined) {
                        sendNotification(notification_info, seller.device_token);
                    }
                }
@@ -653,7 +666,9 @@ io.on('connection', function (socket) {
                var other_user = active_users.get(transaction.getOtherUserId(user_id));
                var alert = user.first_name + " " + user.last_name + " has terminated the transaction '" + transaction.title + "'";
                var notification_info = {alert: alert, category: "TRANSACTION_TERMINATED"};
-               sendNotification(notification_info, other_user.device_token);
+               if(other_user != undefined){
+                   sendNotification(notification_info, other_user.device_token);
+               }
                emitEvent("transaction_terminated", {user_id: user_id, transaction_id: transaction_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
            }catch(e){
                console.log(e);
@@ -791,13 +806,19 @@ io.on('connection', function (socket) {
                 // var seller_socket = io.sockets.connected[seller.socket_id];
                 // buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
                 // seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+                var user = active_users.get(user_id);
                 var other_user_id = transaction.getOtherUserId(user_id);
                 var other_user = active_users.get(other_user_id);
-                var other_user_socket = io.sockets.connected[other_user.socket_id];
+                var other_user_socket = undefined
+                if(other_user != undefined){
+                   other_user_socket = io.sockets.connected[other_user.socket_id];
+                }
                 if(other_user_socket == undefined){
                     var alert = user.first_name + " " + user.last_name + ": " + message_text;
                     var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction: transaction}};
-                    sendNotification(notification_info, other_user.device_token);
+                    if(other_user != undefined) {
+                        sendNotification(notification_info, other_user.device_token);
+                    }
                 }
                 emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
             }catch(e){
@@ -2099,7 +2120,9 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
                 var alert = " Your listing '" + listing.title + "' has expired";
                 var notification_info = {alert: alert, category: "LISTING_EXPIRED"};
                 var user = active_users.get(listing.user_id);
-                sendNotification(notification_info, user.device_token);
+                if(user != undefined){
+                    sendNotification(notification_info, user.device_token);
+                }
                 io.emit("listing_removed", {data: {listing_id: listing_id}});
                 console.log("listing with id " + listing_id + " was removed because it has expired");
             }, error_handler);
