@@ -28,8 +28,8 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="136">
-              <caret line="417" column="65" selection-start-line="417" selection-start-column="65" selection-end-line="417" selection-end-column="65" />
+            <state relative-caret-position="241">
+              <caret line="982" column="28" selection-start-line="982" selection-start-column="28" selection-end-line="982" selection-end-column="28" />
               <folding />
             </state>
           </provider>
@@ -384,12 +384,12 @@
       <workItem from="1481127424715" duration="438000" />
       <workItem from="1481209857977" duration="10359000" />
       <workItem from="1481411343373" duration="5205000" />
-      <workItem from="1481915101487" duration="26588000" />
+      <workItem from="1481915101487" duration="26896000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="467312000" />
+    <option name="totallyTimeSpent" value="467620000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="78" y="23" width="1101" height="735" extended-state="0" />
@@ -840,8 +840,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="417" column="65" selection-start-line="417" selection-start-column="65" selection-end-line="417" selection-end-column="65" />
+        <state relative-caret-position="241">
+          <caret line="982" column="28" selection-start-line="982" selection-start-column="28" selection-end-line="982" selection-end-column="28" />
           <folding />
         </state>
       </provider>

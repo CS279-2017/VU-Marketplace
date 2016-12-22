@@ -979,7 +979,8 @@ function registerEmailAddress(email_address, callback, error_handler){
         //if the email address exists but hasn't been verified delete the email address
         function makeVerificationCode(length){
             var text = "";
-            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            // var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var possible = "0123456789";
 
             for( var i=0; i < length; i++ )
                 text += possible.charAt(Math.floor(Math.random() * possible.length));
