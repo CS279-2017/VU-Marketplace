@@ -2313,6 +2313,9 @@ function sendNotification(notification_info, device_token){
     if(notification_info.sound != undefined){
         notification.sound = notification_info.sound;
     }
+    else{
+        notification.sound = "default";
+    }
     if(notification_info.alert != undefined){
         notification.alert = notification_info.alert;
     }
