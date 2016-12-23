@@ -227,7 +227,14 @@ var Transaction = function() {
             else{
                 throw {message: "user_id doesn't match either of the user ids in the transaction"};
             }
-        }
+        },
+
+        isBuyer: function(user_id){
+            if(user_id == this.buyer_user_id){
+                return true;
+            }
+            return false;
+        },
     }
 
     return Transaction;

@@ -290,6 +290,9 @@ io.on('connection', function (socket) {
         var price = json.price;
         var buy = json.buy;
         function callback(listing){
+            var user = active_users.get(user_id);
+            var buy_or_sell = listing.buy? "buy" : "sell";
+            console.log("Listing was made by " + user.first_name + " " + user.last_name + " to " + buy_or_sell + " '" + listing.title + "' for $" + listing.price);
             socket.emit("make_listing_response", {data: null, error: null});
             //emit event to all users that a new listing has been made
             io.emit("listing_made", {data: {listing: listing}});
@@ -465,6 +468,11 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         function callback(transaction){
             console.log("emitting accept_transaction_response");
+            var accepting_user = active_users.get(user_id);
+            var requesting_user = transaction.getOtherUserId(requesting_user);
+            var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
+            var accepting_user_full_name = accepting_user.first_name + " " + accepting_user.last_name;
+            console.log(accepting_user_full_name + " accepted the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
             socket.emit("accept_transaction_request_response", {data: null, error: null});
             //notify users involved in the transaction that transaction has been accepted, will start
             try {
@@ -533,6 +541,12 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         function callback(transaction){
             try {
+                var declining_user = active_users.get(user_id);
+                var requesting_user = transaction.getOtherUserId(requesting_user);
+                var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
+                var declining_user_full_name = declining_user.first_name + " " + declining_user.last_name;
+                console.log(declining_user_full_name + " declined the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
+
                 emitEvent("transaction_request_declined", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)]);
                 var user = active_users.get(user_id);
                 var user_socket = io.sockets.connected[user.socket_id];
@@ -593,6 +607,16 @@ io.on('connection', function (socket) {
        function callback(transaction){
            //notify both users in the transaction that this user has confirmed
            try {
+
+               var confirming_user = active_users.get(user_id);
+               var other_user = transaction.getOtherUserId(confirming_user);
+               var other_user_full_name = other_user.first_name + " " + other_user.last_name;
+               var confirming_user_full_name = confirming_user.first_name + " " + confirming_user.last_name;
+               var bought_or_sold = transaction.isBuyer(confirming_user._id) ? "bought " : "sold ";
+               var from_or_to = transaction.isBuyer(confirming_user._id) ? " from " : " to ";
+               console.log(confirming_user_full_name + " has " + bought_or_sold
+                   + transaction.title + from_or_to + other_user_full_name + " at the price of $" + transaction.price);
+
                // var event = new Event("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, null);
                emitEvent("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
                var buyer = active_users.get(transaction.buyer_user_id);
@@ -612,6 +636,8 @@ io.on('connection', function (socket) {
                    }
                }
                if(transaction.isCompleted()){
+                   console.log("The transaction '" + transaction.title + "' for $" + transaction.price + " was COMPLETED!");
+
                    var alert = "The transaction '" + transaction.title + "' was completed!";
                    var notification_info = {alert: alert, payload: {transaction: transaction}, category: "TRANSACTION_COMPLETED"};
                    //notify users that transaction is completed
@@ -659,6 +685,7 @@ io.on('connection', function (socket) {
        var transaction_id = json.transaction_id;
        function callback(transaction){
            //notify both users in the transaction that this user has rejected the transaction
+           console.log("The transaction '" + transaction.title + "' for $" + transaction.price + " was TERMINATED!");
            try {
                console.log("terminate Transactinon successful!")
                console.log(transaction)
@@ -1475,9 +1502,14 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
         }
         console.log("no duplicate found calling makeTransaction")
         makeTransaction(user_id, listing_id, function (transaction) {
-                console.log("user that made that transaction (is the transaction_id in current_transaciton ids?:");
-                console.log(active_users.get(user_id));
-                callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
+                // console.log("user that made that transaction (is the transaction_id in current_transaciton ids?:");
+            // console.log(active_users.get(user_id));
+            var requesting_user = active_users.get(user_id);
+            var receiving_user = transaction.getOtherUserId(requesting_user);
+            var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
+            var receiving_user_full_name = receiving_user.first_name + " " + receiving_user.last_name;
+            console.log(requesting_user_full_name + " made a transaction request to " + receiving_user_full_name + " for " + transaction.title)
+            callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
         }, error_handler)
     }, error_handler);
     //called on a user (using user_id) and a listing (using listing_id)
