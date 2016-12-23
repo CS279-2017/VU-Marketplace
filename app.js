@@ -9,8 +9,8 @@ var apn = require('apn');
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -747,15 +747,17 @@ io.on('connection', function (socket) {
             console.log(user);
             var current_transaction_ids = user.current_transactions_ids;
             try {
-                for (var key in current_transaction_ids) {
-                    var transaction_id = current_transaction_ids[key];
-                    var transaction = active_transactions.get(transaction_id);
-                    var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                    var other_user_socket = io.sockets.connected[other_user.socket_id];
-                    if(other_user_socket != undefined){
-                        other_user_socket.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id, updated_location: updated_location}, error: null});
-                    }
-                }
+                // for (var key in current_transaction_ids) {
+                //     var transaction_id = current_transaction_ids[key];
+                //     var transaction = active_transactions.get(transaction_id);
+                //     var other_user = active_users.get(transaction.getOtherUserId(user_id));
+                //     var other_user_socket = io.sockets.connected[other_user.socket_id];
+                //     if(other_user_socket != undefined){
+                //         other_user_socket.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id, updated_location: updated_location}, error: null});
+                //     }
+                // }
+                io.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id}, error: null});
+
             }catch(e){
                 console.log(e.message);
                 error_handler(e.message);
@@ -782,6 +784,7 @@ io.on('connection', function (socket) {
 
         function callback(){
             socket.emit("update_profile_picture_response", {data: null, error: null});
+            io.emit("profile_picture_updated", {data: {user_id: user_id}, error: null});
         }
 
         function error_handler(e){
