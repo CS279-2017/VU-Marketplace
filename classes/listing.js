@@ -18,6 +18,8 @@ var Listing = function() {
         this.active = true;
 
         this.removed_time = null;
+
+        this.picture_ids = [];
     }
 
     Listing.prototype = {
@@ -49,6 +51,9 @@ var Listing = function() {
             this.price = listing.price;
             this.buy = listing.buy;
         },
+        addPictureId: function(picture_id){
+            this.picture_ids.push(picture_id.toString());
+        },
         makeTransaction: function (user_initiate_id) {
             //user_intitate_id is the id of the user that clicks on the listing i.e initiates the transaction
             if (_id == undefined) {
@@ -64,6 +69,7 @@ var Listing = function() {
             }
             return false;
         }
+
     }
 
     return Listing;

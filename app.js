@@ -9,8 +9,8 @@ var apn = require('apn');
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -820,6 +820,48 @@ io.on('connection', function (socket) {
         }
     });
 
+    socket.on('update_picture', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var picture_id = json.picture_id;
+        var picture = json.picture;
+        // console.log(profile_picture.length);
+        authenticate(user_id, password, function(user){
+            updatePicture(picture_id, user_id, picture, callback, error_handler)
+        }, error_handler)
+
+        function callback(){
+            socket.emit("update_profile_picture_response", {data: null, error: null});
+            io.emit("picture_updated", {data: {picture_id: picture_id}, error: null});
+        }
+
+        function error_handler(e){
+            socket.emit("update_profile_picture_response", {data: null, error: e});
+            console.log(e);
+        }
+    });
+
+    socket.on('add_picture_to_listing', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var listing_id = json.listing_id
+        var picture = json.picture;
+        // console.log(profile_picture.length);
+        authenticate(user_id, password, function(user){
+            addPictureToListing(listing_id, user_id, picture, callback , error_handler)
+        });
+
+        function callback(){
+            socket.emit("add_picture_to_listing_response", {data: null, error: null});
+            // socket.emit("picture_added_to_listing", {data: {listing_id: listing_id}, error: null});
+        }
+
+        function error_handler(e){
+            socket.emit("add_picture_to_listing_response", {data: null, error: e});
+            console.log(e);
+        }
+    });
+
     socket.on('send_chat_message', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -970,6 +1012,23 @@ io.on('connection', function (socket) {
         console.log("getProfilePicture called!")
         var start0 = new Date().getTime();
         getProfilePicture(user_id, callback, error_handler);
+    })
+
+    socket.on('get_picture', function(json){
+        console.log("get_picture called!")
+        var picture_id = json.picture_id;
+        function callback(picture){
+            socket.emit("get_picture_response", {data: {picture_id: picture_id.toString(), picture: picture}, error: null});
+            // socket.emit("picture_gotten", {data: {picture_id_id: picture_id.toString(), picture: profile_picture}, error: null});
+            // console.log("emitting profile_picture_gotten took " + (end1 - start1) + " milliseconds.")
+            console.log("get_picture_response emitted!");
+        }
+        function error_handler(e){
+            socket.emit("get_picture_response", {data: null, error: e});
+            console.log(e);
+        }
+        console.log("getPicture called!")
+        getPicture(picture_id, callback, error_handler);
     })
 });
 
@@ -1929,6 +1988,46 @@ function updateProfilePicture(user_id, profile_picture, callback, error_handler)
     });
 }
 
+function updatePicture(picture_id, user_id, picture, callback, error_handler){
+    var collection_pictures = database.collection('pictures');
+    // console.log(typeof profile_picture);
+    // console.log(profile_picture);
+    collection_pictures.find({_id: picture_id}).toArray(function(err, docs) {
+        if(err){
+            error_handler(err);
+        }
+        else {
+            if (docs.length > 0) {
+               if(docs[0].user_id == user_id){
+                   collection_pictures.update({_id: picture_id}, {picture: picture}, function (err, count, status) {
+                       if(err){error_handler(err.message);}
+                       else{
+                           if(callback != undefined && callback != null){callback();}
+                       }
+                   });
+               }
+                else{
+                   error_handler("This picture doesn't belong to you! Can't update!")
+               }
+            }
+            else {
+
+            }
+        }
+    });
+}
+
+function addPictureToListing(listing_id, user_id, picture, callback, error_handler){
+    var collection_pictures = database.collection('pictures');
+    collection_pictures.insert({picture: picture, user_id: user_id}, function(err,docsInserted){
+        if(err){error_handler(err.message); return;}
+        var listing = active_listings.get(listing_id);
+        listing.addPictureId(docsInserted[0]._id);
+        updateListingInDatabase(listing, function(){}, error_handler);
+        callback();
+    });
+}
+
 //1. authenticate
 //2. find the transaction
 //3. verify user is one of the users of the transaction
@@ -2070,6 +2169,23 @@ function getProfilePicture(user_id, callback, error_handler){
             }
             else {
                 // error_handler("getProfilePicture: unable to find profile_picture");
+            }
+        }
+    });
+}
+
+function getPicture(picture_id, callback, error_handler){
+    var collection = database.collection('pictures');
+    collection.find({_id: picture_id}).toArray(function(err, docs) {
+        if(err){
+            error_handler(err);
+        }
+        else {
+            if (docs.length > 0) {
+                callback(docs[0].picture.buffer);
+            }
+            else {
+
             }
         }
     });
@@ -2254,8 +2370,8 @@ function validateTitle(title){
     // if(!(typeof title == 'string' && /^[A-Za-z0-9\s\-_,\.;:()]+$/.test(title))){
     //     return "That's an invalid title!"
     // }
-    if(!(title.length <= 30)){
-        return "Title must be less than 30 characters!"
+    if(!(title.length <= 60)){
+        return "Title must be less than 60 characters!"
     }
     else if(!( title.length > 0)){
         return "You didn't enter a title!"
@@ -2267,8 +2383,8 @@ function validateDescription(description){
     if(!(description.length > 0 )){
         return "Looks like you didn't enter a description!"
     }
-    else if(!(description.length <= 140)){
-        return "Description must be 140 characters or less!"
+    else if(!(description.length <= 400)){
+        return "Description must be 400 characters or less!"
     }
     else{
         return "";

@@ -89,7 +89,7 @@ User.prototype = {
         this.current_transactions_ids.push(current_transaction_id.toString());
     },
     removeCurrentTransactionId: function(current_transaction_id){
-        console.log(this);
+        // console.log(this);
         var index = this.current_transactions_ids.indexOf(current_transaction_id.toString());
         if(index <= -1){
             throw {message: "transaction id " + current_transaction_id + " does not exist in current transactions ids of user with id " + this._id};
