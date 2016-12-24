@@ -121,6 +121,13 @@ server.listen(port, function () {
         }, function(error){
             console.log(error);
         });
+
+        getActiveUsersFromDatabase(function(users){
+            active_users.initFromDatabase(users);
+            // console.log(active_users.getAll());
+        }, function(error){
+            console.log(error);
+        });
         
     });
 
@@ -831,12 +838,12 @@ io.on('connection', function (socket) {
         }, error_handler)
 
         function callback(){
-            socket.emit("update_profile_picture_response", {data: null, error: null});
+            socket.emit("update_picture_response", {data: null, error: null});
             io.emit("picture_updated", {data: {picture_id: picture_id}, error: null});
         }
 
         function error_handler(e){
-            socket.emit("update_profile_picture_response", {data: null, error: e});
+            socket.emit("update_picture_response", {data: null, error: e});
             console.log(e);
         }
     });
@@ -1291,18 +1298,23 @@ function login(email_address, password, callback, error_handler){
             //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
             var user = new User();
             user.initFromDatabase(docs[0]);
-            try {
-                //if not already logged in then add user to active_users
-                if(active_users.get(user._id) == undefined) {
-                    active_users.add(user);
+            user.active = true;
+            updateUserInDatabase(user, function(){
+                try {
+                    //if not already logged in then add user to active_users
+                    if(active_users.get(user._id) == undefined) {
+                        active_users.add(user);
+                    }
+                }catch(error){
+                    error_handler(error.message);
+                    return;
                 }
-            }catch(error){
-                error_handler(error.message);
-                return;
-            }
+                if(callback != undefined){ callback(user); }
+            }, error_handler)
+
             // console.log(user.email_address + " is logged in");
             //return user._id, use this to authenticate, thus login is independent of login credentials
-            if(callback != undefined){ callback(user); }
+
 
         }
         else{
@@ -1319,14 +1331,22 @@ function logout(user_id, password, callback, error_handler){
     //verify credentials of user calling logout
     authenticate(user_id, password, function(user){
         try {
-            var collection = database.collection('users');
-            //this saves the user data to the database before logging out
-            collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, active_users.get(user_id), function(err, result) {
-                if(err){error_handler(err); return;}
-                console.log(user_id + " info saved to database");
+            var user = active_users.get(user_id);
+            user.active = false;
+            updateUserInDatabase(user, function(){
+                active_users.remove(user_id);
+                console.log(user);
                 console.log(user.email_address + " has logged out");
                 if(callback != undefined){ callback(); }
-            });
+            }, error_handler)
+            // var collection = database.collection('users');
+            // //this saves the user data to the database before logging out
+            // collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, active_users.get(user_id), function(err, result) {
+            //     if(err){error_handler(err); return;}
+            //     console.log(user_id + " info saved to database");
+            //     console.log(user.email_address + " has logged out");
+            //     if(callback != undefined){ callback(); }
+            // });
             //removes all of the users_current_listings
             // for(var i=0; i<user.current_listings_ids.length; i++){
             //     var listing_id = user.current_listings_ids[i];
@@ -1335,7 +1355,7 @@ function logout(user_id, password, callback, error_handler){
             //     }, error_handler)
             // }
                 //update database with new user info
-            active_users.remove(user_id);
+
         }catch(e){
             error_handler(e.message);
             return;
@@ -1357,11 +1377,14 @@ function authenticate(user_id, password, callback, error_handler){
     // console.log("trying to authenticate user_id: " + user_id + " password: " + password);
     if(user == undefined){
         // console.log("invalid user id: + " + user_id);
-        error_handler("tried to authenticate an invalid user_id/password combination");
+        if(error_handler != undefined){
+            error_handler("tried to authenticate an invalid user_id/password combination");
+        }
     }
     else if(user.password != password){
-        // console.log("invalid password");
-        error_handler("tried to authenticate an invalid user_id/password combination");
+        if(error_handler != undefined){
+            error_handler("tried to authenticate an invalid user_id/password combination");
+        }
     }
     else{
         // console.log("authentication success!!")
@@ -2022,7 +2045,8 @@ function addPictureToListing(listing_id, user_id, picture, callback, error_handl
     collection_pictures.insert({picture: picture, user_id: user_id}, function(err,docsInserted){
         if(err){error_handler(err.message); return;}
         var listing = active_listings.get(listing_id);
-        listing.addPictureId(docsInserted[0]._id);
+        console.log(docsInserted);
+        listing.addPictureId(docsInserted.ops[0]._id);
         updateListingInDatabase(listing, function(){}, error_handler);
         callback();
     });
@@ -2225,13 +2249,20 @@ function updateListingInDatabase(listing, callback, error_handler){
 function updateUserInDatabase(user, callback, error_handler){
     console.log("updateUserInDatabase called!")
     var collection = database.collection('users');
-    collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, active_users.get(user._id), function(err, result) {
+    collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, user , function(err, result) {
         if(err){error_handler(err); return;}
         console.log(user.email_address + " has been updated");
         if(callback != undefined){ callback(); }
     });
 }
 
+function getActiveUsersFromDatabase(callback, error_handler){
+    var collection_users = database.collection('users');
+    collection_users.find({active: true}).toArray(function(err, docs){
+        if(err){error_handler(err.message);}
+        else{callback(docs);}
+    });
+}
 function getActiveListingsFromDatabase(callback, error_handler){
     var collection_listings = database.collection('listings');
     collection_listings.find({active: true}).toArray(function(err, docs){

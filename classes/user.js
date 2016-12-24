@@ -48,6 +48,8 @@ User.prototype = {
         this.current_listings_ids = user.current_listings_ids;
         // this.previous_listings_ids = user.previous_listings_ids;
         this.current_transactions_ids = user.current_transactions_ids
+        
+        this.active = user.active;
         // this.previous_transactions_ids = user.previous_transactions_ids;
         
         //initializes the event queue using data passed from database

@@ -1,4 +1,5 @@
 module.exports = ActiveUsers;
+var User = require("./user.js");
 
 //TODO: login/logout simply manipulates ActiveUsers, note current user object manipulation all revolve around username
 //TODO: may want to change focus to something else, may even want to remove usernames all together and only use real names
@@ -9,6 +10,13 @@ function ActiveUsers(){
 //active_users now indexed by _id rather than username, thus making login indepedent of username
 ActiveUsers.prototype = {
     constructor: ActiveUsers,
+    initFromDatabase: function(active_users){
+        for(var i = 0; i<active_users.length; i++){
+            var new_user = new User();
+            new_user.initFromDatabase(active_users[i]);
+            this.users[new require('mongodb').ObjectID(new_user._id.toString())] = new_user;
+        }
+    },
     add: function(user){
         if(this.users[user._id] == undefined) {
             this.users[user._id] = user;
