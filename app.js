@@ -298,7 +298,7 @@ io.on('connection', function (socket) {
             var user = active_users.get(user_id);
             var buy_or_sell = listing.buy? "buy" : "sell";
             console.log("Listing was made by " + user.first_name + " " + user.last_name + " to " + buy_or_sell + " '" + listing.title + "' for $" + listing.price);
-            socket.emit("make_listing_response", {data: null, error: null});
+            socket.emit("make_listing_response", {data: {listing: listing}, error: null});
             //emit event to all users that a new listing has been made
             io.emit("listing_made", {data: {listing: listing}});
         }
@@ -331,7 +331,7 @@ io.on('connection', function (socket) {
             }
         }, error_handler)
         function callback(listing){
-            socket.emit("update_listing_response", {data: null, error: null});
+            socket.emit("update_listing_response", {data: {listing: listing}, error: null});
             //emit event to all users that a new listing has been made
             console.log("updatedListing returned: ");
             console.log(listing);
@@ -826,6 +826,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('update_picture', function(json){
+        console.log("update_picture called!");
         var user_id = json.user_id;
         var password = json.password;
         var picture_id = json.picture_id;
@@ -836,6 +837,7 @@ io.on('connection', function (socket) {
         }, error_handler)
 
         function callback(){
+            console.log("update_picture successful!")
             socket.emit("update_picture_response", {data: null, error: null});
             io.emit("picture_updated", {data: {picture_id: picture_id}, error: null});
         }
@@ -2017,14 +2019,14 @@ function updatePicture(picture_id, user_id, picture, callback, error_handler){
     var collection_pictures = database.collection('pictures');
     // console.log(typeof profile_picture);
     // console.log(profile_picture);
-    collection_pictures.find({_id: picture_id}).toArray(function(err, docs) {
+    collection_pictures.find({_id: toMongoIdObject(picture_id)}).toArray(function(err, docs) {
         if(err){
             error_handler(err);
         }
         else {
             if (docs.length > 0) {
                if(docs[0].user_id == user_id){
-                   collection_pictures.update({_id: picture_id}, {picture: picture}, function (err, count, status) {
+                   collection_pictures.update({_id: toMongoIdObject(picture_id)}, {user_id: user_id, picture: picture}, function (err, count, status) {
                        if(err){error_handler(err.message);}
                        else{
                            if(callback != undefined && callback != null){callback();}
@@ -2036,6 +2038,7 @@ function updatePicture(picture_id, user_id, picture, callback, error_handler){
                }
             }
             else {
+                error_handler("picture with id not found");
 
             }
         }
@@ -2044,7 +2047,7 @@ function updatePicture(picture_id, user_id, picture, callback, error_handler){
 
 function addPictureToListing(listing_id, user_id, picture, callback, error_handler){
     var collection_pictures = database.collection('pictures');
-    collection_pictures.insert({picture: picture, user_id: user_id}, function(err,docsInserted){
+    collection_pictures.insert({picture: picture, user_id: toMongoIdObject(user_id)}, function(err,docsInserted){
         if(err){error_handler(err.message); return;}
         var listing = active_listings.get(listing_id);
         console.log(docsInserted);
@@ -2203,7 +2206,7 @@ function getProfilePicture(user_id, callback, error_handler){
 function getPicture(picture_id, callback, error_handler){
     var collection = database.collection('pictures');
 
-    collection.find({_id: new require('mongodb').ObjectID(picture_id.toString())}).toArray(function(err, docs) {
+    collection.find({_id: toMongoIdObject(picture_id)}).toArray(function(err, docs) {
         if(err){
             error_handler(err);
         }
@@ -2478,6 +2481,10 @@ function getUUID(){
         var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
         return v.toString(16);
     });
+}
+
+function toMongoIdObject(id){
+    return new require('mongodb').ObjectID(id.toString());
 }
 
 function sendNotification(notification_info, device_token){

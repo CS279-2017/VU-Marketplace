@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/listing.js" afterPath="$PROJECT_DIR$/classes/listing.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,7 +29,7 @@
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="196">
-              <caret line="834" column="80" selection-start-line="834" selection-start-column="80" selection-end-line="834" selection-end-column="80" />
+              <caret line="2029" column="59" selection-start-line="2029" selection-start-column="59" selection-end-line="2029" selection-end-column="59" />
               <folding />
             </state>
           </provider>
@@ -168,8 +167,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="58" />
-    <option name="y" value="66" />
+    <option name="x" value="38" />
+    <option name="y" value="49" />
     <option name="width" value="1101" />
     <option name="height" value="735" />
   </component>
@@ -380,15 +379,15 @@
       <workItem from="1481209857977" duration="10359000" />
       <workItem from="1481411343373" duration="5205000" />
       <workItem from="1481915101487" duration="27000000" />
-      <workItem from="1482428352978" duration="21047000" />
+      <workItem from="1482428352978" duration="23583000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="488771000" />
+    <option name="totallyTimeSpent" value="491307000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="58" y="66" width="1101" height="735" extended-state="0" />
+    <frame x="38" y="49" width="1101" height="735" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19444445" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -829,7 +828,7 @@
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="196">
-          <caret line="834" column="80" selection-start-line="834" selection-start-column="80" selection-end-line="834" selection-end-column="80" />
+          <caret line="2029" column="59" selection-start-line="2029" selection-start-column="59" selection-end-line="2029" selection-end-column="59" />
           <folding />
         </state>
       </provider>
