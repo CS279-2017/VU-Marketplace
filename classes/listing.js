@@ -42,6 +42,10 @@ var Listing = function() {
                 this.removed_time = listing.removed_time;
             }
 
+            if(listing.picture_ids != undefined){
+                this.picture_ids = listing.picture_ids;
+            }
+
         },
         update: function(listing){
             this.title = listing.title;

@@ -272,12 +272,10 @@ io.on('connection', function (socket) {
             //actually its a device_token but that client ios app has a case that handles this string message;
             console.log("entered device_token: " + device_token)
             console.log("actual device_token: " + active_users.get(user_id).device_token);
-            error_handler("tried to authenticate an invalid user_id/password combination");
+            // error_handler("tried to authenticate an invalid user_id/password combination");
         }
-        else{
-            console.log("device_token: " + device_token);
-            authenticate(user_id, password, callback, error_handler);
-        }
+        console.log("device_token: " + device_token);
+        authenticate(user_id, password, callback, error_handler);
     });
 
 
@@ -860,6 +858,10 @@ io.on('connection', function (socket) {
 
         function callback(){
             socket.emit("add_picture_to_listing_response", {data: null, error: null});
+            var listing = active_listings.get(listing_id);
+            if(listing != undefined){
+                io.emit("listing_updated", {data: {listing: listing}});
+            }
             // socket.emit("picture_added_to_listing", {data: {listing_id: listing_id}, error: null});
         }
 
@@ -879,6 +881,7 @@ io.on('connection', function (socket) {
             //notify all user in the transaction that a new message has been sent
             try {
                 var transaction = active_transactions.get(transaction_id);
+                emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
                 // var buyer = transaction.buyer_user_id;
                 // var seller = transaction.seller_user_id;
                 // var buyer_socket = io.sockets.connected[buyer.socket_id];
@@ -899,7 +902,6 @@ io.on('connection', function (socket) {
                         sendNotification(notification_info, other_user.device_token);
                     }
                 }
-                emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
             }catch(e){
                 console.log(e);
                 return;
@@ -1335,7 +1337,7 @@ function logout(user_id, password, callback, error_handler){
             user.active = false;
             updateUserInDatabase(user, function(){
                 active_users.remove(user_id);
-                console.log(user);
+                // console.log(user);
                 console.log(user.email_address + " has logged out");
                 if(callback != undefined){ callback(); }
             }, error_handler)
@@ -2200,11 +2202,13 @@ function getProfilePicture(user_id, callback, error_handler){
 
 function getPicture(picture_id, callback, error_handler){
     var collection = database.collection('pictures');
-    collection.find({_id: picture_id}).toArray(function(err, docs) {
+
+    collection.find({_id: new require('mongodb').ObjectID(picture_id.toString())}).toArray(function(err, docs) {
         if(err){
             error_handler(err);
         }
         else {
+            console.log(docs);
             if (docs.length > 0) {
                 callback(docs[0].picture.buffer);
             }
