@@ -94,6 +94,7 @@ var port = process.env.PORT || 3000;
 
 var max_listings = 8;
 var max_transactions = 24;
+var max_pictures_per_listing = 5;
 
 server.listen(port, function () {
     console.log('Example app listening on port ' + port);
@@ -2075,15 +2076,27 @@ function updatePicture(picture_id, user_id, picture, callback, error_handler){
 }
 
 function addPictureToListing(listing_id, user_id, picture, callback, error_handler){
-    var collection_pictures = database.collection('pictures');
-    collection_pictures.insert({picture: picture, user_id: toMongoIdObject(user_id)}, function(err,docsInserted){
-        if(err){error_handler(err.message); return;}
-        var listing = active_listings.get(listing_id);
-        console.log(docsInserted);
-        listing.addPictureId(docsInserted.ops[0]._id);
-        updateListingInDatabase(listing, function(){}, error_handler);
-        callback();
-    });
+    var listing = active_listings.get(listing_id);
+    if(listing != undefined){
+        if(listing.picture_ids != undefined && listing.picture_id < max_pictures_per_listing){
+            var collection_pictures = database.collection('pictures');
+            collection_pictures.insert({picture: picture, user_id: toMongoIdObject(user_id)}, function(err,docsInserted){
+                if(err){error_handler(err.message); return;}
+
+                console.log(docsInserted);
+                listing.addPictureId(docsInserted.ops[0]._id);
+                updateListingInDatabase(listing, function(){}, error_handler);
+                callback();
+            });
+        }
+        else{
+            error_handler("You can only add up to " + max_pictures_per_listing + " pictures per listing");
+        }
+    }
+    else{
+        error_handler("invalid listing_id");
+    }
+
 }
 
 //1. authenticate
