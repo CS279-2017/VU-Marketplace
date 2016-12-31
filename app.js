@@ -55,7 +55,7 @@ exports.getActiveUsers = getActiveUsers;
 exports.getActiveListings = getActiveListings;
 exports.getActiveTransactions = getActiveTransactions;
 
-exports.getUser = getUser;
+exports.getUserInfo = getUserInfo;
 exports.getListing = getListing;
 
 
@@ -91,6 +91,9 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 var port = process.env.PORT || 3000;
+
+var max_listings = 8;
+var max_transactions = 24;
 
 server.listen(port, function () {
     console.log('Example app listening on port ' + port);
@@ -737,28 +740,43 @@ io.on('connection', function (socket) {
             // console.log("successfully updated user_location")
             // console.log("users current transaction_ids")
             // console.log(user.current_transactions_ids);
-            var current_transaction_ids = user.current_transactions_ids;
-            try {
-                for (var key in current_transaction_ids) {
-                    var transaction_id = current_transaction_ids[key];
-                    try {
-                        var transaction = active_transactions.get(transaction_id);
-                        var other_user_id = transaction.getOtherUserId(user_id);
-                        var other_user = active_users.get(other_user_id);
-                        var other_user_socket = io.sockets.connected[other_user.socket_id];
-                        // console.log("emitting user_location_updated");
-                        other_user_socket.emit("user_location_updated", {
-                            data: {
-                                user_id: user._id.toString(),
-                                transaction_id: transaction_id.toString(),
-                                updated_location: updated_location
-                            }, error: null
-                        });
-                    }catch(e){error_handler(e.message)}
-                }
-            }catch(e){
-                console.log(e);
-                return;
+            // var current_transaction_ids = user.current_transactions_ids;
+            // try {
+            //     for (var key in current_transaction_ids) {
+            //         var transaction_id = current_transaction_ids[key];
+            //         try {
+            //             var transaction = active_transactions.get(transaction_id);
+            //             var other_user_id = transaction.getOtherUserId(user_id);
+            //             var other_user = active_users.get(other_user_id);
+            //             var other_user_socket = io.sockets.connected[other_user.socket_id];
+            //             // console.log("emitting user_location_updated");
+            //             other_user_socket.emit("user_location_updated", {
+            //                 data: {
+            //                     user_id: user._id.toString(),
+            //                     transaction_id: transaction_id.toString(),
+            //                     updated_location: updated_location
+            //                 }, error: null
+            //             });
+            //         }catch(e){error_handler(e.message)}
+            //     }
+            // }catch(e){
+            //     console.log(e);
+            //     return;
+            // }
+            var users_active_transactions = active_transactions.getAllForUser();
+            for(var i=0; i<users_active_transactions.length; i++){
+                var transaction = users_active_transactions[i];
+                var other_user_id = transaction.getOtherUserId(user_id);
+                var other_user = active_users.get(other_user_id);
+                var other_user_socket = io.sockets.connected[other_user.socket_id];
+                // console.log("emitting user_location_updated");
+                other_user_socket.emit("user_location_updated", {
+                    data: {
+                        user_id: user._id.toString(),
+                        transaction_id: transaction_id.toString(),
+                        updated_location: updated_location
+                    }, error: null
+                });
             }
         }
         function error_handler(e){
@@ -777,7 +795,7 @@ io.on('connection', function (socket) {
             //notify all users, or all users in the same transaction with user whose venmo_id was updated,
             var user = active_users.get(user_id);
             console.log(user);
-            var current_transaction_ids = user.current_transactions_ids;
+            // var current_transaction_ids = user.current_transactions_ids;
             try {
                 // for (var key in current_transaction_ids) {
                 //     var transaction_id = current_transaction_ids[key];
@@ -999,7 +1017,7 @@ io.on('connection', function (socket) {
             socket.emit("get_user_response", {data: null, error: e});
             console.log(e);
         }
-        getUser(user_id, callback, error_handler);
+        getUserInfo(user_id, callback, error_handler);
     });
 
     socket.on('get_profile_picture', function(json){
@@ -1435,9 +1453,9 @@ function makeListing(user_id, password, title, description, location, expiration
             return;
         }
 
-        //limit the number of listings to 5
-        if(active_listings.getAllForUser(user_id).length >= 3){
-            error_handler("You cannot have more than 3 listings")
+        //limit the number of listings to 8
+        if(active_listings.getAllForUser(user_id).length >= max_listings){
+            error_handler("You cannot have more than " + max_listings + " listings")
             return;
         }
         var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
@@ -1452,7 +1470,7 @@ function makeListing(user_id, password, title, description, location, expiration
                             console.log("new listing added!")
                             console.log(new_listing)
                             active_listings.add(new_listing);
-                            user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
+                            // user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
                             updateUserInDatabase(user, function(){
 
                             }, error_handler)
@@ -1534,7 +1552,7 @@ function removeListing(listing_id, callback, error_handler){
             active_listings.remove(listing_id);
             if (user != undefined) { //in case user has already logged out
                 try {
-                    user.removeCurrentListingId(listing_id);
+                    // user.removeCurrentListingId(listing_id);
                     updateUserInDatabase(user, function(){
 
                     }, error_handler)
@@ -1562,27 +1580,38 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
     authenticate(user_id, password, function(user) {
         console.log("checking if transaction is a duplicate on a listing")
         var transaction_already_made_on_listing = false;
-        for (var key in user.current_transactions_ids) {
-            console.log("entering for loop");
-            try {
-                var transaction = active_transactions.get(user.current_transactions_ids[key]);
-                if(transaction != undefined) {
-                    if (transaction.listing_id.toString() == listing_id.toString()) {
-                        console.log("the user has already made a transaction on this listing")
-                        error_handler("You have already made a transaction on this listing");
-                        return;
-                    }
+        var users_current_transactions = active_transactions.getAllForUser(user_id);
+        for(var i =0; i< users_current_transactions.length; i++){
+            var transaction = users_current_transactions[i];
+            if(transaction != undefined) {
+                if (transaction.listing_id.toString() == listing_id.toString()) {
+                    console.log("the user has already made a transaction on this listing")
+                    error_handler("You have already made a transaction on this listing");
+                    return;
                 }
-            } catch (e) {
-                error_handler(e.message)
             }
         }
-        if(active_transactions.getAllForUser(user_id).length >= 8){
-            error_handler("You are involved in too many transactions, please complete some of your current transactions before making new ones");
+        // for (var key in user.current_transactions_ids) {
+        //     console.log("entering for loop");
+        //     try {
+        //         var transaction = active_transactions.get(user.current_transactions_ids[key]);
+        //         if(transaction != undefined) {
+        //             if (transaction.listing_id.toString() == listing_id.toString()) {
+        //                 console.log("the user has already made a transaction on this listing")
+        //                 error_handler("You have already made a transaction on this listing");
+        //                 return;
+        //             }
+        //         }
+        //     } catch (e) {
+        //         error_handler(e.message)
+        //     }
+        // }
+        if(users_current_transactions.length >= max_transactions){
+            error_handler("You are involved in too many transactions, you cannot be in more than " + max_transactions + " transactions");
             return;
         }
         var listing = active_listings.get(listing_id);
-        if(active_transactions.getAllForUser(listing.user_id).length >= 8){
+        if(active_transactions.getAllForUser(listing.user_id).length >= max_transactions){
             error_handler("The other user is currently involved in too many transactions");
             return;
         }
@@ -1642,7 +1671,7 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
                 }, 60000 * 10)
                 var user = active_users.get(user_id);
                 try{
-                    user.addCurrentTransactionId(new_transaction._id);
+                    // user.addCurrentTransactionId(new_transaction._id);
                     updateUserInDatabase(user, function(){
 
                     }, error_handler)
@@ -1759,7 +1788,7 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
         //update listing in database
         removeListing(transaction.listing_id, function(){
             if(user != undefined) { //in case user has logged out
-                user.addCurrentTransactionId(transaction_id);
+                // user.addCurrentTransactionId(transaction_id);
                 updateUserInDatabase(user, function(){}, error_handler)
                 transaction.start_time = new Date().getTime();
                 updateTransactionInDatabase(transaction, function(){}, function(){});
@@ -1819,30 +1848,30 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
             // remove transaction_id from initiating user (transaction_id was never added to declining user)
             var buyer = active_users.get(transaction.buyer_user_id);
             var seller = active_users.get(transaction.seller_user_id);
-            if(transaction.buyer_accepted_request == true){
-                try{
-                    if(buyer != undefined){
-                        buyer.removeCurrentTransactionId(transaction_id);
-                        updateUserInDatabase(buyer, function(){
-
-                        }, error_handler)
-                    }
-                }catch(e){
-                    error_handler(e.message)
-                }
-            }
-            else{
-                try {
-                    if(seller != undefined) {
-                        seller.removeCurrentTransactionId(transaction_id);
-                        updateUserInDatabase(seller, function(){
-
-                        }, error_handler)
-                    }
-                }catch(e){
-                    error_handler(e.message);
-                }
-            }
+            // if(transaction.buyer_accepted_request == true){
+            //     try{
+            //         if(buyer != undefined){
+            //             // buyer.removeCurrentTransactionId(transaction_id);
+            //             updateUserInDatabase(buyer, function(){
+            //
+            //             }, error_handler)
+            //         }
+            //     }catch(e){
+            //         error_handler(e.message)
+            //     }
+            // }
+            // else{
+            //     try {
+            //         if(seller != undefined) {
+            //             seller.removeCurrentTransactionId(transaction_id);
+            //             updateUserInDatabase(seller, function(){
+            //
+            //             }, error_handler)
+            //         }
+            //     }catch(e){
+            //         error_handler(e.message);
+            //     }
+            // }
             //remove transaction from active_transactions
             active_transactions.remove(transaction._id);
             callback(transaction);
@@ -1883,24 +1912,24 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
             updateTransactionInDatabase(transaction, function(){
                 console.log("updateTransaction completed");
                 console.log(transaction)
-                var user1 = active_users.get(transaction.buyer_user_id);
-                var user2 = active_users.get(transaction.seller_user_id);
-                try {
-                    if (user1 != undefined) {
-                        user1.removeCurrentTransactionId(transaction_id);
-                        updateUserInDatabase(user1, function(){
-
-                        }, error_handler)
-                    }
-                }catch(e){ console.log(e.message)}
-                try {
-                    if (user2 != undefined) {
-                        user2.removeCurrentTransactionId(transaction_id);
-                        updateUserInDatabase(user2, function(){
-
-                        }, error_handler)
-                    }
-                }catch(e){console.log(e.message)}
+                // var user1 = active_users.get(transaction.buyer_user_id);
+                // var user2 = active_users.get(transaction.seller_user_id);
+                // try {
+                //     if (user1 != undefined) {
+                //         user1.removeCurrentTransactionId(transaction_id);
+                //         updateUserInDatabase(user1, function(){
+                //
+                //         }, error_handler)
+                //     }
+                // }catch(e){ console.log(e.message)}
+                // try {
+                //     if (user2 != undefined) {
+                //         user2.removeCurrentTransactionId(transaction_id);
+                //         updateUserInDatabase(user2, function(){
+                //
+                //         }, error_handler)
+                //     }
+                // }catch(e){console.log(e.message)}
                 try {
                     active_transactions.remove(transaction_id);
                 }catch(e){console.log(e.message)}
@@ -1939,28 +1968,28 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
         try {
             updateTransactionInDatabase(transaction, function () {
                 console.log(transaction)
-                var user1 = active_users.get(transaction.buyer_user_id);
-                var user2 = active_users.get(transaction.seller_user_id);
-                if (user1 != undefined) {
-                    try {
-                        user1.removeCurrentTransactionId(transaction_id);
-                        updateUserInDatabase(user1, function(){
-
-                        }, error_handler)
-                    }catch(e){
-                        console.log(e.message)
-                    }
-                }
-                if (user2 != undefined) {
-                    try{
-                        user2.removeCurrentTransactionId(transaction_id);
-                        updateUserInDatabase(user2, function(){
-
-                        }, error_handler)
-                    }catch(e){
-                        console.log(e.message)
-                    }
-                }
+                // var user1 = active_users.get(transaction.buyer_user_id);
+                // var user2 = active_users.get(transaction.seller_user_id);
+                // if (user1 != undefined) {
+                //     try {
+                //         user1.removeCurrentTransactionId(transaction_id);
+                //         updateUserInDatabase(user1, function(){
+                //
+                //         }, error_handler)
+                //     }catch(e){
+                //         console.log(e.message)
+                //     }
+                // }
+                // if (user2 != undefined) {
+                //     try{
+                //         user2.removeCurrentTransactionId(transaction_id);
+                //         updateUserInDatabase(user2, function(){
+                //
+                //         }, error_handler)
+                //     }catch(e){
+                //         console.log(e.message)
+                //     }
+                // }
                 try {
                     active_transactions.remove(transaction_id);
                 }catch(e){console.log(e.message)}
@@ -2100,10 +2129,30 @@ function getListingsWithHashTag(hash_tag, callback, error_handler){
 }
 
 function getUsersActiveTransactions(user_id, password, callback, error_handler){
-    authenticate(user_id, password, function(user){
-        var users_active_transactions = active_transactions.getAllForUser(user._id);
-        callback(users_active_transactions);
-    }, error_handler);
+    getUser(user_id, password, function(user){
+        if(user.password == password.toString()){
+            var users_active_transactions = active_transactions.getAllForUser(user._id);
+            callback(users_active_transactions);
+        }
+        else {
+            console.log(user_id);
+            console.log(user._id);
+            console.log(password);
+            console.log(user.password);
+            error_handler("getUserActiveTransactions: invalid user_id/password")
+        }
+    }, error_handler)
+    // authenticate(user_id, password, function(user){
+    //     var users_active_transactions = active_transactions.getAllForUser(user._id);
+    //     callback(users_active_transactions);
+    // }, error_handler);
+}
+
+function getUsersActiveListings(user_id, callback, error_handler){
+    getUserInfo(user_id, function(user){
+        var users_active_listings = active_listings.getAllForUser(user._id);
+        callback(users_active_listings);
+    }, error_handler)
 }
 
 function getUsersPreviousTransactions(user_id, callback, error_handler){
@@ -2126,7 +2175,7 @@ function getUsersPreviousTransactions(user_id, callback, error_handler){
 }
 
 //Finds user in active_users if not found, searches database, returns a UserInfo object made from the User
-function getUser(user_id, callback, error_handler){
+function getUserInfo(user_id, callback, error_handler){
     var user = active_users.get(user_id);
     //if user is not in active_users, search database
     if(user == undefined){
@@ -2152,6 +2201,23 @@ function getUser(user_id, callback, error_handler){
         user_info.logged_in = true;
         callback(user_info)
     }
+}
+
+function getUser(user_id, password, callback, error_handler){
+
+    var collection = database.collection('users');
+    collection.find({_id: toMongoIdObject(user_id), password: password}).toArray(function(err, docs) {
+        if(docs.length > 0) {
+            //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+            var user = new User();
+            user.initFromDatabase(docs[0]);
+            callback(user)
+        }
+        else{
+            //if not found: alert user that login failed, because incorrect email_address/password
+            error_handler("getUser: user was not found for user_id: "+user_id + " password: " + password);
+        }
+    });
 }
 
 function getListing(listing_id, callback, error_handler){

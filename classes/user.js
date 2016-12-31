@@ -15,9 +15,9 @@ function User(first_name, last_name, password, email){
     this.device_id = null
     this.venmo_id = null;
     this.socket_id = null;
-    this.current_listings_ids = [];
+    // this.current_listings_ids = [];
     // this.previous_listings_ids = []; Rather than storing a copy of previous, just look up in database
-    this.current_transactions_ids = [];
+    // this.current_transactions_ids = [];
     // this.previous_transactions_ids = []; Rather than storing a copy of previous, just look up in database
 
     this.location = null; // not saved onto db
@@ -45,9 +45,9 @@ User.prototype = {
         this.location = user.location;
         this.venmo_id = user.venmo_id;
         this.socket_id = null;
-        this.current_listings_ids = user.current_listings_ids;
+        // this.current_listings_ids = user.current_listings_ids;
         // this.previous_listings_ids = user.previous_listings_ids;
-        this.current_transactions_ids = user.current_transactions_ids
+        // this.current_transactions_ids = user.current_transactions_ids
         
         this.active = user.active;
         // this.previous_transactions_ids = user.previous_transactions_ids;
@@ -66,16 +66,16 @@ User.prototype = {
         }
     },
     addCurrentListingId: function(current_listing_id){
-        this.current_listings_ids.push(current_listing_id.toString());
+        // this.current_listings_ids.push(current_listing_id.toString());
     },
     removeCurrentListingId: function(current_listing_id){
-        var index = this.current_listings_ids.indexOf(current_listing_id.toString());
-        if(index <= -1){
-            throw {message: "listing id " + current_listing_id + " does not exist in current listing ids of user with id " + this._id};
-        }
-        else {
-            this.current_listings_ids.splice(index, 1);
-        }
+        // var index = this.current_listings_ids.indexOf(current_listing_id.toString());
+        // if(index <= -1){
+        //     throw {message: "listing id " + current_listing_id + " does not exist in current listing ids of user with id " + this._id};
+        // }
+        // else {
+        //     this.current_listings_ids.splice(index, 1);
+        // }
     },
     // addPreviousListingId: function(previous_listing_id){
     //     this.previous_listings_ids.push(previous_listing_id);
@@ -88,15 +88,15 @@ User.prototype = {
     //     this.previous_listings_ids.splice(index, 1);
     // },
     addCurrentTransactionId: function(current_transaction_id){
-        this.current_transactions_ids.push(current_transaction_id.toString());
+        // this.current_transactions_ids.push(current_transaction_id.toString());
     },
     removeCurrentTransactionId: function(current_transaction_id){
         // console.log(this);
-        var index = this.current_transactions_ids.indexOf(current_transaction_id.toString());
-        if(index <= -1){
-            throw {message: "transaction id " + current_transaction_id + " does not exist in current transactions ids of user with id " + this._id};
-        }
-        this.current_transactions_ids.splice(index, 1);
+        // var index = this.current_transactions_ids.indexOf(current_transaction_id.toString());
+        // if(index <= -1){
+        //     throw {message: "transaction id " + current_transaction_id + " does not exist in current transactions ids of user with id " + this._id};
+        // }
+        // this.current_transactions_ids.splice(index, 1);
     },
     // addPreviousTransactionId: function(previous_transaction_id){
     //     this.previous_transactions_ids.add(previous_transaction_id);
