@@ -478,7 +478,7 @@ io.on('connection', function (socket) {
         function callback(transaction){
             console.log("emitting accept_transaction_response");
             var accepting_user = active_users.get(user_id);
-            var requesting_user = transaction.getOtherUserId(requesting_user);
+            var requesting_user = transaction.getOtherUserId(accepting_user._id);
             var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
             var accepting_user_full_name = accepting_user.first_name + " " + accepting_user.last_name;
             console.log(accepting_user_full_name + " accepted the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
@@ -551,7 +551,7 @@ io.on('connection', function (socket) {
         function callback(transaction){
             try {
                 var declining_user = active_users.get(user_id);
-                var requesting_user = transaction.getOtherUserId(requesting_user);
+                var requesting_user = transaction.getOtherUserId(declining_user._id);
                 var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
                 var declining_user_full_name = declining_user.first_name + " " + declining_user.last_name;
                 console.log(declining_user_full_name + " declined the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
@@ -618,7 +618,7 @@ io.on('connection', function (socket) {
            try {
 
                var confirming_user = active_users.get(user_id);
-               var other_user = transaction.getOtherUserId(confirming_user);
+               var other_user = transaction.getOtherUserId(confirming_user._id);
                var other_user_full_name = other_user.first_name + " " + other_user.last_name;
                var confirming_user_full_name = confirming_user.first_name + " " + confirming_user.last_name;
                var bought_or_sold = transaction.isBuyer(confirming_user._id) ? "bought " : "sold ";

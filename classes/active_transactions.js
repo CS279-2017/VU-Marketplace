@@ -24,66 +24,82 @@ ActiveTransactions.prototype = {
         }
     },
     add: function(new_transaction){
-        this.transactions_id_to_transaction_map[new_transaction._id.toString()] = new_transaction;
+        this.transactions_id_to_transaction_map[new_transaction._id] = new_transaction;
 
-        if(this.user_id_to_transactions_map[new_transaction.buyer_user_id.toString()] == undefined){
-            this.user_id_to_transactions_map[new_transaction.buyer_user_id.toString()] = [];
+        var buyer_user_id = toMongoIdObject(new_transaction.buyer_user_id.toString())
+        if(this.user_id_to_transactions_map[buyer_user_id] == undefined){
+            this.user_id_to_transactions_map[buyer_user_id] = [];
         }
-        this.user_id_to_transactions_map[new_transaction.buyer_user_id.toString()].push(new_transaction);
+        this.user_id_to_transactions_map[buyer_user_id].push(new_transaction);
 
+        var seller_user_id = toMongoIdObject(new_transaction.seller_user_id.toString())
 
-        if(this.user_id_to_transactions_map[new_transaction.seller_user_id.toString()] == undefined){
-            this.user_id_to_transactions_map[new_transaction.seller_user_id.toString()] = [];
+        if(this.user_id_to_transactions_map[seller_user_id] == undefined){
+            this.user_id_to_transactions_map[seller_user_id] = [];
         }
-        this.user_id_to_transactions_map[new_transaction.seller_user_id.toString()].push(new_transaction);
+        this.user_id_to_transactions_map[seller_user_id].push(new_transaction);
 
-        if(this.transaction_id_to_user_id_map[new_transaction._id.toString()] == undefined){
-            this.transaction_id_to_user_id_map[new_transaction._id.toString()] = [];
+        if(this.transaction_id_to_user_id_map[new_transaction._id] == undefined){
+            this.transaction_id_to_user_id_map[new_transaction._id] = [];
         }
-        this.transaction_id_to_user_id_map[new_transaction._id.toString()].push(new_transaction.buyer_user_id.toString());
-        this.transaction_id_to_user_id_map[new_transaction._id.toString()].push(new_transaction.seller_user_id.toString());
+        this.transaction_id_to_user_id_map[new_transaction._id].push(buyer_user_id);
+        this.transaction_id_to_user_id_map[new_transaction._id].push(seller_user_id);
 
         //every transaction has two users, but every user can have mutliple transactions
 
-        if(this.listing_id_to_transactions_map[new_transaction.listing_id.toString()] == undefined){
-            this.listing_id_to_transactions_map[new_transaction.listing_id.toString()] = [];
+        var listing_id = toMongoIdObject(new_transaction.listing_id.toString())
+        if(this.listing_id_to_transactions_map[listing_id] == undefined){
+            this.listing_id_to_transactions_map[listing_id] = [];
         }
-        this.listing_id_to_transactions_map[new_transaction.listing_id.toString()].push(new_transaction);
+        this.listing_id_to_transactions_map[listing_id].push(new_transaction);
         //there can be multiple transactions per listing
 
-        this.transaction_id_to_listing_id_map[new_transaction._id.toString()] = new_transaction.listing_id.toString();
+        this.transaction_id_to_listing_id_map[new_transaction._id] = listing_id;
         //but every transaction can only have 1 listing
     },
     remove: function(transaction_id){
-        // delete this.transactions_id_to_transaction_map[transaction_id.toString()];
+        delete this.transactions_id_to_transaction_map[transaction_id];
 
-        var user_id1 = this.transaction_id_to_user_id_map[transaction_id.toString()][0];
-        var user_id2 = this.transaction_id_to_user_id_map[transaction_id.toString()][1];
-        delete this.transaction_id_to_user_id_map[transaction_id.toString()];
-
-
-        var user1_transactions = this.user_id_to_transactions_map[user_id1.toString()];
-        var index = user1_transactions.indexOf(transaction_id.toString());
-        if (index > -1) { user1_transactions.splice(index, 1);}
-        if(user1_transactions.length == 0){delete this.user_id_to_transactions_map[user_id1.toString()];}
+        var user_id1 = this.transaction_id_to_user_id_map[transaction_id][0];
+        var user_id2 = this.transaction_id_to_user_id_map[transaction_id][1];
+        delete this.transaction_id_to_user_id_map[transaction_id];
 
 
-        var user2_transactions = this.user_id_to_transactions_map[user_id2.toString()];
-        var index = user2_transactions.indexOf(transaction_id.toString());
-        if (index > -1) { user2_transactions.splice(index, 1);}
-        if(user2_transactions.length == 0){delete this.user_id_to_transactions_map[user_id2.toString()];}
+        var user1_transactions = this.user_id_to_transactions_map[user_id1];
+        if(user1_transactions != undefined){
+            for(var i=0; i<user1_transactions.length; i++){
+                if(user1_transactions[i]._id == transaction_id){
+                    user1_transactions.splice(i, 1);
+                }
+            }
+            if(user1_transactions.length == 0){delete this.user_id_to_transactions_map[user_id1];}
+        }
 
-        var listing_id = this.transaction_id_to_listing_id_map[transaction_id.toString()];
-        delete this.transaction_id_to_listing_id_map[transaction_id.toString()];
+
+        var user2_transactions = this.user_id_to_transactions_map[user_id2];
+        if(user2_transactions != undefined){
+            for(var i=0; i<user2_transactions.length; i++){
+                if(user2_transactions[i]._id == transaction_id){
+                    user2_transactions.splice(i, 1);
+                }
+            }
+            if(user2_transactions.length == 0){delete this.user_id_to_transactions_map[user_id2];}
+        }
+
+        var listing_id = this.transaction_id_to_listing_id_map[transaction_id];
+        if(listing_id != undefined){
+            delete this.transaction_id_to_listing_id_map[transaction_id];
+        }
 
         var listing_transactions = this.listing_id_to_transactions_map[listing_id];
-        var index = listing_transactions.indexOf(transaction_id.toString());
-        if (index > -1) { listing_transactions.splice(index, 1);}
-        if(listing_transactions.length == 0){delete this.listing_id_to_transactions_map[listing_id.toString()];}
-
-
-
-
+        if (listing_transactions != undefined){
+            for(var i=0; i<listing_transactions.length; i++){
+                if(listing_transactions[i]._id == transaction_id){
+                    listing_transactions.splice(i, 1);
+                }
+            }
+            if(listing_transactions.length == 0){delete this.listing_id_to_transactions_map[listing_id];}
+        }
         // this.user_id_to_transactions_map[new_transaction.buyer_user_id].push(new_transaction);
         //
         // if(this.user_id_to_transactions_map[new_transaction.seller_user_id] == undefined){
@@ -97,7 +113,7 @@ ActiveTransactions.prototype = {
         // this.listing_id_to_transactions_map[new_transaction.listing_id].push(new_transaction);
     },
     get: function (transaction_id){
-        return this.transactions_id_to_transaction_map[transaction_id.toString()];
+        return this.transactions_id_to_transaction_map[transaction_id];
         // if(typeof transaction == 'undefined'){
         //     console.log("transaction not found: ")
         //     console.log(transaction_id);
@@ -157,6 +173,10 @@ ActiveTransactions.prototype = {
         this.listing_id_to_transactions_map = {};
         this.transaction_id_to_listing_id_map = {};
     },
+}
+
+function toMongoIdObject(id){
+    return new require('mongodb').ObjectID(id.toString());
 }
 
 module.exports = ActiveTransactions;
