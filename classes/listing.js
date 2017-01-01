@@ -58,6 +58,12 @@ var Listing = function() {
         addPictureId: function(picture_id){
             this.picture_ids.push(picture_id.toString());
         },
+        removePictureId: function(picture_id){
+            var index = this.picture_ids.indexOf(picture_id);
+            if(index > -1){
+                this.picture_ids.splice(index, 1);
+            }
+        },
         makeTransaction: function (user_initiate_id) {
             //user_intitate_id is the id of the user that clicks on the listing i.e initiates the transaction
             if (_id == undefined) {

@@ -892,6 +892,31 @@ io.on('connection', function (socket) {
         }
     });
 
+    socket.on('delete_picture_from_listing', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var listing_id = json.listing_id
+        var picture_id = json.picture_id;
+        // console.log(profile_picture.length);
+        authenticate(user_id, password, function(user){
+            deletePictureFromListing(picture_id, listing_id, user_id, callback, error_handler)
+        });
+
+        function callback(){
+            socket.emit("delete_picture_from_listing_response", {data: null, error: null});
+            var listing = active_listings.get(listing_id);
+            if(listing != undefined){
+                io.emit("listing_updated", {data: {listing: listing}});
+            }
+            // socket.emit("picture_added_to_listing", {data: {listing_id: listing_id}, error: null});
+        }
+
+        function error_handler(e){
+            socket.emit("delete_picture_from_listing_response", {data: null, error: e});
+            console.log(e);
+        }
+    });
+
     socket.on('send_chat_message', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -2077,16 +2102,19 @@ function updatePicture(picture_id, user_id, picture, callback, error_handler){
 
 function addPictureToListing(listing_id, user_id, picture, callback, error_handler){
     var listing = active_listings.get(listing_id);
+    if(listing.user_id != user_id){
+        error_handler("You can only add pictures to your own listing!");
+        return;
+    }
     if(listing != undefined){
-        if(listing.picture_ids != undefined && listing.picture_id < max_pictures_per_listing){
+        if(listing.picture_ids != undefined && listing.picture_ids.length < max_pictures_per_listing){
             var collection_pictures = database.collection('pictures');
             collection_pictures.insert({picture: picture, user_id: toMongoIdObject(user_id)}, function(err,docsInserted){
                 if(err){error_handler(err.message); return;}
 
                 console.log(docsInserted);
                 listing.addPictureId(docsInserted.ops[0]._id);
-                updateListingInDatabase(listing, function(){}, error_handler);
-                callback();
+                updateListingInDatabase(listing, callback, error_handler);
             });
         }
         else{
@@ -2096,7 +2124,16 @@ function addPictureToListing(listing_id, user_id, picture, callback, error_handl
     else{
         error_handler("invalid listing_id");
     }
+}
 
+function deletePictureFromListing(picture_id, listing_id, user_id, callback, error_handler){
+    var listing = active_listings.get(listing_id);
+    if(listing.user_id != user_id){
+        error_handler("You can only add pictures to your own listing!");
+        return;
+    }
+    listing.removePictureId(picture_id);
+    updateListingInDatabase(listing, callback, error_handler);
 }
 
 //1. authenticate
