@@ -1643,13 +1643,14 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
         }
         console.log("no duplicate found calling makeTransaction")
         makeTransaction(user_id, listing_id, function (transaction) {
+            console.log("makeTransaction callback called!")
                 // console.log("user that made that transaction (is the transaction_id in current_transaciton ids?:");
             // console.log(active_users.get(user_id));
-            var requesting_user = active_users.get(user_id);
-            var receiving_user = transaction.getOtherUserId(requesting_user);
-            var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
-            var receiving_user_full_name = receiving_user.first_name + " " + receiving_user.last_name;
-            console.log(requesting_user_full_name + " made a transaction request to " + receiving_user_full_name + " for " + transaction.title)
+            // var requesting_user = active_users.get(user_id);
+            // var receiving_user = transaction.getOtherUserId(requesting_user);
+            // var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
+            // var receiving_user_full_name = receiving_user.first_name + " " + receiving_user.last_name;
+            // console.log(requesting_user_full_name + " made a transaction request to " + receiving_user_full_name + " for " + transaction.title)
             callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
         }, error_handler)
     }, error_handler);
