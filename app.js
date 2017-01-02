@@ -431,7 +431,7 @@ io.on('connection', function (socket) {
                         // other_user.enqueueEvent(event);
                         var alert = user.first_name + " " + user.last_name + " is requesting to " +
                             (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + transaction.price;
-                        notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE", payload: {transaction_id: transaction._id}};
+                        notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE", payload: {transaction_id: transaction._id.toString()}};
                         sendNotification(notification_info, other_user.device_token);
                     }
                 }
@@ -516,7 +516,7 @@ io.on('connection', function (socket) {
                     var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
                     var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
                     + "'" + transaction.title + "'";
-                    notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
+                    notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
                     if(buyer != undefined) {
                         sendNotification(notification_info, buyer.device_token);
                     }
@@ -529,7 +529,7 @@ io.on('connection', function (socket) {
                     var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
                         + "'" + transaction.title + "'";
                     // notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
-                    notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
+                    notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
 
                     if(seller != undefined){
                         sendNotification(notification_info, seller.device_token);
@@ -651,7 +651,7 @@ io.on('connection', function (socket) {
                var user_name = user.first_name + " " + user.last_name;
                if(!transaction.isCompleted()){
                    var alert = user_name + " has confirmed the transaction '" + transaction.title + "'";
-                   var notification_info = {alert: alert, payload: {transaction: transaction}, category: "TRANSACTION_CONFIRMED"};
+                   var notification_info = {alert: alert, payload: {transaction_id: transaction._id.toString()}, category: "TRANSACTION_CONFIRMED"};
                    if(buyer_socket == undefined && buyer != undefined) {
                        sendNotification(notification_info, buyer.device_token);
                    }
@@ -663,7 +663,7 @@ io.on('connection', function (socket) {
                    console.log("The transaction '" + transaction.title + "' for $" + transaction.price + " was COMPLETED!");
 
                    var alert = "The transaction '" + transaction.title + "' was completed!";
-                   var notification_info = {alert: alert, payload: {transaction: transaction}, category: "TRANSACTION_COMPLETED"};
+                   var notification_info = {alert: alert, payload: {transaction_id: transaction._id.toString()}, category: "TRANSACTION_COMPLETED"};
                    //notify users that transaction is completed
                    var event = new Event("transaction_completed", {transaction_id: transaction_id}, null);
                    if(buyer_socket != undefined) {
@@ -954,7 +954,7 @@ io.on('connection', function (socket) {
                 }
                 // if(other_user_socket == undefined){
                     var alert = user.first_name + " " + user.last_name + ": " + message_text;
-                    var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction: transaction}};
+                    var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction_id: transaction._id.toString()}};
                     if(other_user != undefined) {
                         sendNotification(notification_info, other_user.device_token);
                     }
@@ -1034,6 +1034,31 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         getListing(listing_id, callback, error_handler);
+    });
+
+    socket.on('get_transaction', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var device_token = json.device_token;
+        var transaction_id = json.transaction_id;
+
+        function error_handler(e){
+            socket.emit("get_listing_response", {data: null, error: e});
+            console.log(e);
+        }
+
+        authenticate(user_id, password, device_token, function(user){
+            function callback(transaction){
+                //send all_active_listings back to client
+                if(user._id.toString() == transaction.buyer_user_id.toString() || user._id.toString() == transaction.seller_user_id.toString()){
+                    socket.emit("get_transaction_response", {data: {transaction: transaction}, error: null});
+                }
+                else{
+                    error_handler("getTransaction: You are not a user in this transaction");
+                }
+            }
+            getTransaction(transaction_id, callback, error_handler);
+        }, error_handler)
     });
 
     socket.on('get_listings_with_hash_tag', function(json){
@@ -2170,6 +2195,29 @@ function getListing(listing_id, callback, error_handler){
         var listing_info = new ListingInfo(listing);
         listing_info.active = true;
         callback(listing_info)
+    }
+}
+
+function getTransaction(transaction_id, callback, error_handler){
+    var transaction = active_transactions.get(transaction_id);
+    //if user is not in active_users, search database
+    if(transaction == undefined){
+        var collection = database.collection('transactions');
+        collection.find({_id: toMongoIdObject(transaction_id)}).toArray(function(err, docs) {
+            if (docs.length > 0) {
+                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                var transaction = new Transaction();
+                transaction.initFromDatabase(docs[0]);
+                callback(transaction);
+            }
+            else {
+                error_handler("listing with listing_id " + listing_id + " was not found");
+            }
+        });
+    }
+    //if user is in active_users then logged in, thus set the parameter and return user;
+    else{
+        callback(transaction)
     }
 }
 
