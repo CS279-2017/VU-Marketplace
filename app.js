@@ -211,8 +211,8 @@ io.on('connection', function (socket) {
         var callback = function(user){
             //send user_id back to user
             //notify necessary clients that a user has logged is
-            active_users.get(user._id).socket_id = socket.id; //store the socket_id of the user upon login and authentication
-            // active_users.get(user._id).device_token = device_token;
+            user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
+            active_users.get(user._id).device_token = device_token;
             updateUserInDatabase(user, function(){
                 console.log("new device token: " + user.device_token + " for " + user.first_name + " " + user.last_name);
                 socket.emit("login_response", {data: {user_id: user._id}, error: null});
