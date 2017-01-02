@@ -214,8 +214,10 @@ io.on('connection', function (socket) {
             //notify necessary clients that a user has logged is
             user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
             active_users.get(user._id).device_token = device_token;
-            console.log("new device token: " + device_token);
-            socket.emit("login_response", {data: {user_id: user._id}, error: null});
+            updateUserInDatabase(user, function(){
+                console.log("new device token: " + device_token);
+                socket.emit("login_response", {data: {user_id: user._id}, error: null});
+            }, error_handler)
         };
         var error_handler = function(e) {
             socket.emit("login_response", {data: null, error: e});
@@ -275,11 +277,13 @@ io.on('connection', function (socket) {
         if(active_users.get(user_id) != undefined && (device_token != active_users.get(user_id).device_token)){
             //actually its a device_token but that client ios app has a case that handles this string message;
             console.log("entered device_token: " + device_token)
-            console.log("actual device_token: " + active_users.get(user_id).device_token);
-            // error_handler("tried to authenticate an invalid user_id/password combination");
+            console.log("current device_token: " + active_users.get(user_id).device_token);
+            error_handler("tried to authenticate an invalid user_id/password combination");
         }
-        console.log("device_token: " + device_token);
-        authenticate(user_id, password, callback, error_handler);
+        else {
+            console.log("entered :device_token: " + device_token);
+            authenticate(user_id, password, device_token, callback, error_handler);
+        }
     });
 
 
@@ -292,6 +296,7 @@ io.on('connection', function (socket) {
     socket.on('make_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
         var title = json.title;
         var description = json.description;
         var location = json.location;
@@ -310,12 +315,13 @@ io.on('connection', function (socket) {
             socket.emit("make_listing_response", {data: null, error: e});
             console.log(e);
         }
-        makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler);
+        makeListing(user_id, password, device_token, title, description, location, expiration_time, price, buy, callback, error_handler);
     });
 
     socket.on('update_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
         var listing_id = json.listing_id
         var title = json.title;
         var description = json.description;
@@ -324,7 +330,7 @@ io.on('connection', function (socket) {
         var price = json.price;
         var buy = json.buy;
 
-        authenticate(user_id, password, function(user){
+        authenticate(user_id, password, device_token, function(user){
             var listing = active_listings.get(listing_id);
             var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
             if(user._id.toString() == listing.user_id.toString()){
@@ -354,6 +360,7 @@ io.on('connection', function (socket) {
     socket.on('remove_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
         var listing_id = json.listing_id
         var callback = function(listing_id){
             socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
@@ -364,7 +371,7 @@ io.on('connection', function (socket) {
             socket.emit("remove_listing_response", {data: null, error: e});
             console.log(e);
         }
-        authenticate(user_id, password, function(user){
+        authenticate(user_id, password, device_token, function(user){
             console.log("user authenticated")
             var listing = active_listings.get(listing_id);
             console.log(listing)
@@ -790,6 +797,7 @@ io.on('connection', function (socket) {
     socket.on('update_venmo_id', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
         var venmo_id = json.venmo_id;
         function callback(updated_venmo_id){
             socket.emit("update_venmo_id_response", {data: {updated_venmo_id: updated_venmo_id}, error: null});
@@ -819,7 +827,7 @@ io.on('connection', function (socket) {
             socket.emit("update_venmo_id_response", {data: null, error: e});
             console.log(e);
         }
-        authenticate(user_id, password, function(user){
+        authenticate(user_id, password, device_token, function(user){
             updateVenmoId(user_id, venmo_id, callback, error_handler)
         })
     });
@@ -827,9 +835,10 @@ io.on('connection', function (socket) {
     socket.on('update_profile_picture', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
         var profile_picture = json.profile_picture;
         // console.log(profile_picture.length);
-        authenticate(user_id, password, function(user){
+        authenticate(user_id, password, device_token, function(user){
             updateProfilePicture(user_id, profile_picture, callback, error_handler)
         }, error_handler)
 
@@ -848,10 +857,12 @@ io.on('connection', function (socket) {
         console.log("update_picture called!");
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
         var picture_id = json.picture_id;
         var picture = json.picture;
         // console.log(profile_picture.length);
-        authenticate(user_id, password, function(user){
+        authenticate(user_id, password, device_token, function(user){
             updatePicture(picture_id, user_id, picture, callback, error_handler)
         }, error_handler)
 
@@ -870,10 +881,12 @@ io.on('connection', function (socket) {
     socket.on('add_picture_to_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
         var listing_id = json.listing_id
         var picture = json.picture;
         // console.log(profile_picture.length);
-        authenticate(user_id, password, function(user){
+        authenticate(user_id, password, device_token, function(user){
             addPictureToListing(listing_id, user_id, picture, callback , error_handler)
         });
 
@@ -895,10 +908,12 @@ io.on('connection', function (socket) {
     socket.on('delete_picture_from_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
         var listing_id = json.listing_id
         var picture_id = json.picture_id;
         // console.log(profile_picture.length);
-        authenticate(user_id, password, function(user){
+        authenticate(user_id, password, device_token, function(user){
             deletePictureFromListing(picture_id, listing_id, user_id, callback, error_handler)
         });
 
@@ -991,6 +1006,7 @@ io.on('connection', function (socket) {
         console.log("get_users_previous_transactions called");
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
         function callback(users_previous_transactions){
             //send all_active_listings back to client
             console.log("get_users_previous_transactions successful!");
@@ -1002,7 +1018,7 @@ io.on('connection', function (socket) {
             socket.emit("get_users_previous_transactions_response", {data: null, error: e});
             console.log(e);
         }
-        authenticate(user_id, password, function(user){
+        authenticate(user_id, password, device_token, function(user){
             getUsersPreviousTransactions(user_id, callback, error_handler)
         }, error_handler);
     });
@@ -1024,6 +1040,7 @@ io.on('connection', function (socket) {
         // var login_info = json.login_info;
        var hash_tag = json.hash_tag;
         // authenticate()
+
         function callback(listings){
             socket.emit("get_listings_with_hash_tag_response", {data: {listings: listings}, error: null})
         }
@@ -1374,10 +1391,10 @@ function login(email_address, password, callback, error_handler){
 
 //TODO: what if a user logs out during a transaction? while he/she has listings? or he or she has requested a transaction
 //TODO: or when he or she has received a transaction?
-function logout(user_id, password, callback, error_handler){
+function logout(user_id, password, device_token, callback, error_handler){
     console.log("logout called");
     //verify credentials of user calling logout
-    authenticate(user_id, password, function(user){
+    authenticate(user_id, password, device_token, function(user){
         try {
             var user = active_users.get(user_id);
             user.active = false;
@@ -1420,7 +1437,7 @@ function logout(user_id, password, callback, error_handler){
 //for each user thus socket_id is set upon login
 
 //TODO: implement device_id
-function authenticate(user_id, password, callback, error_handler){
+function authenticate(user_id, password, device_token, callback, error_handler){
     var user = active_users.get(user_id);
     // console.log("trying to authenticate user_id: " + user_id + " password: " + password);
     if(user == undefined){
@@ -1431,6 +1448,13 @@ function authenticate(user_id, password, callback, error_handler){
     }
     else if(user.password != password){
         if(error_handler != undefined){
+            error_handler("tried to authenticate an invalid user_id/password combination");
+        }
+    }
+    else if(user.device_token != device_token){
+        if(error_handler != undefined){
+            console.log("current device token: " + user.device_token);
+            console.log("entered device token: " + device_token);
             error_handler("tried to authenticate an invalid user_id/password combination");
         }
     }
@@ -1447,8 +1471,8 @@ function authenticate(user_id, password, callback, error_handler){
 //5. notify all that a new listing has been added 
 
 //TODO: save the listing state i.e bool called active so that upon server crash, active_listings can be restored
-function makeListing(user_id, password, title, description, location, expiration_time, price, buy, callback, error_handler){
-    authenticate(user_id, password, function(user){
+function makeListing(user_id, password, device_token, title, description, location, expiration_time, price, buy, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
         var error_string = "";
         //must be less than 30 characters
         if(validateTitle(title) != ""){
@@ -1602,8 +1626,8 @@ function removeListing(listing_id, callback, error_handler){
 //TODO: set active to true
 
 //TODO: make sure user hasn't already made a transaction on this listing
-function makeTransactionRequest(user_id, password, listing_id, callback, error_handler){
-    authenticate(user_id, password, function(user) {
+function makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user) {
         console.log("checking if transaction is a duplicate on a listing")
         var transaction_already_made_on_listing = false;
         var users_current_transactions = active_transactions.getAllForUser(user_id);
@@ -1777,8 +1801,8 @@ function makeTransactionRequest(user_id, password, listing_id, callback, error_h
 //8. remove listing from active_listings
 //9. adds transaction to accepting user's current transactions (the initiating user already has the transaction)
 //10. send a message to both users that transaction has begun
-function acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler){
-    authenticate(user_id, password, function(user){
+function acceptTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == null || transaction == undefined){
             error_handler("unable to find transaction with transaction_id: " + transaction_id);
@@ -1849,8 +1873,8 @@ function acceptTransactionRequest(user_id, password, transaction_id, callback, e
 //7. remove transaction from active_transactions
 //8. message user that initiated request that their transaction has been declined
 
-function declineTransactionRequest(user_id, password, transaction_id, callback, error_handler){
-    authenticate(user_id, password, function(user){
+function declineTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
         var transaction = active_transactions.get(transaction_id);
         // console.log(active_transactions.getAll());
         if(transaction == null || transaction == undefined){
@@ -1916,8 +1940,8 @@ function declineTransactionRequest(user_id, password, transaction_id, callback, 
 //5. update transaction in database
 //6. remove transaction from active_transactions
 
-function confirmTransaction(user_id, password, transaction_id, callback, error_handler){
-    authenticate(user_id, password, function(user){
+function confirmTransaction(user_id, password, device_token, transaction_id, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == undefined){
             error_handler("confirmTransaction: transaction with id " + transaction_id + " was not found");
@@ -1977,8 +2001,8 @@ function confirmTransaction(user_id, password, transaction_id, callback, error_h
 //3. reject the transaction (call reject on the transaction), passing in user_id
 //4. check if transaction has completed, if so run appropriate methods
 
-function terminateTransaction(user_id, password, transaction_id, callback, error_handler){
-    authenticate(user_id, password, function(user){
+function terminateTransaction(user_id, password, device_token, transaction_id, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction == undefined){
             error_handler("terminateTransaction: transaction with id " + transaction_id + " was not found");
@@ -2032,8 +2056,8 @@ function terminateTransaction(user_id, password, transaction_id, callback, error
 //1. authenticate
 //2. validate the location
 //3. update the users location to the new_location
-function updateUserLocation(user_id, password, new_location, callback, error_handler){
-    authenticate(user_id, password, function(user){
+function updateUserLocation(user_id, password, device_token, new_location, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
         if(validateLocation(new_location) == ""){
             //transform the ordered pair into a Location object (regardless of whether it was a Location or just a normal
             //object)
@@ -2141,8 +2165,8 @@ function deletePictureFromListing(picture_id, listing_id, user_id, callback, err
 //2. find the transaction
 //3. verify user is one of the users of the transaction
 //4. send a message in the conversation
-function sendChatMessage(user_id, password, transaction_id, message_text, callback, error_handler){
-    authenticate(user_id, password, function(user){
+function sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
         var transaction = active_transactions.get(transaction_id);
         if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
             try {
@@ -2162,8 +2186,8 @@ function sendChatMessage(user_id, password, transaction_id, message_text, callba
 //1. authenticate
 //2. get active_listings
 //3. return active_listings
-function getAllActiveListings(user_id, password, callback, error_handler){
-    authenticate(user_id, password, function(user){
+function getAllActiveListings(user_id, password, device_token, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
         var all_active_listings = active_listings.getAll();
         callback(all_active_listings);
     }, error_handler)

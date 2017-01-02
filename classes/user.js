@@ -59,7 +59,9 @@ User.prototype = {
                 user.event_queue[i] = new Event(event.name, event.message.data, event.message.error);
             }
         }
-        this.device_id = user.device_id;
+        if(user.device_token != undefined){
+            this.device_token = user.device_token;
+        }
         this.event_queue = user.event_queue;
         if(user.creation_time != undefined){
             this.creation_time = user.creation_time;
