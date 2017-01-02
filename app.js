@@ -9,8 +9,8 @@ var apn = require('apn');
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -952,13 +952,13 @@ io.on('connection', function (socket) {
                 if(other_user != undefined){
                    other_user_socket = io.sockets.connected[other_user.socket_id];
                 }
-                if(other_user_socket == undefined){
+                // if(other_user_socket == undefined){
                     var alert = user.first_name + " " + user.last_name + ": " + message_text;
                     var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction: transaction}};
                     if(other_user != undefined) {
                         sendNotification(notification_info, other_user.device_token);
                     }
-                }
+                // }
                 getUserInfo(user_id, function(user_info){
                     console.log(user_info.first_name + " " + user_info.last_name + ": '" + message.text +"'");
                 }, function(){})
@@ -1351,6 +1351,7 @@ function login(email_address, password, device_token, callback, error_handler){
             user.initFromDatabase(docs[0]);
             user.active = true;
             user.device_token = device_token
+            active_users.get(user._id).device_token = device_token;
             updateUserInDatabase(user, function(){
                 try {
                     //if not already logged in then add user to active_users
@@ -2490,6 +2491,8 @@ function sendNotification(notification_info, device_token){
     // Actually send the notification
     apnProvider.send(notification, deviceToken).then(function(result) {
         // Check the result for any failed devices
+        console.log(result);
+        console.log(device_token);
     });
 }
 
