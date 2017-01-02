@@ -1,7 +1,7 @@
 module.exports = Conversation;
 
 function Conversation(conversation){
-    if(typeof conversation == 'undefined' || typeof conversation.message == 'undefined') {
+    if(conversation == undefined){
         this.messages = [];
     }
     else{

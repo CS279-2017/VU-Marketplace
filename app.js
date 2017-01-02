@@ -9,8 +9,8 @@ var apn = require('apn');
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-var url = 'mongodb://localhost:27017/mealplanappserver';
-// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+// var url = 'mongodb://localhost:27017/mealplanappserver';
+var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -360,10 +360,7 @@ io.on('connection', function (socket) {
         var listing_id = json.listing_id
         var callback = function(listing_id){
             socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
-            //notify all users that listing_id has been removed
-            var listing = active_listings.get(listing_id);
-            var user = active_users.get(listing.user_id);
-            console.log("Listing with title " + listing.title + " was updated by " + user.first_name + " " + user.last_name)
+            //notify all users that listing_id has been removed;
             io.emit("listing_removed", {data: {listing_id: listing_id}});
         };
         var error_handler = function(e) {
@@ -374,6 +371,7 @@ io.on('connection', function (socket) {
             var listing = active_listings.get(listing_id);
             if(listing != undefined){
                 if(listing.user_id.toString() == user_id.toString()){
+                    console.log("Listing '" + listing.title + "' was removed by " + user.first_name + " " + user.last_name);
                     removeListing(listing_id, callback, error_handler)
                 }
                 else{
@@ -962,7 +960,7 @@ io.on('connection', function (socket) {
                     }
                 }
                 getUserInfo(user_id, function(user_info){
-                    console.log(user_info.first_name + " " + user_info.last_name + ": '" + message+"'");
+                    console.log(user_info.first_name + " " + user_info.last_name + ": '" + message.text +"'");
                 }, function(){})
             }catch(e){
                 console.log(e);
