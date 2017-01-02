@@ -114,21 +114,18 @@ server.listen(port, function () {
         //restore all active_listings and active_transactions
         getActiveListingsFromDatabase(function(listings){
             active_listings.initFromDatabase(listings);
-            // console.log(active_listings.getAll());
         }, function(error){
             console.log(error);
         });
 
         getActiveTransactionsFromDatabase(function(transactions){
             active_transactions.initFromDatabase(transactions);
-            // console.log(active_transactions.getAll());
         }, function(error){
             console.log(error);
         });
 
         getActiveUsersFromDatabase(function(users){
             active_users.initFromDatabase(users);
-            // console.log(active_users.getAll());
         }, function(error){
             console.log(error);
         });
@@ -145,7 +142,13 @@ app.get('/', function (req, res) {
 
 //TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
 io.on('connection', function (socket) {
-    console.log("user has connected!");
+    var user = active_users.getUserBySocketId(socket.id);
+    if(user != undefined){
+        console.log(user.first_name + " " + user.last_name + " has connected");
+    }
+    else{
+        console.log("A user has connected!");
+    }
     // socket.emit('event', { data: 'server data' });
     //TODO: should active_listings and transactions be terminated? no unless terminated by other party
     //TODO: should user be logged out when disconnected? maybe
@@ -155,21 +158,17 @@ io.on('connection', function (socket) {
         //TODO: record that the user is disconnected
         //TODO: start sending push notifications rather than socket events for import events like
         //TODO: transaction requests and listing expirations and transaction accept or decline, tranaction terminations or confirmations
-        console.log('user has disconnected!');
-        var socket_id = socket.id
-        var disconnected_user = active_users.getUserBySocketId(socket_id);
-        // disconnected_user.sockets
+        var user = active_users.getUserBySocketId(socket.id);
+        if(user != undefined){
+            console.log(user.first_name + " " + user.last_name + " has disconnected");
+        }
+        else{
+            console.log("A user has disconnected!");
+        }
         var error_handler = function (e) {
             console.log(e);
             return;
         }
-        //TODO: don't logout upon disconnect
-        // if(disconnected_user != null) {
-        //     logout(disconnected_user._id, disconnected_user.password, function (user_id) {
-        //         console.log("user with id " + disconnected_user._id + " logged out due to disconnected")
-        //         socket.emit('logged_out_due_to_disconnect', {data: null, error: null});
-        //     }, error_handler)
-        // }
     });
 
     socket.on('register_email_address', function(json) {
@@ -212,24 +211,28 @@ io.on('connection', function (socket) {
         var callback = function(user){
             //send user_id back to user
             //notify necessary clients that a user has logged is
-            user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
-            active_users.get(user._id).device_token = device_token;
+            active_users.get(user._id).socket_id = socket.id; //store the socket_id of the user upon login and authentication
+            // active_users.get(user._id).device_token = device_token;
             updateUserInDatabase(user, function(){
-                console.log("new device token: " + device_token);
+                console.log("new device token: " + user.device_token + " for " + user.first_name + " " + user.last_name);
                 socket.emit("login_response", {data: {user_id: user._id}, error: null});
             }, error_handler)
+            // console.log("new device token: " + device_token + " for " + user.first_name + " " + user.last_name);
+
         };
         var error_handler = function(e) {
             socket.emit("login_response", {data: null, error: e});
             console.log(e);
         }
         //TODO: should we allow logging in from multiple devices at once? for now yes
-        login(email_address, password, callback, error_handler);
+        login(email_address, password, device_token, callback, error_handler);
     });
 
     socket.on('logout', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
 
         function callback(){
             //notify necessary clients that a sure has logged out
@@ -246,7 +249,7 @@ io.on('connection', function (socket) {
             }
             console.log(e);
         }
-        logout(user_id, password, callback, error_handler);
+        logout(user_id, password, device_token, callback, error_handler);
     });
 
     //authenticates user_id and password info and sends back confirmation if valid
@@ -258,30 +261,21 @@ io.on('connection', function (socket) {
         function callback(user){
             user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
             socket.emit('authenticate_response', {data: null, error: null});
-            // if(user.event_queue != undefined) {
-            //     while (user.event_queue.count > 0) {
-            //         var event = user.dequeueEvent();
-            //         socket.emit(event.name, event.message);
-            //         console.log(socket.name + " emitted from event queue with data "+event.message.toString())
-            //     }
-            // }
+            console.log("authenticated " + user.first_name + " " + user.last_name)
         }
 
         function error_handler(e){
             socket.emit('authenticate_response', {data: null, error:e});
             console.log(e);
         }
-        console.log("user");
-        console.log(active_users.get(user_id));
-        console.log(device_token);
         if(active_users.get(user_id) != undefined && (device_token != active_users.get(user_id).device_token)){
             //actually its a device_token but that client ios app has a case that handles this string message;
-            console.log("entered device_token: " + device_token)
-            console.log("current device_token: " + active_users.get(user_id).device_token);
+            // console.log("entered device_token: " + device_token)
+            // console.log("current device_token: " + active_users.get(user_id).device_token);
             error_handler("tried to authenticate an invalid user_id/password combination");
         }
         else {
-            console.log("entered :device_token: " + device_token);
+            // console.log("entered device_token: " + device_token);
             authenticate(user_id, password, device_token, callback, error_handler);
         }
     });
@@ -322,6 +316,7 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
+
         var listing_id = json.listing_id
         var title = json.title;
         var description = json.description;
@@ -343,8 +338,8 @@ io.on('connection', function (socket) {
         function callback(listing){
             socket.emit("update_listing_response", {data: {listing: listing}, error: null});
             //emit event to all users that a new listing has been made
-            console.log("updatedListing returned: ");
-            console.log(listing);
+            var user = active_users.get(listing.user_id);
+            console.log("Listing with title " + listing.title + " was updated by " + user.first_name + " " + user.last_name)
             io.emit("listing_updated", {data: {listing: listing}});
         }
         function error_handler(e){
@@ -361,10 +356,14 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
+
         var listing_id = json.listing_id
         var callback = function(listing_id){
             socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
             //notify all users that listing_id has been removed
+            var listing = active_listings.get(listing_id);
+            var user = active_users.get(listing.user_id);
+            console.log("Listing with title " + listing.title + " was updated by " + user.first_name + " " + user.last_name)
             io.emit("listing_removed", {data: {listing_id: listing_id}});
         };
         var error_handler = function(e) {
@@ -372,10 +371,7 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         authenticate(user_id, password, device_token, function(user){
-            console.log("user authenticated")
             var listing = active_listings.get(listing_id);
-            console.log(listing)
-            console.log(listing_id);
             if(listing != undefined){
                 if(listing.user_id.toString() == user_id.toString()){
                     removeListing(listing_id, callback, error_handler)
@@ -407,6 +403,7 @@ io.on('connection', function (socket) {
    socket.on('make_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token;
         var listing_id = json.listing_id; 
         function callback(transaction){
             //send transaction request to other user first then notify calling user of success
@@ -469,7 +466,7 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         try {
-            makeTransactionRequest(user_id, password, listing_id, callback, error_handler);
+            makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler);
         }catch(e){
             error_handler(e.message);
         }
@@ -481,28 +478,37 @@ io.on('connection', function (socket) {
     socket.on('accept_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
         var transaction_id = json.transaction_id;
         function callback(transaction){
-            console.log("emitting accept_transaction_response");
-            var accepting_user = active_users.get(user_id);
-            var requesting_user = transaction.getOtherUserId(accepting_user._id);
-            var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
-            var accepting_user_full_name = accepting_user.first_name + " " + accepting_user.last_name;
-            console.log(accepting_user_full_name + " accepted the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
+            // var accepting_user;
+            // var requesting_user;
+            // if(transaction.buy == true){
+            //     accepting_user = active_users.get(transaction.buyer_user_id);
+            //     requesting_user = transaction.getOtherUserId(accepting_user._id);
+            // }
+            // else{
+            //     accepting_user = active_users.get(transaction.seller_user_id);
+            //     requesting_user = transaction.getOtherUserId(accepting_user._id);
+            // }
+            //
+            // if(requesting_user != undefined && accepting_user != undefined) {
+            //     var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
+            //     var accepting_user_full_name = accepting_user.first_name + " " + accepting_user.last_name;
+            //     console.log(accepting_user_full_name + " accepted the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
+            // }
             socket.emit("accept_transaction_request_response", {data: null, error: null});
             //notify users involved in the transaction that transaction has been accepted, will start
             try {
                 //notify all users that a listing was removed
                 io.emit("listing_removed", {data: {listing_id: transaction.listing_id}});
-                console.log("transaction:")
-                console.log(transaction);
                 var buyer = active_users.get(transaction.buyer_user_id);
                 var seller = active_users.get(transaction.seller_user_id);
                 var buyer_socket = io.sockets.connected[buyer.socket_id];
                 var seller_socket = io.sockets.connected[seller.socket_id];
                 emitEvent("transaction_request_accepted", {transaction_id: transaction_id.toString(), user_id: user_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
                 if(transaction.isAccepted()){
-                    console.log("emitting transaction_started");
                     emitEvent("transaction_started", {transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
                 }
                 var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
@@ -542,7 +548,7 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         try {
-            acceptTransactionRequest(user_id, password, transaction_id, callback, error_handler)
+            acceptTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler)
         }catch(e){
             error_handler(e.message);
         }
@@ -554,14 +560,16 @@ io.on('connection', function (socket) {
     socket.on('decline_transaction_request', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
         var transaction_id = json.transaction_id;
         function callback(transaction){
             try {
-                var declining_user = active_users.get(user_id);
-                var requesting_user = transaction.getOtherUserId(declining_user._id);
-                var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
-                var declining_user_full_name = declining_user.first_name + " " + declining_user.last_name;
-                console.log(declining_user_full_name + " declined the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
+                // var declining_user = active_users.get(user_id);
+                // var requesting_user = transaction.getOtherUserId(declining_user._id);
+                // var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
+                // var declining_user_full_name = declining_user.first_name + " " + declining_user.last_name;
+                // console.log(declining_user_full_name + " declined the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
 
                 emitEvent("transaction_request_declined", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)]);
                 var user = active_users.get(user_id);
@@ -611,7 +619,7 @@ io.on('connection', function (socket) {
             socket.emit("decline_transaction_request_response", {data: null, error: e});
             console.log(e);
         }
-        declineTransactionRequest(user_id, password, transaction_id, callback, error_handler)
+        declineTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler)
     });
 
     //TODO: confirming a transaction that doesn't exist i.e not in active_transactions
@@ -619,19 +627,21 @@ io.on('connection', function (socket) {
    socket.on('confirm_transaction', function(json){
        var user_id = json.user_id;
        var password = json.password;
+       var device_token = json.device_token
+
        var transaction_id = json.transaction_id;
        function callback(transaction){
            //notify both users in the transaction that this user has confirmed
            try {
 
-               var confirming_user = active_users.get(user_id);
-               var other_user = transaction.getOtherUserId(confirming_user._id);
-               var other_user_full_name = other_user.first_name + " " + other_user.last_name;
-               var confirming_user_full_name = confirming_user.first_name + " " + confirming_user.last_name;
-               var bought_or_sold = transaction.isBuyer(confirming_user._id) ? "bought " : "sold ";
-               var from_or_to = transaction.isBuyer(confirming_user._id) ? " from " : " to ";
-               console.log(confirming_user_full_name + " has " + bought_or_sold
-                   + transaction.title + from_or_to + other_user_full_name + " at the price of $" + transaction.price);
+               // var confirming_user = active_users.get(user_id);
+               // var other_user = transaction.getOtherUserId(confirming_user._id);
+               // var other_user_full_name = other_user.first_name + " " + other_user.last_name;
+               // var confirming_user_full_name = confirming_user.first_name + " " + confirming_user.last_name;
+               // var bought_or_sold = transaction.isBuyer(confirming_user._id) ? "bought " : "sold ";
+               // var from_or_to = transaction.isBuyer(confirming_user._id) ? " from " : " to ";
+               // console.log(confirming_user_full_name + " has " + bought_or_sold
+               //     + transaction.title + from_or_to + other_user_full_name + " at the price of $" + transaction.price);
 
                // var event = new Event("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, null);
                emitEvent("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
@@ -687,7 +697,7 @@ io.on('connection', function (socket) {
            console.log(e);
        }
        try {
-           confirmTransaction(user_id, password, transaction_id, callback, error_handler);
+           confirmTransaction(user_id, password, device_token, transaction_id, callback, error_handler);
        }catch(e){
            error_handler(e.message);
        }
@@ -698,6 +708,8 @@ io.on('connection', function (socket) {
    socket.on('terminate_transaction', function(json){
        var user_id = json.user_id;
        var password = json.password;
+       var device_token = json.device_token
+
        var transaction_id = json.transaction_id;
        function callback(transaction){
            //notify both users in the transaction that this user has rejected the transaction
@@ -724,7 +736,7 @@ io.on('connection', function (socket) {
            console.log(e);
        }
        try {
-           terminateTransaction(user_id, password, transaction_id, callback, error_handler)
+           terminateTransaction(user_id, password, device_token, transaction_id, callback, error_handler)
        }catch(e){
            error_handler(e.message);
        }
@@ -740,58 +752,39 @@ io.on('connection', function (socket) {
     socket.on('update_user_location', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
         var new_location = json.new_location;
         function callback(updated_location){
             socket.emit("update_user_location_response", {data: {updated_location: updated_location}, error: null});
             //notify all users, or all users in the same transaction with user whose location was updated,
+
             var user = active_users.get(user_id);
-            // console.log("successfully updated user_location")
-            // console.log("users current transaction_ids")
-            // console.log(user.current_transactions_ids);
-            // var current_transaction_ids = user.current_transactions_ids;
-            // try {
-            //     for (var key in current_transaction_ids) {
-            //         var transaction_id = current_transaction_ids[key];
-            //         try {
-            //             var transaction = active_transactions.get(transaction_id);
-            //             var other_user_id = transaction.getOtherUserId(user_id);
-            //             var other_user = active_users.get(other_user_id);
-            //             var other_user_socket = io.sockets.connected[other_user.socket_id];
-            //             // console.log("emitting user_location_updated");
-            //             other_user_socket.emit("user_location_updated", {
-            //                 data: {
-            //                     user_id: user._id.toString(),
-            //                     transaction_id: transaction_id.toString(),
-            //                     updated_location: updated_location
-            //                 }, error: null
-            //             });
-            //         }catch(e){error_handler(e.message)}
-            //     }
-            // }catch(e){
-            //     console.log(e);
-            //     return;
-            // }
-            var users_active_transactions = active_transactions.getAllForUser();
+            var users_active_transactions = active_transactions.getAllForUser(user_id);
             for(var i=0; i<users_active_transactions.length; i++){
                 var transaction = users_active_transactions[i];
                 var other_user_id = transaction.getOtherUserId(user_id);
                 var other_user = active_users.get(other_user_id);
-                var other_user_socket = io.sockets.connected[other_user.socket_id];
+                if(other_user != undefined){
+                    var other_user_socket = io.sockets.connected[other_user.socket_id];
+                }
                 // console.log("emitting user_location_updated");
-                other_user_socket.emit("user_location_updated", {
-                    data: {
-                        user_id: user._id.toString(),
-                        transaction_id: transaction_id.toString(),
-                        updated_location: updated_location
-                    }, error: null
-                });
+                if(other_user_socket != undefined) {
+                    other_user_socket.emit("user_location_updated", {
+                        data: {
+                            user_id: user._id.toString(),
+                            transaction_id: transaction._id.toString(),
+                            updated_location: updated_location
+                        }, error: null
+                    });
+                }
             }
         }
         function error_handler(e){
             socket.emit("update_user_location_response", {data: null, error: e});
             // console.log(e);
         }
-        updateUserLocation(user_id, password, new_location, callback, error_handler)
+        updateUserLocation(user_id, password, device_token, new_location, callback, error_handler)
     });
 
     socket.on('update_venmo_id', function(json){
@@ -803,18 +796,11 @@ io.on('connection', function (socket) {
             socket.emit("update_venmo_id_response", {data: {updated_venmo_id: updated_venmo_id}, error: null});
             //notify all users, or all users in the same transaction with user whose venmo_id was updated,
             var user = active_users.get(user_id);
-            console.log(user);
             // var current_transaction_ids = user.current_transactions_ids;
             try {
-                // for (var key in current_transaction_ids) {
-                //     var transaction_id = current_transaction_ids[key];
-                //     var transaction = active_transactions.get(transaction_id);
-                //     var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                //     var other_user_socket = io.sockets.connected[other_user.socket_id];
-                //     if(other_user_socket != undefined){
-                //         other_user_socket.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id, updated_location: updated_location}, error: null});
-                //     }
-                // }
+                getUserInfo(user_id, function(user_info){
+                    console.log(user_info.first_name + " " + user_info.last_name + " updated his/her venmo_id")
+                }, function(){})
                 io.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id}, error: null});
 
             }catch(e){
@@ -837,7 +823,7 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
         var profile_picture = json.profile_picture;
-        // console.log(profile_picture.length);
+
         authenticate(user_id, password, device_token, function(user){
             updateProfilePicture(user_id, profile_picture, callback, error_handler)
         }, error_handler)
@@ -845,6 +831,9 @@ io.on('connection', function (socket) {
         function callback(){
             socket.emit("update_profile_picture_response", {data: null, error: null});
             io.emit("profile_picture_updated", {data: {user_id: user_id}, error: null});
+            getUserInfo(user_id, function(user_info){
+                console.log(user_info.first_name + " " + user_info.last_name + " updated his/her profile picture")
+            }, function(){})
         }
 
         function error_handler(e){
@@ -854,20 +843,24 @@ io.on('connection', function (socket) {
     });
 
     socket.on('update_picture', function(json){
-        console.log("update_picture called!");
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
 
         var picture_id = json.picture_id;
         var picture = json.picture;
-        // console.log(profile_picture.length);
+
+        getUserInfo(user_id, function(user_info){
+            console.log(user_info.first_name + " " + user_info.last_name + " called update_picture")
+        }, function(){})
         authenticate(user_id, password, device_token, function(user){
             updatePicture(picture_id, user_id, picture, callback, error_handler)
         }, error_handler)
 
         function callback(){
-            console.log("update_picture successful!")
+            getUserInfo(user_id, function(user_info){
+                console.log(user_info.first_name + " " + user_info.last_name + " updated a picture")
+            }, function(){})
             socket.emit("update_picture_response", {data: null, error: null});
             io.emit("picture_updated", {data: {picture_id: picture_id}, error: null});
         }
@@ -885,7 +878,6 @@ io.on('connection', function (socket) {
 
         var listing_id = json.listing_id
         var picture = json.picture;
-        // console.log(profile_picture.length);
         authenticate(user_id, password, device_token, function(user){
             addPictureToListing(listing_id, user_id, picture, callback , error_handler)
         });
@@ -896,7 +888,9 @@ io.on('connection', function (socket) {
             if(listing != undefined){
                 io.emit("listing_updated", {data: {listing: listing}});
             }
-            // socket.emit("picture_added_to_listing", {data: {listing_id: listing_id}, error: null});
+            getUserInfo(user_id, function(user_info){
+                console.log(user_info.first_name + " " + user_info.last_name + " added a picture to the listing '" + listing.title + "'");
+            }, function(){})
         }
 
         function error_handler(e){
@@ -912,7 +906,6 @@ io.on('connection', function (socket) {
 
         var listing_id = json.listing_id
         var picture_id = json.picture_id;
-        // console.log(profile_picture.length);
         authenticate(user_id, password, device_token, function(user){
             deletePictureFromListing(picture_id, listing_id, user_id, callback, error_handler)
         });
@@ -923,6 +916,10 @@ io.on('connection', function (socket) {
             if(listing != undefined){
                 io.emit("listing_updated", {data: {listing: listing}});
             }
+
+            getUserInfo(user_id, function(user_info){
+                console.log(user_info.first_name + " " + user_info.last_name + " deleted a picture from the listing '" + listing.title + "'");
+            }, function(){})
             // socket.emit("picture_added_to_listing", {data: {listing_id: listing_id}, error: null});
         }
 
@@ -935,6 +932,7 @@ io.on('connection', function (socket) {
     socket.on('send_chat_message', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
         var transaction_id = json.transaction_id;
         var message_text = json.message_text;
         function callback(message){
@@ -963,6 +961,9 @@ io.on('connection', function (socket) {
                         sendNotification(notification_info, other_user.device_token);
                     }
                 }
+                getUserInfo(user_id, function(user_info){
+                    console.log(user_info.first_name + " " + user_info.last_name + ": '" + message+"'");
+                }, function(){})
             }catch(e){
                 console.log(e);
                 return;
@@ -971,12 +972,14 @@ io.on('connection', function (socket) {
         function error_handler(e){
             console.log(e);
         }
-        sendChatMessage(user_id, password, transaction_id, message_text, callback, error_handler)
+        sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler)
     });
 
     socket.on('get_all_active_listings', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
         function callback(all_active_listings){
             //send all_active_listings back to client
             socket.emit("get_all_active_listings_response", {data: {all_active_listings: all_active_listings}, error: null});
@@ -985,12 +988,14 @@ io.on('connection', function (socket) {
             socket.emit("get_all_active_listings_response", {data: null, error: e});
             console.log(e);
         }
-        getAllActiveListings(user_id, password, callback, error_handler)
+        getAllActiveListings(user_id, password, device_token, callback, error_handler)
     });
 
     socket.on('get_users_active_transactions', function(json){
         var user_id = json.user_id;
         var password = json.password;
+        var device_token = json.device_token
+
         function callback(users_active_transactions){
             //send all_active_listings back to client
             socket.emit("get_users_active_transactions_response", {data: {users_active_transactions: users_active_transactions}, error: null});
@@ -999,18 +1004,15 @@ io.on('connection', function (socket) {
             socket.emit("get_users_active_transactions_response", {data: null, error: e});
             console.log(e);
         }
-        getUsersActiveTransactions(user_id, password, callback, error_handler)
+        getUsersActiveTransactions(user_id, password, device_token, callback, error_handler)
     });
 
     socket.on('get_users_previous_transactions', function(json){
-        console.log("get_users_previous_transactions called");
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
         function callback(users_previous_transactions){
             //send all_active_listings back to client
-            console.log("get_users_previous_transactions successful!");
-            // console.log(users_previous_transactions);
 
             socket.emit("get_users_previous_transactions_response", {data: {users_previous_transactions: users_previous_transactions}, error: null});
         }
@@ -1064,42 +1066,30 @@ io.on('connection', function (socket) {
     });
 
     socket.on('get_profile_picture', function(json){
-        console.log("get_profile_picture called!")
         var user_id = json.user_id;
         function callback(profile_picture){
-            var end0 = new Date().getTime();
-            console.log("Call to getProfilePicture took " + (end0 - start0) + " milliseconds.")
-            console.log("getProfilePicture returned!")
-            var start1 = new Date().getTime();
             socket.emit("get_profile_picture_response", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
             socket.emit("profile_picture_gotten", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
-            var end1 = new Date().getTime();
-            console.log("emitting profile_picture_gotten took " + (end1 - start1) + " milliseconds.")
-            console.log("get_profile_picture_response emitted!");
         }
         function error_handler(e){
             socket.emit("get_profile_picture_response", {data: null, error: e});
             console.log(e);
         }
-        console.log("getProfilePicture called!")
         var start0 = new Date().getTime();
         getProfilePicture(user_id, callback, error_handler);
     })
 
     socket.on('get_picture', function(json){
-        console.log("get_picture called!")
         var picture_id = json.picture_id;
         function callback(picture){
             socket.emit("get_picture_response", {data: {picture_id: picture_id.toString(), picture: picture}, error: null});
             // socket.emit("picture_gotten", {data: {picture_id_id: picture_id.toString(), picture: profile_picture}, error: null});
             // console.log("emitting profile_picture_gotten took " + (end1 - start1) + " milliseconds.")
-            console.log("get_picture_response emitted!");
         }
         function error_handler(e){
             socket.emit("get_picture_response", {data: null, error: e});
             console.log(e);
         }
-        console.log("getPicture called!")
         getPicture(picture_id, callback, error_handler);
     })
 });
@@ -1225,8 +1215,6 @@ function registerEmailAddress(email_address, callback, error_handler){
 //fixed: by adding an index to database before inserting
 //TODO: automatically infer first and last name from email_address
 function registerVerificationCode(verification_code, email_address, password, callback, error_handler){
-    console.log("called registerVerificationCode");
-
     //adds a function to String prototype to capitalize first letter
     String.prototype.capitalizeFirstLetter = function() {
         return this.charAt(0).toUpperCase() + this.slice(1);
@@ -1353,7 +1341,7 @@ function registerVerificationCode(verification_code, email_address, password, ca
     return true;
 }
 
-function login(email_address, password, callback, error_handler){
+function login(email_address, password, device_token, callback, error_handler){
     email_address = email_address.toLowerCase();
     //query database for user with given email_address and password
     console.log("login called");
@@ -1364,6 +1352,7 @@ function login(email_address, password, callback, error_handler){
             var user = new User();
             user.initFromDatabase(docs[0]);
             user.active = true;
+            user.device_token = device_token
             updateUserInDatabase(user, function(){
                 try {
                     //if not already logged in then add user to active_users
@@ -1392,7 +1381,6 @@ function login(email_address, password, callback, error_handler){
 //TODO: what if a user logs out during a transaction? while he/she has listings? or he or she has requested a transaction
 //TODO: or when he or she has received a transaction?
 function logout(user_id, password, device_token, callback, error_handler){
-    console.log("logout called");
     //verify credentials of user calling logout
     authenticate(user_id, password, device_token, function(user){
         try {
@@ -1400,26 +1388,9 @@ function logout(user_id, password, device_token, callback, error_handler){
             user.active = false;
             updateUserInDatabase(user, function(){
                 active_users.remove(user_id);
-                // console.log(user);
-                console.log(user.email_address + " has logged out");
+                console.log(user.first_name + " " + user.last_name + " has logged out");
                 if(callback != undefined){ callback(); }
             }, error_handler)
-            // var collection = database.collection('users');
-            // //this saves the user data to the database before logging out
-            // collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, active_users.get(user_id), function(err, result) {
-            //     if(err){error_handler(err); return;}
-            //     console.log(user_id + " info saved to database");
-            //     console.log(user.email_address + " has logged out");
-            //     if(callback != undefined){ callback(); }
-            // });
-            //removes all of the users_current_listings
-            // for(var i=0; i<user.current_listings_ids.length; i++){
-            //     var listing_id = user.current_listings_ids[i];
-            //     removeListing(listing_id, function(){
-            //         io.emit("listing_removed", {data: {listing_id: listing_id}});
-            //     }, error_handler)
-            // }
-                //update database with new user info
 
         }catch(e){
             error_handler(e.message);
@@ -1439,9 +1410,7 @@ function logout(user_id, password, device_token, callback, error_handler){
 //TODO: implement device_id
 function authenticate(user_id, password, device_token, callback, error_handler){
     var user = active_users.get(user_id);
-    // console.log("trying to authenticate user_id: " + user_id + " password: " + password);
     if(user == undefined){
-        // console.log("invalid user id: + " + user_id);
         if(error_handler != undefined){
             error_handler("tried to authenticate an invalid user_id/password combination");
         }
@@ -1453,13 +1422,13 @@ function authenticate(user_id, password, device_token, callback, error_handler){
     }
     else if(user.device_token != device_token){
         if(error_handler != undefined){
+            console.log(user)
             console.log("current device token: " + user.device_token);
             console.log("entered device token: " + device_token);
             error_handler("tried to authenticate an invalid user_id/password combination");
         }
     }
     else{
-        // console.log("authentication success!!")
         callback(user);
     }
 }
@@ -1517,8 +1486,6 @@ function makeListing(user_id, password, device_token, title, description, locati
                     if(docs.length == 1){
                         new_listing.initFromDatabase(docs[0]);
                         try {
-                            console.log("new listing added!")
-                            console.log(new_listing)
                             active_listings.add(new_listing);
                             // user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
                             updateUserInDatabase(user, function(){
@@ -1538,7 +1505,6 @@ function makeListing(user_id, password, device_token, title, description, locati
 }
 
 function updateListing(listing, new_listing, callback, error_handler){
-    console.log("updateListing called");
     if(new_listing != undefined && listing != undefined) {
         var error_string = "";
         //must be less than 30 characters
@@ -1628,34 +1594,17 @@ function removeListing(listing_id, callback, error_handler){
 //TODO: make sure user hasn't already made a transaction on this listing
 function makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler){
     authenticate(user_id, password, device_token, function(user) {
-        console.log("checking if transaction is a duplicate on a listing")
         var transaction_already_made_on_listing = false;
         var users_current_transactions = active_transactions.getAllForUser(user_id);
         for(var i =0; i< users_current_transactions.length; i++){
             var transaction = users_current_transactions[i];
             if(transaction != undefined) {
                 if (transaction.listing_id.toString() == listing_id.toString()) {
-                    console.log("the user has already made a transaction on this listing")
                     error_handler("You have already made a transaction on this listing");
                     return;
                 }
             }
         }
-        // for (var key in user.current_transactions_ids) {
-        //     console.log("entering for loop");
-        //     try {
-        //         var transaction = active_transactions.get(user.current_transactions_ids[key]);
-        //         if(transaction != undefined) {
-        //             if (transaction.listing_id.toString() == listing_id.toString()) {
-        //                 console.log("the user has already made a transaction on this listing")
-        //                 error_handler("You have already made a transaction on this listing");
-        //                 return;
-        //             }
-        //         }
-        //     } catch (e) {
-        //         error_handler(e.message)
-        //     }
-        // }
         if(users_current_transactions.length >= max_transactions){
             error_handler("You are involved in too many transactions, you cannot be in more than " + max_transactions + " transactions");
             return;
@@ -1665,16 +1614,7 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
             error_handler("The other user is currently involved in too many transactions");
             return;
         }
-        console.log("no duplicate found calling makeTransaction")
         makeTransaction(user_id, listing_id, function (transaction) {
-            console.log("makeTransaction callback called!")
-                // console.log("user that made that transaction (is the transaction_id in current_transaciton ids?:");
-            // console.log(active_users.get(user_id));
-            // var requesting_user = active_users.get(user_id);
-            // var receiving_user = transaction.getOtherUserId(requesting_user);
-            // var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
-            // var receiving_user_full_name = receiving_user.first_name + " " + receiving_user.last_name;
-            // console.log(requesting_user_full_name + " made a transaction request to " + receiving_user_full_name + " for " + transaction.title)
             callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
         }, error_handler)
     }, error_handler);
@@ -1694,7 +1634,6 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
         }
         addTransactionToDatabase(new_transaction, function(new_transaction){
             try {
-                console.log("adding to active_transactions");
                 active_transactions.add(new_transaction);
                 //Set 60 second time to respond to transaction_request
                 setTimeout(function(){
@@ -1708,9 +1647,9 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
                                 var user = new User();
                                 user.initFromDatabase(docs[0]);
                                 if (transaction.isAccepted() != true) {
-                                    declineTransactionRequest(user._id, user.password, transaction._id, function () {
+                                    declineTransactionRequest(user._id, user.password, user.device_token, transaction._id, function () {
                                         emitEvent("transaction_request_declined",  {transaction_id: transaction._id.toString(), user_id: user._id}, [other_user_id, user_id]);
-                                        console.log("transaction declined due to exceeding time limit for response")
+                                        console.log(user.first_name + " " + user.last_name + " declined  transaction " + transaction.title + " due to exceeding time limit for response")
                                     }, error_handler);
                                 }
                             }
@@ -1733,8 +1672,6 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
                 //user object is returned by authenticate
             }catch(e){error_handler(e.message)};
             if(callback != undefined && callback != null){
-                console.log("callback(new_transaction)");
-                console.log(new_transaction);
                 callback(new_transaction);
             }
         });
@@ -1771,8 +1708,6 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
                     collection_transactions.find(new_transaction).toArray(function(err, docs){
                         if(docs.length == 1){
                             new_transaction.initFromDatabase(docs[0]);
-                            console.log(new_transaction);
-                            console.log("transaction added and initialized from database");
                             if(callback != undefined){ callback(new_transaction);}
                         }
                         else{
@@ -1817,7 +1752,6 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
             error_handler(e.message);
             return;
         }
-        console.log("transaction.acceptRequest called");
         var listing = active_listings.get(transaction.listing_id);
         //throws error if transaction_id has already been set
         //or listing has already been deleted, means listing has already been accepted
@@ -1830,7 +1764,7 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
         for(var i=0; i <transaction_arr.length; i++){
             var transaction = transaction_arr[i];
             if(transaction._id != transaction_id) {
-                declineTransactionRequest(user_id, password, transaction._id, function (transaction_id) {
+                declineTransactionRequest(user_id, password, device_token, transaction._id, function (transaction_id) {
                 }, error_handler)
             }
         }
@@ -1876,7 +1810,6 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
 function declineTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
         var transaction = active_transactions.get(transaction_id);
-        // console.log(active_transactions.getAll());
         if(transaction == null || transaction == undefined){
             error_handler("unable to find transaction with transaction_id: " + transaction_id);
             return;
@@ -1893,37 +1826,6 @@ function declineTransactionRequest(user_id, password, device_token, transaction_
         transaction.active = false;
         //update transaction in database before deleting it so we have a record of the failed transaction
         updateTransactionInDatabase(transaction, function(){
-            console.log("updateTransaction completed");
-            console.log(transaction)
-            //send message to user that initiated request that request was declined
-            // remove transaction_id from initiating user (transaction_id was never added to declining user)
-            var buyer = active_users.get(transaction.buyer_user_id);
-            var seller = active_users.get(transaction.seller_user_id);
-            // if(transaction.buyer_accepted_request == true){
-            //     try{
-            //         if(buyer != undefined){
-            //             // buyer.removeCurrentTransactionId(transaction_id);
-            //             updateUserInDatabase(buyer, function(){
-            //
-            //             }, error_handler)
-            //         }
-            //     }catch(e){
-            //         error_handler(e.message)
-            //     }
-            // }
-            // else{
-            //     try {
-            //         if(seller != undefined) {
-            //             seller.removeCurrentTransactionId(transaction_id);
-            //             updateUserInDatabase(seller, function(){
-            //
-            //             }, error_handler)
-            //         }
-            //     }catch(e){
-            //         error_handler(e.message);
-            //     }
-            // }
-            //remove transaction from active_transactions
             active_transactions.remove(transaction._id);
             callback(transaction);
             
@@ -1955,32 +1857,10 @@ function confirmTransaction(user_id, password, device_token, transaction_id, cal
             return;
         }
         //TODO: watch out for situation where both users confirm at the same time
-        console.log("checking is Confirmed inside transaction");
-        console.log("isCompleted() == " + transaction.isCompleted());
         if(transaction.isCompleted() == true){
             transaction.end_time = new Date().getTime();
             transaction.active = false;
             updateTransactionInDatabase(transaction, function(){
-                console.log("updateTransaction completed");
-                console.log(transaction)
-                // var user1 = active_users.get(transaction.buyer_user_id);
-                // var user2 = active_users.get(transaction.seller_user_id);
-                // try {
-                //     if (user1 != undefined) {
-                //         user1.removeCurrentTransactionId(transaction_id);
-                //         updateUserInDatabase(user1, function(){
-                //
-                //         }, error_handler)
-                //     }
-                // }catch(e){ console.log(e.message)}
-                // try {
-                //     if (user2 != undefined) {
-                //         user2.removeCurrentTransactionId(transaction_id);
-                //         updateUserInDatabase(user2, function(){
-                //
-                //         }, error_handler)
-                //     }
-                // }catch(e){console.log(e.message)}
                 try {
                     active_transactions.remove(transaction_id);
                 }catch(e){console.log(e.message)}
@@ -2018,33 +1898,9 @@ function terminateTransaction(user_id, password, device_token, transaction_id, c
             transaction.end_time = new Date().getTime();
         try {
             updateTransactionInDatabase(transaction, function () {
-                console.log(transaction)
-                // var user1 = active_users.get(transaction.buyer_user_id);
-                // var user2 = active_users.get(transaction.seller_user_id);
-                // if (user1 != undefined) {
-                //     try {
-                //         user1.removeCurrentTransactionId(transaction_id);
-                //         updateUserInDatabase(user1, function(){
-                //
-                //         }, error_handler)
-                //     }catch(e){
-                //         console.log(e.message)
-                //     }
-                // }
-                // if (user2 != undefined) {
-                //     try{
-                //         user2.removeCurrentTransactionId(transaction_id);
-                //         updateUserInDatabase(user2, function(){
-                //
-                //         }, error_handler)
-                //     }catch(e){
-                //         console.log(e.message)
-                //     }
-                // }
                 try {
                     active_transactions.remove(transaction_id);
                 }catch(e){console.log(e.message)}
-                console.log("Transaction terminated");
                 callback(transaction);
             }, error_handler)
         }catch(e){
@@ -2085,8 +1941,6 @@ function updateVenmoId(user_id, venmo_id, callback, error_handler) {
 
 function updateProfilePicture(user_id, profile_picture, callback, error_handler){
     var collection_profile_pictures = database.collection('profile_pictures');
-    // console.log(typeof profile_picture);
-    // console.log(profile_picture);
     collection_profile_pictures.update({user_id: user_id}, {user_id: user_id, profile_picture: profile_picture}, {upsert: true}, function (err, count, status) {
         if(err){error_handler(err.message);}
         else{
@@ -2097,8 +1951,6 @@ function updateProfilePicture(user_id, profile_picture, callback, error_handler)
 
 function updatePicture(picture_id, user_id, picture, callback, error_handler){
     var collection_pictures = database.collection('pictures');
-    // console.log(typeof profile_picture);
-    // console.log(profile_picture);
     collection_pictures.find({_id: toMongoIdObject(picture_id)}).toArray(function(err, docs) {
         if(err){
             error_handler(err);
@@ -2203,20 +2055,19 @@ function getListingsWithHashTag(hash_tag, callback, error_handler){
     callback(listings);
 }
 
-function getUsersActiveTransactions(user_id, password, callback, error_handler){
-    getUser(user_id, password, function(user){
-        if(user.password == password.toString()){
-            var users_active_transactions = active_transactions.getAllForUser(user._id);
-            callback(users_active_transactions);
-        }
-        else {
-            console.log(user_id);
-            console.log(user._id);
-            console.log(password);
-            console.log(user.password);
-            error_handler("getUserActiveTransactions: invalid user_id/password")
-        }
-    }, error_handler)
+function getUsersActiveTransactions(user_id, password, device_token, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
+        getUser(user_id, password, function(user){
+            if(user.password == password.toString()){
+                var users_active_transactions = active_transactions.getAllForUser(user._id);
+                callback(users_active_transactions);
+            }
+            else {
+                error_handler("getUserActiveTransactions: invalid user_id/password")
+            }
+        }, error_handler)
+    }, error_handler);
+
     // authenticate(user_id, password, function(user){
     //     var users_active_transactions = active_transactions.getAllForUser(user._id);
     //     callback(users_active_transactions);
@@ -2331,10 +2182,6 @@ function getProfilePicture(user_id, callback, error_handler){
         }
         else {
             if (docs.length > 0) {
-                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                //the object that is stored in database has a user_id field and a profile_picture field that stores the binary
-                // console.log(docs[0]);
-                // console.log(docs[0].profile_picture.buffer)
                 callback(docs[0].profile_picture.buffer);
             }
             else {
@@ -2352,7 +2199,6 @@ function getPicture(picture_id, callback, error_handler){
             error_handler(err);
         }
         else {
-            console.log(docs);
             if (docs.length > 0) {
                 callback(docs[0].picture.buffer);
             }
@@ -2364,8 +2210,6 @@ function getPicture(picture_id, callback, error_handler){
 }
 
 function updateTransactionInDatabase(transaction, callback, error_handler){
-    console.log("updateTransactionInDatabase called!");
-    console.log(transaction);
     var collection_transactions = database.collection('transactions');
     try {
         collection_transactions.update({_id: new require('mongodb').ObjectID(transaction._id.toString())}, transaction, function (err, count, status) {
@@ -2384,7 +2228,6 @@ function updateTransactionInDatabase(transaction, callback, error_handler){
 }
 
 function updateListingInDatabase(listing, callback, error_handler){
-    console.log("updateListingInDatabase called!")
     var collection_listings = database.collection('listings');
     collection_listings.update({_id:new require('mongodb').ObjectID(listing._id.toString())}, listing, function (err, count, status) {
         if(err){error_handler(err.message);}
@@ -2395,11 +2238,9 @@ function updateListingInDatabase(listing, callback, error_handler){
 }
 
 function updateUserInDatabase(user, callback, error_handler){
-    console.log("updateUserInDatabase called!")
     var collection = database.collection('users');
     collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, user , function(err, result) {
         if(err){error_handler(err); return;}
-        console.log(user.email_address + " has been updated");
         if(callback != undefined){ callback(); }
     });
 }
@@ -2421,7 +2262,6 @@ function getActiveListingsFromDatabase(callback, error_handler){
 
 function getActiveTransactionsFromDatabase(callback, error_handler){
     var collection_transactions = database.collection('transactions');
-    // console.log(collection_transactions);
     collection_transactions.find({active: true}).toArray(function(err, docs){
         if(err){error_handler(err.message);}
         else{callback(docs);}
@@ -2440,14 +2280,7 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
         }
         for(var i=0; i<expired_listings_arr.length; i++){
             var listing = expired_listings_arr[i];
-            // var user = active_users.get(listing.user_id);
-            // console.log(user);
-            // console.log(listing);
-            // console.log("Expired Listings Before Removal");
-            // console.log(active_listings.getExpiredListings());
             removeListing(listing._id, function(listing_id){
-                // console.log("Expired Listings After Removal");
-                // console.log(active_listings.getExpiredListings());
                 var alert = " Your listing '" + listing.title + "' has expired";
                 var notification_info = {alert: alert, category: "LISTING_EXPIRED"};
                 var user = active_users.get(listing.user_id);
@@ -2455,7 +2288,11 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
                     sendNotification(notification_info, user.device_token);
                 }
                 io.emit("listing_removed", {data: {listing_id: listing_id}});
-                console.log("listing with id " + listing_id + " was removed because it has expired");
+                getListing(listing_id, function(listing){
+                    getUserInfo(listing.user_id, function(user){
+                        console.log(user.first_name + " " + user.last_name + "'s listing '" + listing.title + "' was removed because it has expired");
+                    }, function(){})
+                }, function(){})
             }, error_handler);
         }
     }, interval_in_milliseconds);
@@ -2470,24 +2307,19 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
 //also accepts data which is a javascript object that holds the data that will passed in the event
 function emitEvent(event_name, data, user_id_arr){
     for(var i=0; i<user_id_arr.length; i++){
-        // console.log(user_id_arr[i]);
-        // console.log("user_id_arr.length = " + user_id_arr.length)
         var user = active_users.get(user_id_arr[i]);
         var user_socket;
         if(user != undefined){
             user_socket = io.sockets.connected[user.socket_id];
         }
         var event = new Event(event_name, data, null);
-        console.log(event);
         // var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
 
         if(user_socket != undefined) {
-            console.log("event emitted to " + user.first_name);
             user_socket.emit(event.name , event.message);
         }
         else{
             if(user != undefined) {
-                console.log("event enqueued for " + user.first_name);
                 user.enqueueEvent(event);
             }
         }
@@ -2612,7 +2444,6 @@ function validatePrice(price){
 }
 
 function validateBuy(buy){
-    console.log("typeofbuy == " + (typeof buy));
     // return typeof buy == 'boolean';
     return "";
 }
@@ -2631,7 +2462,6 @@ function toMongoIdObject(id){
 function sendNotification(notification_info, device_token){
     // Enter the device token from the Xcode console
     var deviceToken = device_token;
-    console.log(device_token);
 
     // Prepare a new notification
     var notification = new apn.Notification();
@@ -2662,7 +2492,6 @@ function sendNotification(notification_info, device_token){
     // Actually send the notification
     apnProvider.send(notification, deviceToken).then(function(result) {
         // Check the result for any failed devices
-        console.log(result);
     });
 }
 

@@ -5,7 +5,7 @@ var User = require("./user.js");
 //TODO: may want to change focus to something else, may even want to remove usernames all together and only use real names
 //contains all active (online) users
 function ActiveUsers(){
-    this.users = {};
+    this.user_id_to_user = {};
 }
 //active_users now indexed by _id rather than username, thus making login indepedent of username
 ActiveUsers.prototype = {
@@ -14,13 +14,13 @@ ActiveUsers.prototype = {
         for(var i = 0; i<active_users.length; i++){
             var new_user = new User();
             new_user.initFromDatabase(active_users[i]);
-            this.users[new require('mongodb').ObjectID(new_user._id.toString())] = new_user;
+            this.user_id_to_user[new require('mongodb').ObjectID(new_user._id.toString())] = new_user;
         }
     },
     add: function(user){
-        if(this.users[user._id] == undefined) {
-            this.users[user._id] = user;
-            console.log(this.users[user._id].email_address + " has been added to ActiveUsers");
+        if(this.user_id_to_user[user._id] == undefined) {
+            this.user_id_to_user[user._id] = user;
+            console.log(this.user_id_to_user[user._id].email_address + " has been added to ActiveUsers");
         }
         else{
             throw {message: "user is already logged in, can't login"}
@@ -28,12 +28,12 @@ ActiveUsers.prototype = {
 
     },
     get: function(_id){
-        return this.users[_id];
+        return this.user_id_to_user[_id];
     },
     remove: function(_id){
-        if(this.users[_id] != undefined){
-            delete this.users[_id];
-            if(typeof this.users[_id] == 'undefined') {
+        if(this.user_id_to_user[_id] != undefined){
+            delete this.user_id_to_user[_id];
+            if(typeof this.user_id_to_user[_id] == 'undefined') {
                 console.log("user with id " + _id + " has been removed from ActiveUsers");
             }
             else{
@@ -46,27 +46,27 @@ ActiveUsers.prototype = {
         //we don't delete from database, because database keeps track of all registered users
     },
     size: function(){
-        return Object.keys(this.users).length
+        return Object.keys(this.user_id_to_user).length
     },
     //returns an array of all the users
     getAll: function(){
         var users_arr = [];
-        for(key in this.users){
-            users_arr.push(this.users[key]);
+        for(key in this.user_id_to_user){
+            users_arr.push(this.user_id_to_user[key]);
         }
         return users_arr;
     },
     //TODO: find some faster way to search users on socket id, maybe make another hashmap
     getUserBySocketId: function(socket_id){
-        for(key in this.users){
-            if(this.users[key].socket_id == socket_id){
-                return this.users[key];
+        for(key in this.user_id_to_user){
+            if(this.user_id_to_user[key].socket_id == socket_id){
+                return this.user_id_to_user[key];
             }
         }
-        return null;
+        return undefined;
     },
     //clears the active_users, for testing purposes
     clear: function(){
-        this.users = {};
+        this.user_id_to_user = {};
     },
 }
