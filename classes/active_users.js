@@ -18,9 +18,9 @@ ActiveUsers.prototype = {
         }
     },
     add: function(user){
-        if(this.user_id_to_user[user._id] == undefined) {
-            this.user_id_to_user[user._id] = user;
-            console.log(this.user_id_to_user[user._id].email_address + " has been added to ActiveUsers");
+        if(this.user_id_to_user[toMongoIdObject(user._id)] == undefined) {
+            this.user_id_to_user[toMongoIdObject(user._id)] = user;
+            console.log(this.user_id_to_user[toMongoIdObject(user._id)].email_address + " has been added to ActiveUsers");
         }
         else{
             throw {message: "user is already logged in, can't login"}
@@ -28,7 +28,7 @@ ActiveUsers.prototype = {
 
     },
     get: function(_id){
-        return this.user_id_to_user[_id];
+        return this.user_id_to_user[toMongoIdObject(_id)];
     },
     remove: function(_id){
         if(this.user_id_to_user[_id] != undefined){
@@ -69,4 +69,8 @@ ActiveUsers.prototype = {
     clear: function(){
         this.user_id_to_user = {};
     },
+}
+
+function toMongoIdObject(id){
+    return new require('mongodb').ObjectID(id.toString());
 }

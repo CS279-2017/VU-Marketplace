@@ -212,7 +212,9 @@ io.on('connection', function (socket) {
             //send user_id back to user
             //notify necessary clients that a user has logged is
             user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
+            user.device_token = device_token;
             active_users.get(user._id).device_token = device_token;
+            console.log("device_token: " + device_token);
             updateUserInDatabase(user, function(){
                 console.log("new device token: " + user.device_token + " for " + user.first_name + " " + user.last_name);
                 socket.emit("login_response", {data: {user_id: user._id}, error: null});
@@ -758,25 +760,33 @@ io.on('connection', function (socket) {
             //notify all users, or all users in the same transaction with user whose location was updated,
 
             var user = active_users.get(user_id);
-            var users_active_transactions = active_transactions.getAllForUser(user_id);
-            for(var i=0; i<users_active_transactions.length; i++){
-                var transaction = users_active_transactions[i];
-                var other_user_id = transaction.getOtherUserId(user_id);
-                var other_user = active_users.get(other_user_id);
-                if(other_user != undefined){
-                    var other_user_socket = io.sockets.connected[other_user.socket_id];
-                }
-                // console.log("emitting user_location_updated");
-                if(other_user_socket != undefined) {
-                    other_user_socket.emit("user_location_updated", {
-                        data: {
-                            user_id: user._id.toString(),
-                            transaction_id: transaction._id.toString(),
-                            updated_location: updated_location
-                        }, error: null
-                    });
-                }
-            }
+            // var users_active_transactions = active_transactions.getAllForUser(user_id);
+            // for(var i=0; i<users_active_transactions.length; i++){
+            //     var transaction = users_active_transactions[i];
+            //     var other_user_id = transaction.getOtherUserId(user_id);
+            //     var other_user = active_users.get(other_user_id);
+            //     if(other_user != undefined){
+            //         var other_user_socket = io.sockets.connected[other_user.socket_id];
+            //     }
+            //     // console.log("emitting user_location_updated");
+            //     if(other_user_socket != undefined) {
+            //         other_user_socket.emit("user_location_updated", {
+            //             data: {
+            //                 user_id: user._id.toString(),
+            //                 transaction_id: transaction._id.toString(),
+            //                 updated_location: updated_location
+            //             }, error: null
+            //         });
+            //     }
+            // }
+            console.log(user.first_name + " " + user.last_name + " updated their location");
+            io.emit("user_location_updated", {
+                data: {
+                    user_id: user._id.toString(),
+                    transaction_id: null,
+                    updated_location: updated_location
+                }, error: null
+            });
         }
         function error_handler(e){
             socket.emit("update_user_location_response", {data: null, error: e});
@@ -1049,8 +1059,12 @@ io.on('connection', function (socket) {
 
         authenticate(user_id, password, device_token, function(user){
             function callback(transaction){
+                console.log("found transaction:")
+                console.log(transaction);
+                console.log(user)
+
                 //send all_active_listings back to client
-                if(user._id.toString() == transaction.buyer_user_id.toString() || user._id.toString() == transaction.seller_user_id.toString()){
+                if((user._id.toString() == transaction.buyer_user_id.toString()) || (user._id.toString() == transaction.seller_user_id.toString())){
                     socket.emit("get_transaction_response", {data: {transaction: transaction}, error: null});
                 }
                 else{
@@ -1376,12 +1390,12 @@ function login(email_address, password, device_token, callback, error_handler){
             user.initFromDatabase(docs[0]);
             user.active = true;
             user.device_token = device_token
-            active_users.get(user._id).device_token = device_token;
             updateUserInDatabase(user, function(){
                 try {
                     //if not already logged in then add user to active_users
                     if(active_users.get(user._id) == undefined) {
                         active_users.add(user);
+                        active_users.get(user._id).device_token = device_token;
                     }
                 }catch(error){
                     error_handler(error.message);
@@ -1446,9 +1460,9 @@ function authenticate(user_id, password, device_token, callback, error_handler){
     }
     else if(user.device_token != device_token){
         if(error_handler != undefined){
-            console.log(user)
-            console.log("current device token: " + user.device_token);
-            console.log("entered device token: " + device_token);
+            // console.log(user)
+            // console.log("current device token: " + user.device_token);
+            // console.log("entered device token: " + device_token);
             error_handler("tried to authenticate an invalid user_id/password combination");
         }
     }
@@ -1769,6 +1783,36 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
         }
         try {
             transaction.acceptRequest(user._id);
+            updateTransactionInDatabase(transaction, function(){
+                var listing = active_listings.get(transaction.listing_id);
+                //throws error if transaction_id has already been set
+                //or listing has already been deleted, means listing has already been accepted
+                if(listing == undefined || listing.transaction_id != null){
+                    error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
+                    return;
+                }
+                //decline all other transactions in based on this listing besides current transaction
+                var transaction_arr = active_transactions.getAllForListingId(listing._id);
+                for(var i=0; i <transaction_arr.length; i++){
+                    var transaction = transaction_arr[i];
+                    if(transaction._id != transaction_id) {
+                        declineTransactionRequest(user_id, password, device_token, transaction._id, function (transaction_id) {
+                        }, error_handler)
+                    }
+                }
+
+                listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
+                //update listing in database
+                removeListing(transaction.listing_id, function(){
+                    if(user != undefined) { //in case user has logged out
+                        // user.addCurrentTransactionId(transaction_id);
+                        updateUserInDatabase(user, function(){}, error_handler)
+                        transaction.start_time = new Date().getTime();
+                        updateTransactionInDatabase(transaction, function(){}, function(){});
+                        callback(transaction);
+                    }
+                }, error_handler)
+            }, error_handler)
             //throws error if user with the user_id has already accepted request or if user_id
             //doesn't match either user_id of the transactions
             //verify that the other user has already accepted_request if not throw error
@@ -1776,50 +1820,6 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
             error_handler(e.message);
             return;
         }
-        var listing = active_listings.get(transaction.listing_id);
-        //throws error if transaction_id has already been set
-        //or listing has already been deleted, means listing has already been accepted
-        if(listing == undefined || listing.transaction_id != null){
-            error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
-            return;
-        }
-        //decline all other transactions in based on this listing besides current transaction
-        var transaction_arr = active_transactions.getAllForListingId(listing._id);
-        for(var i=0; i <transaction_arr.length; i++){
-            var transaction = transaction_arr[i];
-            if(transaction._id != transaction_id) {
-                declineTransactionRequest(user_id, password, device_token, transaction._id, function (transaction_id) {
-                }, error_handler)
-            }
-        }
-
-        listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
-        //update listing in database
-        removeListing(transaction.listing_id, function(){
-            if(user != undefined) { //in case user has logged out
-                // user.addCurrentTransactionId(transaction_id);
-                updateUserInDatabase(user, function(){}, error_handler)
-                transaction.start_time = new Date().getTime();
-                updateTransactionInDatabase(transaction, function(){}, function(){});
-                callback(transaction);
-            }
-        }, error_handler)
-        // updateListingInDatabase(listing, function(){
-        //     active_listings.remove(transaction.listing_id);
-        //     //add transaction to current transaction of accepting user, user object returned by authenticate
-        //     if(user != undefined) { //in case user has logged out
-        //         user.addCurrentTransactionId(transaction_id);
-        //     }
-        //     //since transaction has started remove the listing from the current listing of the user
-        //     //this is already taken care of in removeListing
-        //     // var listingOwner = active_users.get(user._id);
-        //     // if(listingOwner)
-        //     // listingOwner.removeCurrentListingId(listing._id);
-        //     //send message to both users that transaction has begun
-        //     // sendTransactionStartedMessage(transaction, function(){
-        //         callback(transaction);
-        //     // }, error_handler);
-        // });
 
 
     }, error_handler);
@@ -1840,6 +1840,13 @@ function declineTransactionRequest(user_id, password, device_token, transaction_
         }
         try {
             transaction.declineRequest(user_id);
+            transaction.active = false;
+            //update transaction in database before deleting it so we have a record of the failed transaction
+            updateTransactionInDatabase(transaction, function(){
+                active_transactions.remove(transaction._id);
+                callback(transaction);
+
+            }, error_handler);
             //throws error if user with the user_id has already accepted request or if user_id
             //doesn't match either user_id of the transactions
             //verify that the other user has already accepted_request if not throw error
@@ -1847,15 +1854,6 @@ function declineTransactionRequest(user_id, password, device_token, transaction_
             error_handler(e.message);
             return;
         }
-        transaction.active = false;
-        //update transaction in database before deleting it so we have a record of the failed transaction
-        updateTransactionInDatabase(transaction, function(){
-            active_transactions.remove(transaction._id);
-            callback(transaction);
-            
-        }, error_handler);
-
-
     }, error_handler);
 }
 
@@ -1876,27 +1874,29 @@ function confirmTransaction(user_id, password, device_token, transaction_id, cal
         try {
             //confirms user_id has agreed to continue with the transaction
             transaction.confirm(user_id);
+            updateTransactionInDatabase(transaction, function(){
+                if(transaction.isCompleted() == true){
+                    transaction.end_time = new Date().getTime();
+                    transaction.active = false;
+                    updateTransactionInDatabase(transaction, function(){
+                        try {
+                            active_transactions.remove(transaction_id);
+                        }catch(e){console.log(e.message)}
+                        callback(transaction);
+                    }, error_handler)
+                }
+                else{
+                    updateTransactionInDatabase(transaction, function () {
+                        callback(transaction);
+                    }, error_handler);
+
+                }
+            }, error_handler)
         }catch(e){
             error_handler(e.message);
             return;
         }
         //TODO: watch out for situation where both users confirm at the same time
-        if(transaction.isCompleted() == true){
-            transaction.end_time = new Date().getTime();
-            transaction.active = false;
-            updateTransactionInDatabase(transaction, function(){
-                try {
-                    active_transactions.remove(transaction_id);
-                }catch(e){console.log(e.message)}
-                callback(transaction);
-            }, error_handler)
-        }
-        else{
-                updateTransactionInDatabase(transaction, function () {
-                    callback(transaction);
-                }, error_handler);
-
-        }
     }, error_handler);
 }
 
