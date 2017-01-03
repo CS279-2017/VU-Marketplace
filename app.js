@@ -9,8 +9,8 @@ var apn = require('apn');
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -137,7 +137,7 @@ server.listen(port, function () {
 });
 
 app.get('/', function (req, res) {
-    res.send('If you have any questions about MealPlanApp, please email mealplanapp@gmail.com');
+    res.send('If you have any questions about VandyList, please email mealplanapp@gmail.com');
 });
 
 //TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
@@ -189,6 +189,38 @@ io.on('connection', function (socket) {
         // var username = json.username;
         var password = json.password;
         
+        // var first_name = json.first_name;
+        // var last_name = json.last_name;
+        // var confirm_password = json.confirm_password;
+        var email_address = json.email_address.toLowerCase();
+        var callback = function(){
+            socket.emit("register_verification_code_response", {data: null, error: null});
+        };
+        var error_handler = function(e) {
+            socket.emit("register_verification_code_response", {data: null, error: e});
+            console.log(e);
+        }
+        registerVerificationCode(verification_code, email_address, password, callback, error_handler);
+    });
+
+    socket.on('reset_password_email_address', function(json) {
+        var email_address = json.email_address.toLowerCase();
+        var callback = function (verification_code, email_address) {
+            socket.emit('register_email_address_response', {data: null , error: null});
+        };
+        var error_handler = function (e) {
+            socket.emit('register_email_address_response', {data: null , error: e})
+            console.log(e);
+            return;
+        }
+        registerEmailAddress(email_address, callback, error_handler);
+    });
+
+    socket.on('reset_password_verification_code', function(json){
+        var verification_code = json.verification_code;
+        // var username = json.username;
+        var password = json.password;
+
         // var first_name = json.first_name;
         // var last_name = json.last_name;
         // var confirm_password = json.confirm_password;
@@ -1226,9 +1258,9 @@ function registerEmailAddress(email_address, callback, error_handler){
         function sendEmail(email_address, verification_code){
             // setup e-mail data with unicode symbols
             var mailOptions = {
-                from: '"Meal Plan App" <mealplanapp@gmail.com>', // sender address
+                from: '"VandyList" <mealplanapp@gmail.com>', // sender address
                 to: email_address, // list of receivers
-                subject: 'Verification Code for Meal Plan App', // Subject line
+                subject: 'Verification Code for VandyList', // Subject line
                 text: 'Verification Code: ' + verification_code, // plaintext body
             };
 
@@ -1377,6 +1409,152 @@ function registerVerificationCode(verification_code, email_address, password, ca
     //return something indicating all the validation of input is valid but database may still trigger error
     return true;
 }
+
+function resetPasswordEmailAddress(email_address, callback, error_handler){
+    email_address = email_address.toLowerCase() //converts email_address to lowercase because email_addresses are case insensitive
+    //validate email address is real
+    if(validateEmail(email_address) == false){
+        //return a object type that has an error message
+        error_handler("invalid email address");
+        return;
+    }
+    //validate email address is vanderbilt.edu
+    if(validateVanderbiltEmail(email_address) == false){
+        error_handler("Must be a valid vanderbilt.edu email address")
+        return;
+    }
+    //validate email address send out verification email
+    try {
+        //generates veritification code and sends out email containing the code to email_address
+        sendVerificationEmail(email_address);
+    }catch(e){
+        console.log(e.message);
+    }
+
+    //returns the verification_code and asychronously adds it to the database
+    function sendVerificationEmail(email_address){
+        //first ensure that email address has not already been verified
+        //if the email address exists but hasn't been verified delete the email address
+        function makeVerificationCode(length){
+            var text = "";
+            // var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var possible = "0123456789";
+
+            for( var i=0; i < length; i++ )
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+            return text;
+        }
+        var verification_code = makeVerificationCode(6);
+        var collection = database.collection('emails');
+        collection.find({email_address: email_address}).toArray(function(err, docs) {
+            if(docs.length > 0) {
+                //if email has already been registered throw error saying email is taken
+                if(docs[0].registered == true){
+                    var email = {email_address: email_address, registered: docs[0].registered, verification_code: docs[0].verification_code, reset_password_verification_code: verification_code}
+                    //adding unique index on email_address ensures no duplicate email_addresses
+                    collection.update({email_address: email_address}, email, function (err, result) {
+                        if (err) {
+                            console.log(err);
+                            return;
+                        } else {
+                            console.log('Inserted reset password verification code ' + verification_code + ' into the email database under email address ' + email_address)
+                            sendEmail(email_address, verification_code);
+                        }
+                    });
+                }
+                else{
+                    error_handler("This email address has not been registered")
+                }
+            }
+            else{
+                error_handler("This email address has not been registered")
+            }
+            //adds the verification code and email to database
+            //TODO: For testing purposes, dont actually send emails!
+
+        });
+        function sendEmail(email_address, verification_code){
+            // setup e-mail data with unicode symbols
+            var mailOptions = {
+                from: '"VandyList" <mealplanapp@gmail.com>', // sender address
+                to: email_address, // list of receivers
+                subject: 'Reset Password Verification Code for VandyList', // Subject line
+                text: 'Reset Password Verification Code: ' + verification_code, // plaintext body
+            };
+
+            // send mail with defined transport object
+            transporter.sendMail(mailOptions, function(error, info){
+                if(error){
+                    return console.log(error);
+                }
+                console.log('Message sent: ' + info.response);
+                //send verification_code to callback as well as email (for testing purposes)
+            });
+        }
+        return verification_code;
+    }
+    //notify client that verification email has been sent (client moves to text page with verification code username and password)
+    //TODO:return message that indicates validation of email was successful
+    return true;
+}
+
+function resetPasswordVerificationCode(verification_code, email_address, password, callback, error_handler){
+    //adds a function to String prototype to capitalize first letter
+    String.prototype.capitalizeFirstLetter = function() {
+        return this.charAt(0).toUpperCase() + this.slice(1);
+    }
+    email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
+    if(!validateEmail(email_address)){
+        error_handler("invalid password");
+        return;
+    }
+    //verify password is valid
+    if(!validatePassword(password)) {
+        error_handler("invalid password");
+        return;
+    }
+    var collection_emails = database.collection('emails');
+    collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
+        if(docs.length > 0) {
+            //checks that verification_code is valid and email hasn't already been registered
+            if(docs[0].verification_code == verification_code){
+                if(docs[0].registered == true){
+                    var collection_emails = database.collection('emails');
+                    var collection_users = database.collection('users');
+                    collection_users.update({email_address:email_address}, {$set: {password : password}}, function(err, result) {
+                        if(err){
+                            error_handler(err);
+                            return;
+                        }
+                        callback();
+                    });
+                    checkIfEmailAddressUnique(function() {
+                        insertUser(function () {
+                            //log user registering
+                            if (callback != undefined) {
+                                callback(email_address, password); //used for testing purposes
+                            }
+                        })
+                    });
+                }
+                else{
+                    error_handler(email_address + " hasn't been");
+                    return;
+                }
+            }
+            else{
+                error_handler("verification code doesn't match")
+                return;
+            }
+        }
+        else{
+            error_handler("cannot register, email_address not found in emails database ")
+            return;
+        }
+    });
+}
+
 
 function login(email_address, password, device_token, callback, error_handler){
     email_address = email_address.toLowerCase();
@@ -2374,19 +2552,19 @@ function emitEvent(event_name, data, user_id_arr){
     }
 }
 
-
-function resetPassword(email_address){
-    //send message back to client saying "if valid email address then you will receive a reset password at this link"
-    //search database to see if valid email_address
-    //if so, send email to email address containing verification link to reset
-}
-
-function resetPasswordVerification(new_password, new_password_confirm){
-    //check to see if user has clicked on verification link
-    //check to see if new password is valid
-    //check to see if new password confirm is equal to new password
-    //update the password for the user in the database (note verification code must be associated with a user)
-}
+//
+// function resetPassword(email_address){
+//     //send message back to client saying "if valid email address then you will receive a reset password at this link"
+//     //search database to see if valid email_address
+//     //if so, send email to email address containing verification link to reset
+// }
+//
+// function resetPasswordVerification(new_password, new_password_confirm){
+//     //check to see if user has clicked on verification link
+//     //check to see if new password is valid
+//     //check to see if new password confirm is equal to new password
+//     //update the password for the user in the database (note verification code must be associated with a user)
+// }
 
 function getActiveUsers(){
     return active_users;
