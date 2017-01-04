@@ -618,42 +618,44 @@ io.on('connection', function (socket) {
                 // var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
                 // var declining_user_full_name = declining_user.first_name + " " + declining_user.last_name;
                 // console.log(declining_user_full_name + " declined the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
-
-                emitEvent("transaction_request_declined", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)]);
                 var user = active_users.get(user_id);
                 var user_socket = io.sockets.connected[user.socket_id];
                 var other_user = active_users.get(transaction.getOtherUserId(user_id));
                 var other_user_socket = undefined;
                 if(other_user != undefined){
-                   other_user_socket = io.sockets.connected[other_user.socket_id];
+                    other_user_socket = io.sockets.connected[other_user.socket_id];
                 }
-                // var event = new Event("transaction_request_declined", , null);
-                if(other_user_socket == undefined) {
-                    // var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                    // var other_user_name = other_user.first_name + " " + other_user.last_name;
-                    // var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
-                    var user_name = user.first_name + " " + user.last_name;
-                    var alert = "Your transaction request for '" + transaction.title + "' was declined by " + user_name;
-                    notification_info = {alert: alert, category: "TRANSACTION_REQUEST_DECLINED"};
-                    if(other_user != undefined){
-                        sendNotification(notification_info, other_user.device_token);
+                var alert = "Your transaction request for '" + transaction.title + "' was declined by " + user.first_name +  " " + user.last_name;
+                var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_DECLINED"};
+                emitEvent("transaction_request_declined", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)], notification_info);
 
-                    }
-                //     other_user_socket.emit(event.name , event.message);
+                // var event = new Event("transaction_request_declined", , null);
+                // if(other_user_socket == undefined) {
+                //     // var other_user = active_users.get(transaction.getOtherUserId(user_id));
+                //     // var other_user_name = other_user.first_name + " " + other_user.last_name;
+                //     // var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
+                //     // var user_name = user.first_name + " " + user.last_name;
+                //     // var alert = "Your transaction request for '" + transaction.title + "' was declined by " + user_name;
+                //     // notification_info = {alert: alert, category: "TRANSACTION_REQUEST_DECLINED"};
+                //     // if(other_user != undefined){
+                //     //     sendNotification(notification_info, other_user.device_token);
+                //     //
+                //     // }
+                // //     other_user_socket.emit(event.name , event.message);
+                // // }
+                // // else{
+                // //     if(other_user != undefined) {
+                // //         other_user.enqueueEvent(event);
+                // //     }
                 // }
-                // else{
-                //     if(other_user != undefined) {
-                //         other_user.enqueueEvent(event);
-                //     }
-                }
-                if(user_socket != undefined) {
-                //     user_socket.emit(event.name , event.message);
+                // if(user_socket != undefined) {
+                // //     user_socket.emit(event.name , event.message);
+                // // }
+                // // else{
+                // //     if(user != undefined) {
+                // //         user.enqueueEvent(event);
+                // //     }
                 // }
-                // else{
-                //     if(user != undefined) {
-                //         user.enqueueEvent(event);
-                //     }
-                }
                 //TODO: add some
             }catch(e){
                 console.log(e);
@@ -692,7 +694,7 @@ io.on('connection', function (socket) {
                //     + transaction.title + from_or_to + other_user_full_name + " at the price of $" + transaction.price);
 
                // var event = new Event("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, null);
-               emitEvent("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
+               // emitEvent("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
                var buyer = active_users.get(transaction.buyer_user_id);
                var seller = active_users.get(transaction.seller_user_id);
                var buyer_socket = io.sockets.connected[buyer.socket_id];
@@ -702,36 +704,51 @@ io.on('connection', function (socket) {
                if(!transaction.isCompleted()){
                    var alert = user_name + " has confirmed the transaction '" + transaction.title + "'";
                    var notification_info = {alert: alert, payload: {transaction_id: transaction._id.toString()}, category: "TRANSACTION_CONFIRMED"};
-                   if(buyer_socket == undefined && buyer != undefined) {
-                       sendNotification(notification_info, buyer.device_token);
-                   }
-                   if(seller_socket != undefined && seller != undefined) {
-                       sendNotification(notification_info, seller.device_token);
-                   }
+                   // var event = new Event("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, null);
+                   emitEvent("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id], notification_info);
+
+                   // if(buyer_socket != undefined) {
+                   //     buyer_socket.emit(event.name , event.message);
+                   // }
+                   // else{
+                   //     if(buyer != undefined) {
+                   //         sendNotification(notification_info, buyer.device_token);
+                   //     }
+                   // }
+                   // if(seller_socket != undefined) {
+                   //     seller_socket.emit(event.name , event.message);
+                   // }
+                   // else{
+                   //     if(seller != undefined) {
+                   //         sendNotification(notification_info, seller.device_token);
+                   //     }
+                   // }
                }
                if(transaction.isCompleted()){
                    console.log("The transaction '" + transaction.title + "' for $" + transaction.price + " was COMPLETED!");
 
                    var alert = "The transaction '" + transaction.title + "' was completed!";
                    var notification_info = {alert: alert, payload: {transaction_id: transaction._id.toString()}, category: "TRANSACTION_COMPLETED"};
+                   emitEvent("transaction_completed", {transaction_id: transaction_id}, [transaction.buyer_user_id, transaction.seller_user_id], notification_info);
+
                    //notify users that transaction is completed
-                   var event = new Event("transaction_completed", {transaction_id: transaction_id}, null);
-                   if(buyer_socket != undefined) {
-                       buyer_socket.emit(event.name , event.message);
-                   }
-                   else{
-                       if(buyer != undefined) {
-                           sendNotification(notification_info, buyer.device_token);
-                       }
-                   }
-                   if(seller_socket != undefined) {
-                       seller_socket.emit(event.name , event.message);
-                   }
-                   else{
-                       if(seller != undefined) {
-                           sendNotification(notification_info, seller.device_token);
-                       }
-                   }
+                   // var event = new Event("transaction_completed", {transaction_id: transaction_id}, null);
+                   // if(buyer_socket != undefined) {
+                   //     buyer_socket.emit(event.name , event.message);
+                   // }
+                   // else{
+                   //     if(buyer != undefined) {
+                   //         sendNotification(notification_info, buyer.device_token);
+                   //     }
+                   // }
+                   // if(seller_socket != undefined) {
+                   //     seller_socket.emit(event.name , event.message);
+                   // }
+                   // else{
+                   //     if(seller != undefined) {
+                   //         sendNotification(notification_info, seller.device_token);
+                   //     }
+                   // }
                }
            }catch(e){
                console.log(e);
@@ -1851,6 +1868,7 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
 //1. authenticate, if successful proceed; else return message to error_handler ("invalid authentication info")
 //2. get listing from active_listings, if null then return message to error_handler
 //3. check to make sure that the user_id on listing isn't the user_id intiating the transaction (can't have transaction with self)
+//3. check to make sure that the user_id on listing isn't the useer_id intiating the transaction (can't have transaction with self)
 //4. if transaction is of type buy then user_id is seller_user_id else buyer_user_id
 //5. create a transaction from the listing, add the database, (get _id), and then add to active_transactions
     //6. add the transaction_id of new transaction to the user who initiated
@@ -2542,7 +2560,7 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
 
 //accepts an event string and an array of user_ids, emits the event to each one of those users
 //also accepts data which is a javascript object that holds the data that will passed in the event
-function emitEvent(event_name, data, user_id_arr){
+function emitEvent(event_name, data, user_id_arr, notification_info){
     for(var i=0; i<user_id_arr.length; i++){
         var user = active_users.get(user_id_arr[i]);
         var user_socket;
@@ -2557,7 +2575,10 @@ function emitEvent(event_name, data, user_id_arr){
         }
         else{
             if(user != undefined) {
-                user.enqueueEvent(event);
+                // user.enqueueEvent(event);
+                if(notification_info != undefined){
+                    sendNotification(notification_info, user.device_token);
+                }
             }
         }
 
