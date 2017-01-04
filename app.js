@@ -807,7 +807,6 @@ io.on('connection', function (socket) {
             socket.emit("update_user_location_response", {data: {updated_location: updated_location}, error: null});
             //notify all users, or all users in the same transaction with user whose location was updated,
 
-            var user = active_users.get(user_id);
             // var users_active_transactions = active_transactions.getAllForUser(user_id);
             // for(var i=0; i<users_active_transactions.length; i++){
             //     var transaction = users_active_transactions[i];
@@ -827,7 +826,10 @@ io.on('connection', function (socket) {
             //         });
             //     }
             // }
-            console.log(user.first_name + " " + user.last_name + " updated their location");
+
+            var user = active_users.get(user_id);
+            // console.log(user.first_name + " " + user.last_name + " updated their location");
+
             io.emit("user_location_updated", {
                 data: {
                     user_id: user._id.toString(),
