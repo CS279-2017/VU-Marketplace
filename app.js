@@ -9,8 +9,8 @@ var apn = require('apn');
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -1974,36 +1974,36 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
         }
         try {
             transaction.acceptRequest(user._id);
-            updateTransactionInDatabase(transaction, function(){
-                var listing = active_listings.get(transaction.listing_id);
-                //throws error if transaction_id has already been set
-                //or listing has already been deleted, means listing has already been accepted
-                if(listing == undefined || listing.transaction_id != null){
-                    error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
-                    return;
+            updateTransactionInDatabase(transaction, function(){}, error_handler)
+            var listing = active_listings.get(transaction.listing_id);
+            //throws error if transaction_id has already been set
+            //or listing has already been deleted, means listing has already been accepted
+            if(listing == undefined || listing.transaction_id != null){
+                error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
+                return;
+            }
+            //decline all other transactions in based on this listing besides current transaction
+            var transaction_arr = active_transactions.getAllForListingId(listing._id);
+            for(var i=0; i <transaction_arr.length; i++){
+                var transaction = transaction_arr[i];
+                if(transaction._id != transaction_id) {
+                    declineTransactionRequest(user_id, password, device_token, transaction._id, function (transaction_id) {
+                    }, error_handler)
                 }
-                //decline all other transactions in based on this listing besides current transaction
-                var transaction_arr = active_transactions.getAllForListingId(listing._id);
-                for(var i=0; i <transaction_arr.length; i++){
-                    var transaction = transaction_arr[i];
-                    if(transaction._id != transaction_id) {
-                        declineTransactionRequest(user_id, password, device_token, transaction._id, function (transaction_id) {
-                        }, error_handler)
-                    }
-                }
+            }
 
-                listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
-                //update listing in database
-                removeListing(transaction.listing_id, function(){
-                    if(user != undefined) { //in case user has logged out
-                        // user.addCurrentTransactionId(transaction_id);
-                        updateUserInDatabase(user, function(){}, error_handler)
-                        transaction.start_time = new Date().getTime();
-                        updateTransactionInDatabase(transaction, function(){}, function(){});
-                        callback(transaction);
-                    }
-                }, error_handler)
+            listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
+            //update listing in database
+            removeListing(transaction.listing_id, function(){
+                if(user != undefined) { //in case user has logged out
+                    // user.addCurrentTransactionId(transaction_id);
+                    updateUserInDatabase(user, function(){}, error_handler)
+                    transaction.start_time = new Date().getTime();
+                    updateTransactionInDatabase(transaction, function(){}, function(){});
+                    callback(transaction);
+                }
             }, error_handler)
+
             //throws error if user with the user_id has already accepted request or if user_id
             //doesn't match either user_id of the transactions
             //verify that the other user has already accepted_request if not throw error
@@ -2034,10 +2034,9 @@ function declineTransactionRequest(user_id, password, device_token, transaction_
             transaction.active = false;
             //update transaction in database before deleting it so we have a record of the failed transaction
             updateTransactionInDatabase(transaction, function(){
-                active_transactions.remove(transaction._id);
-                callback(transaction);
-
             }, error_handler);
+            active_transactions.remove(transaction._id);
+            callback(transaction);
             //throws error if user with the user_id has already accepted request or if user_id
             //doesn't match either user_id of the transactions
             //verify that the other user has already accepted_request if not throw error
@@ -2065,24 +2064,23 @@ function confirmTransaction(user_id, password, device_token, transaction_id, cal
         try {
             //confirms user_id has agreed to continue with the transaction
             transaction.confirm(user_id);
-            updateTransactionInDatabase(transaction, function(){
-                if(transaction.isCompleted() == true){
-                    transaction.end_time = new Date().getTime();
-                    transaction.active = false;
-                    updateTransactionInDatabase(transaction, function(){
-                        try {
-                            active_transactions.remove(transaction_id);
-                        }catch(e){console.log(e.message)}
-                        callback(transaction);
-                    }, error_handler)
-                }
-                else{
-                    updateTransactionInDatabase(transaction, function () {
-                        callback(transaction);
-                    }, error_handler);
+            updateTransactionInDatabase(transaction, function(){}, error_handler)
+            if(transaction.isCompleted() == true){
+                transaction.end_time = new Date().getTime();
+                transaction.active = false;
+                updateTransactionInDatabase(transaction, function(){
+                    try {
+                        active_transactions.remove(transaction_id);
+                    }catch(e){console.log(e.message)}
+                    callback(transaction);
+                }, error_handler)
+            }
+            else{
+                updateTransactionInDatabase(transaction, function () {
+                    callback(transaction);
+                }, error_handler);
 
-                }
-            }, error_handler)
+            }
         }catch(e){
             error_handler(e.message);
             return;
@@ -2111,13 +2109,14 @@ function terminateTransaction(user_id, password, device_token, transaction_id, c
         }
             transaction.active = false;
             transaction.end_time = new Date().getTime();
+            updateTransactionInDatabase(transaction, function () {}, error_handler)
         try {
-            updateTransactionInDatabase(transaction, function () {
-                try {
-                    active_transactions.remove(transaction_id);
-                }catch(e){console.log(e.message)}
-                callback(transaction);
-            }, error_handler)
+
+            try {
+                active_transactions.remove(transaction_id);
+            }catch(e){console.log(e.message)}
+            callback(transaction);
+
         }catch(e){
             error_handler(e.message)
         }
