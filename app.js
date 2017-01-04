@@ -96,8 +96,16 @@ var max_listings = 8;
 var max_transactions = 24;
 var max_pictures_per_listing = 5;
 
-server.listen(port, function () {
-    console.log('Example app listening on port ' + port);
+var host = "";
+
+server.listen(port,function () {
+
+    host = server.address().address
+    if(host == "::"){
+        host = "localhost"
+    }
+
+    console.log('Example app listening at http://%s:%s', host, port)
     //TODO: whenever active_listing, active_transactions, or active_users is changed i.e add/remove is called,
     // TODO: all users must be notified of this change
     active_listings = new ActiveListings();
@@ -139,6 +147,14 @@ server.listen(port, function () {
 app.get('/', function (req, res) {
     res.send('If you have any questions about VandyList, please email mealplanapp@gmail.com');
 });
+
+// app.get('/reset_password/', function(req, res){
+//     var query = req.query;
+//     var reset_password_verification_code = query.reset_password_verification_code;
+//     var email_address = query.email_address
+//     resetPasswordVerificationCode(verification_code, email_address)
+//
+// });
 
 //TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
 io.on('connection', function (socket) {
@@ -206,14 +222,14 @@ io.on('connection', function (socket) {
     socket.on('reset_password_email_address', function(json) {
         var email_address = json.email_address.toLowerCase();
         var callback = function (verification_code, email_address) {
-            socket.emit('register_email_address_response', {data: null , error: null});
+            socket.emit('reset_password_email_address_response', {data: null , error: null});
         };
         var error_handler = function (e) {
-            socket.emit('register_email_address_response', {data: null , error: e})
+            socket.emit('reset_password_email_address_response', {data: null , error: e})
             console.log(e);
             return;
         }
-        registerEmailAddress(email_address, callback, error_handler);
+        resetPasswordEmailAddress(email_address, callback, error_handler)
     });
 
     socket.on('reset_password_verification_code', function(json){
@@ -226,13 +242,13 @@ io.on('connection', function (socket) {
         // var confirm_password = json.confirm_password;
         var email_address = json.email_address.toLowerCase();
         var callback = function(){
-            socket.emit("register_verification_code_response", {data: null, error: null});
+            socket.emit("reset_password_verification_code_response", {data: null, error: null});
         };
         var error_handler = function(e) {
-            socket.emit("register_verification_code_response", {data: null, error: e});
+            socket.emit("reset_password_verification_code_response", {data: null, error: e});
             console.log(e);
         }
-        registerVerificationCode(verification_code, email_address, password, callback, error_handler);
+        resetPasswordVerificationCode(verification_code, email_address, password, callback, error_handler);
     });
 
     socket.on('login', function(json){
@@ -1290,7 +1306,7 @@ function registerVerificationCode(verification_code, email_address, password, ca
     }
     email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
     if(!validateEmail(email_address)){
-        error_handler("invalid password");
+        error_handler("invalid email_address");
         return;
     }
     var first_name;
@@ -1460,6 +1476,7 @@ function resetPasswordEmailAddress(email_address, callback, error_handler){
                         } else {
                             console.log('Inserted reset password verification code ' + verification_code + ' into the email database under email address ' + email_address)
                             sendEmail(email_address, verification_code);
+                            callback()
                         }
                     });
                 }
@@ -1476,6 +1493,13 @@ function resetPasswordEmailAddress(email_address, callback, error_handler){
         });
         function sendEmail(email_address, verification_code){
             // setup e-mail data with unicode symbols
+            // var mailOptions = {
+            //     from: '"VandyList" <mealplanapp@gmail.com>', // sender address
+            //     to: email_address, // list of receivers
+            //     subject: 'Reset Password Verification Link for VandyList', // Subject line
+            //     text: 'Reset Password Verification Link: <a href="http://' + host + ':' + port + 'reset_password?reset_password_verification_code=' +
+            //     verification_code + '&email_address=' + email_address + '>Click Here</a>', // plaintext body
+            // };
             var mailOptions = {
                 from: '"VandyList" <mealplanapp@gmail.com>', // sender address
                 to: email_address, // list of receivers
@@ -1505,10 +1529,6 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
         return this.charAt(0).toUpperCase() + this.slice(1);
     }
     email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
-    if(!validateEmail(email_address)){
-        error_handler("invalid password");
-        return;
-    }
     //verify password is valid
     if(!validatePassword(password)) {
         error_handler("invalid password");
@@ -1518,9 +1538,8 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
     collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
         if(docs.length > 0) {
             //checks that verification_code is valid and email hasn't already been registered
-            if(docs[0].verification_code == verification_code){
+            if(docs[0].reset_password_verification_code == verification_code){
                 if(docs[0].registered == true){
-                    var collection_emails = database.collection('emails');
                     var collection_users = database.collection('users');
                     collection_users.update({email_address:email_address}, {$set: {password : password}}, function(err, result) {
                         if(err){
@@ -1528,14 +1547,6 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
                             return;
                         }
                         callback();
-                    });
-                    checkIfEmailAddressUnique(function() {
-                        insertUser(function () {
-                            //log user registering
-                            if (callback != undefined) {
-                                callback(email_address, password); //used for testing purposes
-                            }
-                        })
                     });
                 }
                 else{
@@ -2597,7 +2608,8 @@ function validateUsername(username){
 
 function validatePassword(password){
     //must be atleast 1 character long
-    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,}$/.test(password);
+    return password.length > 1;
+    // return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,}$/.test(password);
 }
 
 //user_id, title, description, location, expiration_time, price, buy
