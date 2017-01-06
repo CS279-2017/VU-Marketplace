@@ -1340,6 +1340,10 @@ function registerVerificationCode(verification_code, email_address, password, ca
         first_name = nameStringSplit[0];
         last_name = nameStringSplit[2];
     }
+    else if(nameStringSplit.length == 4){
+        first_name = nameStringSplit[0];
+        last_name = nameStringSplit[2];
+    }
     else{
         error_handler("the vanderbilt email is of invalid format");
         return;
