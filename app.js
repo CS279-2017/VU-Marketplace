@@ -823,26 +823,40 @@ io.on('connection', function (socket) {
         function callback(updated_location){
             socket.emit("update_user_location_response", {data: {updated_location: updated_location}, error: null});
             //notify all users, or all users in the same transaction with user whose location was updated,
-
-            // var users_active_transactions = active_transactions.getAllForUser(user_id);
-            // for(var i=0; i<users_active_transactions.length; i++){
-            //     var transaction = users_active_transactions[i];
-            //     var other_user_id = transaction.getOtherUserId(user_id);
-            //     var other_user = active_users.get(other_user_id);
-            //     if(other_user != undefined){
-            //         var other_user_socket = io.sockets.connected[other_user.socket_id];
-            //     }
-            //     // console.log("emitting user_location_updated");
-            //     if(other_user_socket != undefined) {
-            //         other_user_socket.emit("user_location_updated", {
-            //             data: {
-            //                 user_id: user._id.toString(),
-            //                 transaction_id: transaction._id.toString(),
-            //                 updated_location: updated_location
-            //             }, error: null
-            //         });
-            //     }
-            // }
+            var user = active_users.get(user_id)
+            var users_active_transactions = active_transactions.getAllForUser(user_id);
+            for(var i=0; i<users_active_transactions.length; i++){
+                var transaction = users_active_transactions[i];
+                var other_user_id = transaction.getOtherUserId(user_id);
+                var other_user = active_users.get(other_user_id);
+                if(other_user != undefined && user != undefined){
+                    if(other_user.location != undefined && user.location != undefined){
+                        if(user.location.getDistanceFrom(other_user.location) <= 200 && transaction.notified != true){
+                            transaction.notified = true;
+                            var alert = user.first_name + " " + user.last_name + " is nearby!"
+                            var notification_info = {alert: alert, category: "TRANSACTION_OTHER_USER_NEARBY", payload: {transaction_id: transaction._id.toString()}};
+                            sendNotification(notification_info, other_user.device_token)
+                            var alert = other_user.first_name + " " + other_user.last_name + " is nearby!"
+                            var notification_info = {alert: alert, category: "TRANSACTION_OTHER_USER_NEARBY", payload: {transaction_id: transaction._id.toString()}};
+                            sendNotification(notification_info, user.device_token)
+                        }
+                        else if(transaction.notified == true && user.location.getDistanceFrom(other_user.location) >= 300){
+                            transaction.notified = false;
+                        }
+                    }
+                    // var other_user_socket = io.sockets.connected[other_user.socket_id];
+                }
+                // console.log("emitting user_location_updated");
+                // if(other_user_socket != undefined) {
+                //     other_user_socket.emit("user_location_updated", {
+                //         data: {
+                //             user_id: user._id.toString(),
+                //             transaction_id: transaction._id.toString(),
+                //             updated_location: updated_location
+                //         }, error: null
+                //     });
+                // }
+            }
 
             var user = active_users.get(user_id);
             // console.log(user.first_name + " " + user.last_name + " updated their location");
