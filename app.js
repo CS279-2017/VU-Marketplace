@@ -2388,7 +2388,7 @@ function getUserInfo(user_id, callback, error_handler){
 }
 
 function getUser(user_id, password, callback, error_handler){
-
+    password = hashPassword(password);
     var collection = database.collection('users');
     collection.find({_id: toMongoIdObject(user_id), password: password}).toArray(function(err, docs) {
         if(docs.length > 0) {
