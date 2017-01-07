@@ -2316,7 +2316,7 @@ function getListingsWithHashTag(hash_tag, callback, error_handler){
 function getUsersActiveTransactions(user_id, password, device_token, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
         getUser(user_id, password, function(user){
-            if(user.password == password.toString()){
+            if(user.password == hashPassword(password)){
                 var users_active_transactions = active_transactions.getAllForUser(user._id);
                 callback(users_active_transactions);
             }
