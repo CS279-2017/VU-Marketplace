@@ -30,6 +30,16 @@ ActiveUsers.prototype = {
     get: function(_id){
         return this.user_id_to_user[toMongoIdObject(_id)];
     },
+    getForEmailAddress: function(email_address){
+        var active_users = this.getAll();
+        for(var i = 0; i <active_users.length; i++){
+            var user = active_users[i]
+            if(user.email_address == email_address){
+                return user;
+            }
+        }
+        return undefined;
+    },
     remove: function(_id){
         if(this.user_id_to_user[_id] != undefined){
             delete this.user_id_to_user[_id];

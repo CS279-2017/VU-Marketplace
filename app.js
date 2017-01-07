@@ -12,8 +12,8 @@ const secret = 'vandylistisawesome';
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -1201,11 +1201,14 @@ io.on('connection', function (socket) {
     })
 
     socket.on('get_picture', function(json){
+        var start = new Date().getTime();
         var picture_id = json.picture_id;
         function callback(picture){
             socket.emit("get_picture_response", {data: {picture_id: picture_id.toString(), picture: picture}, error: null});
             // socket.emit("picture_gotten", {data: {picture_id_id: picture_id.toString(), picture: profile_picture}, error: null});
             // console.log("emitting profile_picture_gotten took " + (end1 - start1) + " milliseconds.")
+            var end = new Date().getTime();
+            console.log("getPicture execution time: " + (end - start));
         }
         function error_handler(e){
             socket.emit("get_picture_response", {data: null, error: e});
@@ -1572,17 +1575,16 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
     }
     password = hashPassword(password);
     email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
-    //verify password is valid
-    // if(!validatePassword(password)) {
-    //     error_handler("invalid password");
-    //     return;
-    // }
     var collection_emails = database.collection('emails');
     collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
         if(docs.length > 0) {
             //checks that verification_code is valid and email hasn't already been registered
             if(docs[0].reset_password_verification_code == verification_code){
                 if(docs[0].registered == true){
+                    var user = active_users.getForEmailAddress(email_address);
+                    if(user != undefined){
+                        user.password = password;
+                    }
                     var collection_users = database.collection('users');
                     collection_users.update({email_address:email_address}, {$set: {password : password}}, function(err, result) {
                         if(err){
