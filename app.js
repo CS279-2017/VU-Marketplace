@@ -6,6 +6,9 @@ var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var apn = require('apn');
 
+const crypto = require('crypto');
+const secret = 'vandylistisawesome';
+
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
@@ -1371,6 +1374,8 @@ function registerVerificationCode(verification_code, email_address, password, ca
         error_handler("invalid password");
         return;
     }
+    //hashes password
+    password = hashPassword(password);
     //verify password confirm matches password
     // if(password != confirm_password){
     //     error_handler("password doesn't match");
@@ -1605,6 +1610,7 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
 
 
 function login(email_address, password, device_token, callback, error_handler){
+    password = hashPassword(password);
     email_address = email_address.toLowerCase();
     //query database for user with given email_address and password
     console.log("login called");
@@ -1673,6 +1679,7 @@ function logout(user_id, password, device_token, callback, error_handler){
 
 //TODO: implement device_id
 function authenticate(user_id, password, device_token, callback, error_handler){
+    password = hashPassword(password);
     var user = active_users.get(user_id);
     if(user == undefined){
         if(error_handler != undefined){
@@ -2723,6 +2730,12 @@ function validatePrice(price){
 function validateBuy(buy){
     // return typeof buy == 'boolean';
     return "";
+}
+
+function hashPassword(password){
+    return crypto.createHmac('sha256', secret)
+        .update(password)
+        .digest('hex');
 }
 
 function getUUID(){
