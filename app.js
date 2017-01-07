@@ -1570,6 +1570,7 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
     String.prototype.capitalizeFirstLetter = function() {
         return this.charAt(0).toUpperCase() + this.slice(1);
     }
+    password = hashPassword(password);
     email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
     //verify password is valid
     if(!validatePassword(password)) {
