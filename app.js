@@ -1573,10 +1573,10 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
     password = hashPassword(password);
     email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
     //verify password is valid
-    if(!validatePassword(password)) {
-        error_handler("invalid password");
-        return;
-    }
+    // if(!validatePassword(password)) {
+    //     error_handler("invalid password");
+    //     return;
+    // }
     var collection_emails = database.collection('emails');
     collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
         if(docs.length > 0) {
@@ -1687,13 +1687,16 @@ function authenticate(user_id, password, device_token, callback, error_handler){
             error_handler("tried to authenticate an invalid user_id/password combination");
         }
     }
-    else if(user.password != password){
+    else if(user.password.toString() != password.toString()){
         if(error_handler != undefined){
+            console.log("incorrect password");
+            console.log(user.password)
             error_handler("tried to authenticate an invalid user_id/password combination");
         }
     }
     else if(user.device_token != device_token){
         if(error_handler != undefined){
+            console.log("incorrect device_token")
             // console.log(user)
             // console.log("current device token: " + user.device_token);
             // console.log("entered device token: " + device_token);
@@ -2656,7 +2659,7 @@ function validateUsername(username){
 
 function validatePassword(password){
     //must be atleast 1 character long
-    return password.length > 1;
+    return password.length >= 1;
     // return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{1,}$/.test(password);
 }
 
