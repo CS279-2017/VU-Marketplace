@@ -2323,7 +2323,9 @@ function sendChatMessage(user_id, password, device_token, transaction_id, messag
         if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
             try {
                 var message = transaction.sendChatMessage(user, message_text);
-                callback(message);
+                updateTransactionInDatabase(transaction, function(){
+                    callback(message);
+                }, error_handler)
             }catch(e){
                 error_handler(e.message);
                 return;
