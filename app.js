@@ -99,7 +99,7 @@ var max_listings = 8;
 var max_transactions = 24;
 var max_pictures_per_listing = 5;
 
-var max_picture_size = 300000
+var max_picture_size = 700000
 
 var host = "";
 
