@@ -136,7 +136,11 @@ var Transaction = function() {
             this.seller_accepted_request = transaction.seller_accepted_request;
             this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
             this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
-            
+
+            if(transaction.offer != undefined){
+                this.offer = transaction.offer;
+            }
+
             if(transaction.end_time != undefined){
                 this.end_time = transaction.end_time;
             }

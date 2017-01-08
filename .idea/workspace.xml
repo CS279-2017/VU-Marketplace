@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/transaction.js" afterPath="$PROJECT_DIR$/classes/transaction.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -29,8 +29,8 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="226">
-              <caret line="2807" column="21" selection-start-line="2807" selection-start-column="4" selection-end-line="2807" selection-end-column="21" />
+            <state relative-caret-position="196">
+              <caret line="477" column="88" selection-start-line="477" selection-start-column="74" selection-end-line="477" selection-end-column="88" />
               <folding />
             </state>
           </provider>
@@ -99,8 +99,8 @@
       <file leaf-file-name="transaction.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/transaction.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-464">
-              <caret line="213" column="21" selection-start-line="213" selection-start-column="21" selection-end-line="213" selection-end-column="21" />
+            <state relative-caret-position="196">
+              <caret line="204" column="94" selection-start-line="204" selection-start-column="90" selection-end-line="204" selection-end-column="94" />
               <folding />
             </state>
           </provider>
@@ -383,7 +383,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="563043000" />
+    <option name="totallyTimeSpent" value="564596000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="110" y="23" width="1101" height="735" extended-state="0" />
@@ -813,16 +813,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/classes/transaction.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-464">
-          <caret line="213" column="21" selection-start-line="213" selection-start-column="21" selection-end-line="213" selection-end-column="21" />
+        <state relative-caret-position="196">
+          <caret line="204" column="94" selection-start-line="204" selection-start-column="90" selection-end-line="204" selection-end-column="94" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="226">
-          <caret line="2807" column="21" selection-start-line="2807" selection-start-column="4" selection-end-line="2807" selection-end-column="21" />
+        <state relative-caret-position="196">
+          <caret line="477" column="88" selection-start-line="477" selection-start-column="74" selection-end-line="477" selection-end-column="88" />
           <folding />
         </state>
       </provider>

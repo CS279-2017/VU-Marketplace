@@ -459,7 +459,8 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token;
-        var listing_id = json.listing_id; 
+        var listing_id = json.listing_id;
+        var offer = json.offer;
         function callback(transaction){
             //send transaction request to other user first then notify calling user of success
             //upon receiving the make_transaction_request_response the intial calling user can make a transaction object
@@ -496,7 +497,17 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         try {
-            makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler);
+            if(offer == null || offer == undefined){
+                makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler);
+            }
+            else {
+                if (validatePrice(offer) != "") {
+                    error_handler(validatePrice(offer));
+                }
+                else {
+                    makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler, offer);
+                }
+            }
         }catch(e){
             error_handler(e.message);
         }
@@ -1859,7 +1870,7 @@ function removeListing(listing_id, callback, error_handler){
 //TODO: set active to true
 
 //TODO: make sure user hasn't already made a transaction on this listing
-function makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler){
+function makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler, offer){
     authenticate(user_id, password, device_token, function(user) {
         var transaction_already_made_on_listing = false;
         var users_current_transactions = active_transactions.getAllForUser(user_id);
@@ -1896,6 +1907,7 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
     function makeTransaction(user_id, listing_id, callback, error_handler){
         try {
             var new_transaction = createTransactionFromListing(user_id, listing_id);
+            new_transaction.offer = offer;
         }catch(e){
             error_handler(e.message);
             return;
