@@ -1178,7 +1178,7 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         function callback(profile_picture){
             socket.emit("get_profile_picture_response", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
-            socket.emit("profile_picture_gotten", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
+            // socket.emit("profile_picture_gotten", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
             var end = new Date().getTime();
             console.log("getProfilePicture time taken: " + (end - start));
         }
@@ -2805,7 +2805,7 @@ function sendNotification(notification_info, device_token){
     notification.topic = 'bowen.jin.mealplanappiOS';
     // Set expiration to 1 hour from now (in case device is offline)
     notification.expiry = Math.floor(Date.now() / 1000) + 3600;
-    notification_info.badge = 0;
+    notification_info.badge = 1;
     // Set app badge indicator
     if(notification_info.badge != undefined){
         notification.badge = notification_info.badge;
