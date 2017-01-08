@@ -475,8 +475,10 @@ io.on('connection', function (socket) {
                 // }, 60000)
                 var user = active_users.get(user_id);
                 console.log(user);
+                var price = (transaction.offer != undefined && transaction.offer != null) ? transaction.offer : transaction.price
+
                 var alert = user.first_name + " " + user.last_name + " is requesting to " +
-                    (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + transaction.price;
+                    (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + price;
                 var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE", payload: {transaction_id: transaction._id.toString()}};
 
                 emitEvent("transaction_request_made", {
