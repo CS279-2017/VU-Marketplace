@@ -95,9 +95,11 @@ app.use(bodyParser.json());
 
 var port = process.env.PORT || 3000;
 
-var max_listings = 8;
-var max_transactions = 24;
+var max_listings = 16;
+var max_transactions = 32;
 var max_pictures_per_listing = 5;
+
+var transaction_expiration_time_in_minutes = 60*24;
 
 var max_picture_size = 700000
 
@@ -618,11 +620,6 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         function callback(transaction){
             try {
-                // var declining_user = active_users.get(user_id);
-                // var requesting_user = transaction.getOtherUserId(declining_user._id);
-                // var requesting_user_full_name = requesting_user.first_name + " " + requesting_user.last_name;
-                // var declining_user_full_name = declining_user.first_name + " " + declining_user.last_name;
-                // console.log(declining_user_full_name + " declined the transaction of " + requesting_user_full_name + " for " + transaction.title + " at the price of $" + transaction.price)
                 var user = active_users.get(user_id);
                 var user_socket = io.sockets.connected[user.socket_id];
                 var other_user = active_users.get(transaction.getOtherUserId(user_id));
@@ -633,35 +630,6 @@ io.on('connection', function (socket) {
                 var alert = "Your transaction request for '" + transaction.title + "' was declined by " + user.first_name +  " " + user.last_name;
                 var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_DECLINED"};
                 emitEvent("transaction_request_declined", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)], notification_info);
-
-                // var event = new Event("transaction_request_declined", , null);
-                // if(other_user_socket == undefined) {
-                //     // var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                //     // var other_user_name = other_user.first_name + " " + other_user.last_name;
-                //     // var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
-                //     // var user_name = user.first_name + " " + user.last_name;
-                //     // var alert = "Your transaction request for '" + transaction.title + "' was declined by " + user_name;
-                //     // notification_info = {alert: alert, category: "TRANSACTION_REQUEST_DECLINED"};
-                //     // if(other_user != undefined){
-                //     //     sendNotification(notification_info, other_user.device_token);
-                //     //
-                //     // }
-                // //     other_user_socket.emit(event.name , event.message);
-                // // }
-                // // else{
-                // //     if(other_user != undefined) {
-                // //         other_user.enqueueEvent(event);
-                // //     }
-                // }
-                // if(user_socket != undefined) {
-                // //     user_socket.emit(event.name , event.message);
-                // // }
-                // // else{
-                // //     if(user != undefined) {
-                // //         user.enqueueEvent(event);
-                // //     }
-                // }
-                //TODO: add some
             }catch(e){
                 console.log(e);
                 return;
@@ -675,6 +643,39 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         declineTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler)
+    });
+    
+    socket.on('withdraw_transaction_request', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var device_token = json.device_token
+        
+        var transaction_id = json.transaction_id;
+        function callback(transaction){
+            try {
+                var user = active_users.get(user_id);
+                var user_socket = io.sockets.connected[user.socket_id];
+                var other_user = active_users.get(transaction.getOtherUserId(user_id));
+                var other_user_socket = undefined;
+                if(other_user != undefined){
+                    other_user_socket = io.sockets.connected[other_user.socket_id];
+                }
+                var alert = user.first_name +  " " + user.last_name + "'s transaction request for '" + transaction.title + "' was withdrawn"; 
+                var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_WITHDRAWN"};
+                emitEvent("transaction_request_withdrawn", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)], notification_info);
+            }catch(e){
+                console.log(e);
+                return;
+            }
+
+            socket.emit("withdraw_transaction_request_response", {data: null, error: null});
+            //notify the initiator of the transaction that transaction has been rejected
+        }
+        function error_handler(e){
+            socket.emit("withdraw_transaction_request_response", {data: null, error: e});
+            console.log(e);
+        }
+        withdrawTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler)
     });
 
     //TODO: confirming a transaction that doesn't exist i.e not in active_transactions
@@ -1950,7 +1951,7 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
                             }
                         });
                     }
-                }, 60000 * 10)
+                }, 60000 * transaction_expiration_time_in_minutes)
                 var user = active_users.get(user_id);
                 try{
                     // user.addCurrentTransactionId(new_transaction._id);
@@ -2094,6 +2095,31 @@ function declineTransactionRequest(user_id, password, device_token, transaction_
         }
         try {
             transaction.declineRequest(user_id);
+            transaction.active = false;
+            //update transaction in database before deleting it so we have a record of the failed transaction
+            updateTransactionInDatabase(transaction, function(){
+            }, error_handler);
+            active_transactions.remove(transaction._id);
+            callback(transaction);
+            //throws error if user with the user_id has already accepted request or if user_id
+            //doesn't match either user_id of the transactions
+            //verify that the other user has already accepted_request if not throw error
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
+    }, error_handler);
+}
+
+function withdrawTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler){
+    authenticate(user_id, password, device_token, function(user){
+        var transaction = active_transactions.get(transaction_id);
+        if(transaction == null || transaction == undefined){
+            error_handler("unable to find transaction with transaction_id: " + transaction_id);
+            return;
+        }
+        try {
+            transaction.withdrawRequest(user_id);
             transaction.active = false;
             //update transaction in database before deleting it so we have a record of the failed transaction
             updateTransactionInDatabase(transaction, function(){

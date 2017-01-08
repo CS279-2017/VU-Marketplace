@@ -173,17 +173,40 @@ var Transaction = function() {
         //1. verify that exactly one user_accept_request bool is null, i.e transaction hasn't already been started
         //2. verify that one of the user_accept_requests is null and set that to true
         acceptRequest: function (user_id) {
-            //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
-            //we must use the call function in order to pass 'this' object to private function verifyTransactionNotActivated
-            verifyTransactionNotActivatedThenSetAcceptRequest.call(this, user_id, true)
+            if(this.active == true) {
+                //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
+                //we must use the call function in order to pass 'this' object to private function verifyTransactionNotActivated
+                verifyTransactionNotActivatedThenSetAcceptRequest.call(this, user_id, true)
+            }
         },
-
         //throws error if transaction has already been accepted or declined
         declineRequest: function (user_id) {
-            //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
-            //we must use the call function in order to pass 'this' object to private function verifyTransactionNotActivated
-            verifyTransactionNotActivatedThenSetAcceptRequest.call(this, user_id, false);
-            this.active = false;
+            if(this.active == true){
+                //TODO: check whether user_id is of buyer or of seller, then set the appropriate accept_request value
+                //we must use the call function in order to pass 'this' object to private function verifyTransactionNotActivated
+                verifyTransactionNotActivatedThenSetAcceptRequest.call(this, user_id, false);
+                this.active = false;
+            }
+
+        },
+        withdrawRequest: function(user_id){
+            if(this.active == true){
+                if(this.buy){
+                    if(user_id.toString() == this.seller_user_id.toString()){
+                        this.seller_accepted_request = false;
+                    }
+                    else{
+                        throw "Cannot withdraw a transaction request that you did not make!"
+                    }
+                }
+                else{
+                    if(user_id.toString() == this.buyer_user_id.toString()){
+                        this.seller_accepted_request = false;
+                    }
+                    this.buyer_accepted_request = false;
+                }
+                this.active = false;
+            }
         },
 
         confirm: function (user_id) {
