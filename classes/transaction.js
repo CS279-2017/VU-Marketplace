@@ -191,21 +191,32 @@ var Transaction = function() {
         },
         withdrawRequest: function(user_id){
             if(this.active == true){
-                if(this.buy){
-                    if(user_id.toString() == this.seller_user_id.toString()){
-                        this.seller_accepted_request = false;
+                if(this.buyer_accepted_request == null || this.seller_accepted_request == null){
+                    if(this.buy){
+                        if(user_id.toString() == this.seller_user_id.toString()){
+                            this.seller_accepted_request = false;
+                            this.active = false;
+                        }
+                        else{
+                            throw "Cannot withdraw a transaction request that you did not make!"
+                        }
                     }
                     else{
-                        throw "Cannot withdraw a transaction request that you did not make!"
+                        if(user_id.toString() == this.buyer_user_id.toString()){
+                            this.buyer_accepted_request = false;
+                            this.active = false;
+                        }
+                        else{
+                            throw "Cannot withdraw a transaction request that you did not make!"
+                        }
                     }
                 }
                 else{
-                    if(user_id.toString() == this.buyer_user_id.toString()){
-                        this.seller_accepted_request = false;
-                    }
-                    this.buyer_accepted_request = false;
+                    throw "This transaction has already been started, cannot be withdrawn"
                 }
-                this.active = false;
+            }
+            else{
+                throw "This transaction is not active, cannot be withdrawn";
             }
         },
 

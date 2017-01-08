@@ -1196,8 +1196,7 @@ io.on('connection', function (socket) {
             socket.emit("get_user_response", {data: null, error: e});
             console.log(e);
         }
-        getUserInfo(user_id, callback, error_handler);
-    });
+        getUserInfo(user_id, callback, erwith
 
     socket.on('get_profile_picture', function(json){
         var user_id = json.user_id;
