@@ -469,45 +469,18 @@ io.on('connection', function (socket) {
                 // var this_user_socket = io.sockets.connected[this_user.socket_id];
                 // setTimeout(function(){
                 //     declineTransactionRequest(transaction.getOtherUserId(user_id), password, transaction._id, function(){
-                //        
+                //
                 //     }, error_handler)
                 // }, 60000)
-                var user = active_users.get(user_id);
-                var user_socket = io.sockets.connected[user.socket_id];
-                var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                var other_user_socket = io.sockets.connected[other_user.socket_id];
-                var event = new Event("transaction_request_made", {
+                var alert = user.first_name + " " + user.last_name + " is requesting to " +
+                    (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + transaction.price;
+                var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE", payload: {transaction_id: transaction._id.toString()}};
+
+                emitEvent("transaction_request_made", {
                     transaction: transaction
-                }, null)
+                }, [user_id, transaction.getOtherUserId(user_id)], notification_info)
                 //emit the event to both users, causes them to make cells
-                if(other_user_socket != undefined) {
-                    other_user_socket.emit(event.name , event.message);
-                }
-                else{
-                    if(other_user != undefined) {
-                        // other_user.enqueueEvent(event);
-                        var alert = user.first_name + " " + user.last_name + " is requesting to " +
-                            (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + transaction.price;
-                        notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE", payload: {transaction_id: transaction._id.toString()}};
-                        sendNotification(notification_info, other_user.device_token);
-                    }
-                }
-                if(user_socket != undefined) {
-                    user_socket.emit(event.name , event.message);
-                }
-                else{
-                    if(user != undefined) {
-                        user.enqueueEvent(event);
-                    }
-                }
-                // if(this_user_socket != undefined) {
-                //     this_user_socket.emit(event.name , event.message);
-                // }
-                // else{
-                //     if(other_user != undefined) {
-                //         other_user.enqueueEvent(event);
-                //     }
-                // }
+
             }catch(e){
                 error_handler(e.message)
                 return;
