@@ -12,8 +12,8 @@ const secret = 'vandylistisawesome';
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-var url = 'mongodb://localhost:27017/mealplanappserver';
-// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+// var url = 'mongodb://localhost:27017/mealplanappserver';
+var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -98,6 +98,8 @@ var port = process.env.PORT || 3000;
 var max_listings = 8;
 var max_transactions = 24;
 var max_pictures_per_listing = 5;
+
+var max_picture_size = 300000
 
 var host = "";
 
@@ -836,15 +838,19 @@ io.on('connection', function (socket) {
                     if(other_user.location != undefined && user.location != undefined){
                         if(user.location.getDistanceFrom(other_user.location) <= 200 && transaction.notified != true){
                             transaction.notified = true;
-                            var alert = user.first_name + " " + user.last_name + " is nearby!"
-                            var notification_info = {alert: alert, category: "TRANSACTION_OTHER_USER_NEARBY", payload: {transaction_id: transaction._id.toString()}};
-                            sendNotification(notification_info, other_user.device_token)
-                            var alert = other_user.first_name + " " + other_user.last_name + " is nearby!"
-                            var notification_info = {alert: alert, category: "TRANSACTION_OTHER_USER_NEARBY", payload: {transaction_id: transaction._id.toString()}};
-                            sendNotification(notification_info, user.device_token)
+                            updateTransactionInDatabase(transaction, function(){
+                                console.log(user.first_name + " " + user.last_name + " and " + other_user.first_name + " " + other_user.last_name + " are nearby! They are " + user.location.getDistanceFrom(other_user.location) + "m apart");
+                                var alert = user.first_name + " " + user.last_name + " is nearby!"
+                                var notification_info = {alert: alert, category: "TRANSACTION_OTHER_USER_NEARBY", payload: {transaction_id: transaction._id.toString()}};
+                                sendNotification(notification_info, other_user.device_token)
+                                var alert = other_user.first_name + " " + other_user.last_name + " is nearby!"
+                                var notification_info = {alert: alert, category: "TRANSACTION_OTHER_USER_NEARBY", payload: {transaction_id: transaction._id.toString()}};
+                                sendNotification(notification_info, user.device_token)
+                            }, error_handler)
                         }
                         else if(transaction.notified == true && user.location.getDistanceFrom(other_user.location) >= 300){
                             transaction.notified = false;
+                            updateTransactionInDatabase(transaction, function(){}, error_handler);
                         }
                     }
                     // var other_user_socket = io.sockets.connected[other_user.socket_id];
@@ -1075,11 +1081,14 @@ io.on('connection', function (socket) {
         function callback(all_active_listings){
             //send all_active_listings back to client
             socket.emit("get_all_active_listings_response", {data: {all_active_listings: all_active_listings}, error: null});
+            var end = new Date().getTime()
+            console.log("getAllActiveListings() time taken : " + (end - start));
         }
         function error_handler(e){
             socket.emit("get_all_active_listings_response", {data: null, error: e});
             console.log(e);
         }
+        var start = new Date().getTime()
         getAllActiveListings(user_id, password, device_token, callback, error_handler)
     });
 
@@ -1091,11 +1100,14 @@ io.on('connection', function (socket) {
         function callback(users_active_transactions){
             //send all_active_listings back to client
             socket.emit("get_users_active_transactions_response", {data: {users_active_transactions: users_active_transactions}, error: null});
+            var end = new Date().getTime();
+            console.log("getAllActiveTransactions() time taken : " + (end - start));
         }
         function error_handler(e){
             socket.emit("get_users_active_transactions_response", {data: null, error: e});
             console.log(e);
         }
+        var start = new Date().getTime();
         getUsersActiveTransactions(user_id, password, device_token, callback, error_handler)
     });
 
@@ -1143,9 +1155,9 @@ io.on('connection', function (socket) {
 
         authenticate(user_id, password, device_token, function(user){
             function callback(transaction){
-                console.log("found transaction:")
-                console.log(transaction);
-                console.log(user)
+                // console.log("found transaction:")
+                // console.log(transaction);
+                // console.log(user)
 
                 //send all_active_listings back to client
                 if((user._id.toString() == transaction.buyer_user_id.toString()) || (user._id.toString() == transaction.seller_user_id.toString())){
@@ -1191,12 +1203,14 @@ io.on('connection', function (socket) {
         function callback(profile_picture){
             socket.emit("get_profile_picture_response", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
             socket.emit("profile_picture_gotten", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
+            var end = new Date().getTime();
+            console.log("getProfilePicture time taken: " + (end - start));
         }
         function error_handler(e){
             socket.emit("get_profile_picture_response", {data: null, error: e});
             console.log(e);
         }
-        var start0 = new Date().getTime();
+        var start = new Date().getTime();
         getProfilePicture(user_id, callback, error_handler);
     })
 
@@ -2203,66 +2217,89 @@ function updateVenmoId(user_id, venmo_id, callback, error_handler) {
 }
 
 function updateProfilePicture(user_id, profile_picture, callback, error_handler){
-    var collection_profile_pictures = database.collection('profile_pictures');
-    collection_profile_pictures.update({user_id: user_id}, {user_id: user_id, profile_picture: profile_picture}, {upsert: true}, function (err, count, status) {
-        if(err){error_handler(err.message);}
-        else{
-            if(callback != undefined && callback != null){callback();}
-        }
-    });
+    console.log("profile_picture length " + profile_picture.length)
+    if(profile_picture.length <= max_picture_size){
+        var collection_profile_pictures = database.collection('profile_pictures');
+        collection_profile_pictures.update({user_id: user_id}, {user_id: user_id, profile_picture: profile_picture}, {upsert: true}, function (err, count, status) {
+            if(err){error_handler(err.message);}
+            else{
+                if(callback != undefined && callback != null){callback();}
+            }
+        });
+    }
+    else{
+        console.log("picture size: " + profile_picture.length)
+        error_handler("Picture Size Too Large!")
+    }
+
 }
 
 function updatePicture(picture_id, user_id, picture, callback, error_handler){
-    var collection_pictures = database.collection('pictures');
-    collection_pictures.find({_id: toMongoIdObject(picture_id)}).toArray(function(err, docs) {
-        if(err){
-            error_handler(err);
-        }
-        else {
-            if (docs.length > 0) {
-               if(docs[0].user_id == user_id){
-                   collection_pictures.update({_id: toMongoIdObject(picture_id)}, {user_id: user_id, picture: picture}, function (err, count, status) {
-                       if(err){error_handler(err.message);}
-                       else{
-                           if(callback != undefined && callback != null){callback();}
-                       }
-                   });
-               }
-                else{
-                   error_handler("This picture doesn't belong to you! Can't update!")
-               }
+    console.log("picture size: " + picture.length)
+    if(picture.length <= max_picture_size){
+        var collection_pictures = database.collection('pictures');
+        collection_pictures.find({_id: toMongoIdObject(picture_id)}).toArray(function(err, docs) {
+            if(err){
+                error_handler(err);
             }
             else {
-                error_handler("picture with id not found");
+                if (docs.length > 0) {
+                    if(docs[0].user_id == user_id){
+                        collection_pictures.update({_id: toMongoIdObject(picture_id)}, {user_id: user_id, picture: picture}, function (err, count, status) {
+                            if(err){error_handler(err.message);}
+                            else{
+                                if(callback != undefined && callback != null){callback();}
+                            }
+                        });
+                    }
+                    else{
+                        error_handler("This picture doesn't belong to you! Can't update!")
+                    }
+                }
+                else {
+                    error_handler("picture with id not found");
 
+                }
             }
-        }
-    });
+        });
+    }
+    else{
+        error_handler("Picture Size Too Large!")
+    }
+
 }
 
 function addPictureToListing(listing_id, user_id, picture, callback, error_handler){
-    var listing = active_listings.get(listing_id);
-    if(listing.user_id != user_id){
-        error_handler("You can only add pictures to your own listing!");
-        return;
-    }
-    if(listing != undefined){
-        if(listing.picture_ids != undefined && listing.picture_ids.length < max_pictures_per_listing){
-            var collection_pictures = database.collection('pictures');
-            collection_pictures.insert({picture: picture, user_id: toMongoIdObject(user_id)}, function(err,docsInserted){
-                if(err){error_handler(err.message); return;}
+    console.log("picture size: " + picture.length)
 
-                console.log(docsInserted);
-                listing.addPictureId(docsInserted.ops[0]._id);
-                updateListingInDatabase(listing, callback, error_handler);
-            });
+    if(picture.length <= max_picture_size){
+        var listing = active_listings.get(listing_id);
+        if(listing.user_id != user_id){
+            error_handler("You can only add pictures to your own listing!");
+            return;
+        }
+        if(listing != undefined){
+            if(listing.picture_ids != undefined && listing.picture_ids.length < max_pictures_per_listing){
+                var collection_pictures = database.collection('pictures');
+                collection_pictures.insert({picture: picture, user_id: toMongoIdObject(user_id)}, function(err,docsInserted){
+                    if(err){error_handler(err.message); return;}
+
+                    console.log(docsInserted);
+                    listing.addPictureId(docsInserted.ops[0]._id);
+                    updateListingInDatabase(listing, callback, error_handler);
+                });
+            }
+            else{
+                error_handler("You can only add up to " + max_pictures_per_listing + " pictures per listing");
+            }
         }
         else{
-            error_handler("You can only add up to " + max_pictures_per_listing + " pictures per listing");
+            error_handler("invalid listing_id");
         }
     }
     else{
-        error_handler("invalid listing_id");
+        console.log("picture size: " + picture.length)
+        error_handler("Picture Size Too Large!")
     }
 }
 

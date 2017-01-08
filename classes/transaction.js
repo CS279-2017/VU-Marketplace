@@ -144,6 +144,10 @@ var Transaction = function() {
             if(transaction.start_time != undefined) {
                 this.start_time = transaction.start_time;
             }
+
+            if(transaction.notified != undefined){
+                this.notified = transaction.notified; 
+            }
             
             
             this.active = transaction.active;
