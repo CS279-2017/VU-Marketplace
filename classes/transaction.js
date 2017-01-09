@@ -137,18 +137,28 @@ var Transaction = function() {
             this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
             this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
 
+            //amount offered in a transaction request, may differ from price
             if(transaction.offer != undefined){
                 this.offer = transaction.offer;
             }
 
+            //time when a transaction was terminated/confirmed
             if(transaction.end_time != undefined){
                 this.end_time = transaction.end_time;
             }
-            //backwards capatability with transaction database entries without start_time
+
+            //time when a transaction was accepted
             if(transaction.start_time != undefined) {
                 this.start_time = transaction.start_time;
             }
 
+            //expiration time is when a transaction_request expires, transactions never expire and must be
+            //terminated or confirmed
+            if(transaction.expiration_time != undefined){
+                this.expiration_time = transaction.expiration_time;
+            }
+
+            //denotes whether a "user is nearby" notification has been sent out to both users in a transaction
             if(transaction.notified != undefined){
                 this.notified = transaction.notified; 
             }
