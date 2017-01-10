@@ -2708,7 +2708,7 @@ function validateEmail(email_address) {
 function validateVanderbiltEmail(email_address){
     var nameString = email_address.substring(0, email_address.indexOf("@"));
     var nameStringSplit = nameString.split(".");
-    return nameStringSplit.length >= 2 && nameStringSplit.length <= 3 && /@vanderbilt.edu\s*$/.test(email_address);
+    return nameStringSplit.length >= 2 && nameStringSplit.length <= 4 && /@vanderbilt.edu\s*$/.test(email_address);
 }
 
 function validateUsername(username){
