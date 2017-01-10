@@ -1628,6 +1628,7 @@ function login(email_address, password, device_token, callback, error_handler){
             user.initFromDatabase(docs[0]);
             user.active = true;
             user.device_token = device_token
+            user.last_login_time = new Date().getTime();
             updateUserInDatabase(user, function(){
                 try {
                     //if not already logged in then add user to active_users

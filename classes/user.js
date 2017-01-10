@@ -45,27 +45,18 @@ User.prototype = {
         this.location = user.location;
         this.venmo_id = user.venmo_id;
         this.socket_id = null;
-        // this.current_listings_ids = user.current_listings_ids;
-        // this.previous_listings_ids = user.previous_listings_ids;
-        // this.current_transactions_ids = user.current_transactions_ids
-        
         this.active = user.active;
-        // this.previous_transactions_ids = user.previous_transactions_ids;
-        
-        //initializes the event queue using data passed from database
-        if(user.event_queue != undefined) {
-            for (var i = 0; i < user.event_queue.count; i++) {
-                var event = user.event_queue[i];
-                user.event_queue[i] = new Event(event.name, event.message.data, event.message.error);
-            }
-        }
+
         if(user.device_token != undefined){
             this.device_token = user.device_token;
         }
-        this.event_queue = user.event_queue;
         if(user.creation_time != undefined){
             this.creation_time = user.creation_time;
         }
+        if(user.last_login_time != undefined){
+            this.last_login_time = user.last_login_time;
+        }
+
     },
     addCurrentListingId: function(current_listing_id){
         // this.current_listings_ids.push(current_listing_id.toString());
