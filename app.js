@@ -168,14 +168,14 @@ app.get('/', function (req, res) {
 //TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
 io.on('connection', function (socket) {
     
-    active_users.getUserBySocketId(socket.id, function(user){
-        if(user != undefined){
-            console.log(user.first_name + " " + user.last_name + " has connected");
-        }
-        else{
-            console.log("A user has connected!");
-        }
-    });
+    // active_users.getUserBySocketId(socket.id, function(user){
+    //     if(user != undefined){
+    //         console.log(user.first_name + " " + user.last_name + " has connected");
+    //     }
+    //     else{
+    //         console.log("A user has connected!");
+    //     }
+    // });
 
     // socket.emit('event', { data: 'server data' });
     //TODO: should active_listings and transactions be terminated? no unless terminated by other party
@@ -366,7 +366,7 @@ io.on('connection', function (socket) {
         var price = json.price;
         var buy = json.buy;
         function callback(listing){
-            var user = active_users.get(user_id, function(user){
+            active_users.get(user_id, function(user){
                 var buy_or_sell = listing.buy? "buy" : "sell";
                 console.log("Listing was made by " + user.first_name + " " + user.last_name + " to " + buy_or_sell + " '" + listing.title + "' for $" + listing.price);
                 socket.emit("make_listing_response", {data: {listing: listing}, error: null});
@@ -2424,15 +2424,15 @@ function getAllActiveListings(user_id, password, device_token, callback, error_h
 function getUsersActiveTransactions(user_id, password, device_token, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
         getUser(user_id, function(user){
-            if(user.password == hashPassword(password)){
+            // if(user.password == hashPassword(password)){
                 active_transactions.getAllForUser(user._id, function(users_active_transactions){
+                    console.log(users_active_transactions);
                     callback(users_active_transactions);
-
                 });
-            }
-            else {
-                error_handler("getUserActiveTransactions: invalid user_id/password")
-            }
+            // }
+            // else {
+            //     error_handler("getUserActiveTransactions: invalid user_id/password")
+            // }
         }, error_handler)
     }, error_handler);
 
@@ -2708,25 +2708,27 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
 function emitEvent(event_name, data, user_id_arr, notification_info){
     for(var i=0; i<user_id_arr.length; i++){
         // var user = active_users.get(user_id_arr[i]);
-        var user = getUser(user_id_arr[i]);
-        var user_socket;
-        if(user != undefined){
-            user_socket = io.sockets.connected[user.socket_id];
-        }
-        var event = new Event(event_name, data, null);
-        // var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
+        getUser(user_id_arr[i], function(user){
+            var user_socket;
+            if(user != undefined){
+                user_socket = io.sockets.connected[user.socket_id];
+            }
+            var event = new Event(event_name, data, null);
+            // var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
 
-        if(user_socket != undefined) {
-            user_socket.emit(event.name , event.message);
-        }
-        else{
-            if(user != undefined) {
-                // user.enqueueEvent(event);
-                if(notification_info != undefined){
-                    sendNotification(notification_info, user.device_token);
+            if(user_socket != undefined) {
+                user_socket.emit(event.name , event.message);
+            }
+            else{
+                if(user != undefined) {
+                    // user.enqueueEvent(event);
+                    if(notification_info != undefined){
+                        sendNotification(notification_info, user.device_token);
+                    }
                 }
             }
-        }
+        });
+
 
     }
 }

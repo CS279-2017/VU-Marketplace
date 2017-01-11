@@ -103,7 +103,7 @@ ActiveTransactions.prototype = {
     },
     get: function (transaction_id, callback){
         // return this.transactions_id_to_transaction_map[transaction_id];
-        this.collection_transactions.find({_id: toMongoIdObject(_id)}).toArray(function(err, docs) {
+        this.collection_transactions.find({_id: toMongoIdObject(transaction_id)}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 //checks that verification_code is valid and email hasn't already been registered
                 var transaction = new Transaction();
@@ -121,7 +121,8 @@ ActiveTransactions.prototype = {
     //gets all transactions involving a user with a given user_id
     //TODO: find a better way to perform these searching functions
     getAllForUser: function(user_id, callback){
-        this.collection_transactions.find({user_id: user_id}).toArray(function(err, docs) {
+        {$or: [{expires: {$gte: new Date()}}, {expires: null}]}
+        this.collection_transactions.find({ $and: [{active: true}, {$or: [{buyer_user_id: user_id.toString()}, {seller_user_id: user_id.toString()}]}]}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_transactions = [];
                 for(var i = 0; i < docs.length; i++){

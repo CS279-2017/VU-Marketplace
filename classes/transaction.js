@@ -142,6 +142,11 @@ var Transaction = function() {
             
             this.picture_ids = transaction.picture_ids;
 
+            // if(transaction.owner_user_id){
+            //     this.owner_user_id = transaction.owner_user_id;
+            // }
+
+
             //amount offered in a transaction request, may differ from price
             if(transaction.offer != undefined){
                 this.offer = transaction.offer;
