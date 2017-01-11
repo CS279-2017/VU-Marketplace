@@ -10,6 +10,7 @@ var Notification = function() {
         this.user_id = user_id;
         this.transaction_id = transaction_id;
         this.message = message;
+        this.active = true;
     }
 
     Notification.prototype = {

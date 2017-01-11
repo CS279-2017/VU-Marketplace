@@ -16,10 +16,6 @@ Location.prototype = {
             this.longitude = location.longitude;
             this.last_update_time = location.last_update_time;
         }
-        // else{
-        //     // this.latitude = null;
-        //     // this.longitude = null;
-        // }
 
     },
     update: function(latitude, longitude){

@@ -576,35 +576,35 @@ io.on('connection', function (socket) {
                             emitEvent("transaction_started", {transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
                         }
                         var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
-                        if(buyer_socket == undefined) {
-                            active_users.get(transaction.getOtherUserId(user_id), function(other_user){
-                                var other_user_name = other_user.first_name + " " + other_user.last_name;
-                                var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
-                                var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
-                                    + "'" + transaction.title + "'";
-                                notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
-                                if(buyer != undefined) {
-                                    sendNotification(notification_info, buyer.device_token);
-                                }
-                            });
-
-                        }
-                        if(seller_socket == undefined) {
-                            active_users.get(transaction.getOtherUserId(user_id), function(other_user){
-                                var other_user_name = other_user.first_name + " " + other_user.last_name;
-                                var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
-                                var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
-                                    + "'" + transaction.title + "'";
-                                // notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
-                                notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
-
-                                if(seller != undefined){
-                                    sendNotification(notification_info, seller.device_token);
-                                }
-                                // seller.enqueueEvent(event);
-                            });
-
-                        }
+                        // if(buyer_socket == undefined) {
+                        //     active_users.get(transaction.getOtherUserId(user_id), function(other_user){
+                        //         var other_user_name = other_user.first_name + " " + other_user.last_name;
+                        //         var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
+                        //         var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
+                        //             + "'" + transaction.title + "'";
+                        //         notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
+                        //         if(buyer != undefined) {
+                        //             sendNotification(notification_info, buyer.device_token, user_id, transaction,_id);
+                        //         }
+                        //     });
+                        //
+                        // }
+                        // if(seller_socket == undefined) {
+                        //     active_users.get(transaction.getOtherUserId(user_id), function(other_user){
+                        //         var other_user_name = other_user.first_name + " " + other_user.last_name;
+                        //         var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
+                        //         var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
+                        //             + "'" + transaction.title + "'";
+                        //         // notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
+                        //         notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
+                        //
+                        //         if(seller != undefined){
+                        //             sendNotification(notification_info, seller.device_token, user_id, transaction._id);
+                        //         }
+                        //         // seller.enqueueEvent(event);
+                        //     });
+                        //
+                        // }
                     });
 
                 });
@@ -782,9 +782,9 @@ io.on('connection', function (socket) {
                    active_users.get(transaction.getOtherUserId(user_id), function(other_user){
                        var alert = user.first_name + " " + user.last_name + " has terminated the transaction '" + transaction.title + "'";
                        var notification_info = {alert: alert, category: "TRANSACTION_TERMINATED"};
-                       if(other_user != undefined){
-                           sendNotification(notification_info, other_user.device_token);
-                       }
+                       // if(other_user != undefined){
+                       //     sendNotification(notification_info, other_user.device_token, );
+                       // }
                        emitEvent("transaction_terminated", {user_id: user_id, transaction_id: transaction_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
                    });
 
@@ -1056,7 +1056,7 @@ io.on('connection', function (socket) {
                             var alert = user.first_name + " " + user.last_name + ": " + message_text;
                             var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction_id: transaction._id.toString()}};
                             if(other_user != undefined) {
-                                sendNotification(notification_info, other_user.device_token);
+                                sendNotification(notification_info, other_user.device_token, user._id, transaction._id);
                             }
                             // }
                             getUserInfo(user_id, function(user_info){
@@ -1130,6 +1130,47 @@ io.on('connection', function (socket) {
         }
         authenticate(user_id, password, device_token, function(user){
             getUsersPreviousTransactions(user_id, callback, error_handler)
+        }, error_handler);
+    });
+
+    socket.on('get_users_active_notifications', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var device_token = json.device_token
+        function callback(users_active_notification){
+            //send all_active_listings back to client
+
+            socket.emit("get_users_active_notifications_response", {data: {users_active_notifications: users_active_notification}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_users_active_notifications_response", {data: null, error: e});
+            console.log(e);
+        }
+        authenticate(user_id, password, device_token, function(user){
+            getUsersActiveNotifications(user_id, callback, error_handler)
+        }, error_handler);
+    });
+
+    socket.on('deactivate_notification', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var device_token = json.device_token
+        var notification_id = json.notification_id
+        function callback(users_previous_transactions){
+            //send all_active_listings back to client
+
+            socket.emit("get_users_previous_transactions_response", {data: {users_previous_transactions: users_previous_transactions}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_users_previous_transactions_response", {data: null, error: e});
+            console.log(e);
+        }
+        authenticate(user_id, password, device_token, function(user){
+            getNotification(notification_id, function(notification){
+                if(notification.user_id == user_id){
+                    deactivateNotification(notification_id, callback, error_handler)
+                }
+            }, function(error){console.log(error)})
         }, error_handler);
     });
     
@@ -2608,6 +2649,74 @@ function getPicture(picture_id, callback, error_handler){
     });
 }
 
+function getUsersActiveNotifications(user_id, callback, error_handler){
+    var collection = database.collection('notifications');
+    collection.find({user_id: toMongoIdObject(user_id), active: true}).toArray(function(err, docs) {
+        if(err){
+            error_handler(err);
+        }
+        else {
+            if (docs.length > 0) {
+                callback(docs);
+            }
+            else {
+
+            }
+        }
+    });
+}
+
+function getNotification(notification_id, callback, error_handler){
+    var collection = database.collection('notifications');
+    collection.find({_id: toMongoIdObject(notification_id)}).toArray(function(err, docs) {
+        if(err){
+            error_handler(err);
+        }
+        else {
+            if (docs.length > 0) {
+                callback(docs[0]);
+            }
+            else {
+
+            }
+        }
+    });
+}
+
+function addNotificationToDatabase(notification, callback, error_handler){
+    var collection = database.collection('notifications');
+    collection.insert(notification, function (err, result) {
+        if (err) {
+            error_handler(err);
+            return;
+        } else {
+            callback(notification);
+        }
+    });
+}
+
+function deactivateNotification(notification_id, callback, error_handler){
+    var collection = database.collection('notifications');
+    collection.find({_id: toMongoIdObject(notification_id), active: true}).toArray(function(err, docs) {
+        if(err){
+            error_handler(err);
+        }
+        else {
+            if (docs.length > 0) {
+                var notification = docs[0];
+                notification.active = false;
+                collection.update({_id: toMongoIdObject(notification_id)}, notification, function (err, result) {
+                    if (err) {
+                        error_handler(err)
+                        return;
+                    }
+                });
+            }
+        }
+    });
+
+}
+
 function updateTransactionInDatabase(transaction, callback, error_handler){
     var collection_transactions = database.collection('transactions');
     try {
@@ -2671,33 +2780,33 @@ function getActiveTransactionsFromDatabase(callback, error_handler){
 //**END Client->Server API methods**
 //**********************************
 
-function initExpiredListingGarbageCollector(interval_in_milliseconds){
-    setInterval(function() {
-        var expired_listings_arr = active_listings.getExpiredListings();
-        function error_handler(e){
-            console.log(e)
-        }
-        for(var i=0; i<expired_listings_arr.length; i++){
-            var listing = expired_listings_arr[i];
-            removeListing(listing._id, function(listing_id){
-                var alert = " Your listing '" + listing.title + "' has expired";
-                var notification_info = {alert: alert, category: "LISTING_EXPIRED"};
-                // var user = active_users.get(listing.user_id);
-                getUser(listing.user_id, function(user){
-                    if(user != undefined){
-                        sendNotification(notification_info, user.device_token);
-                    }
-                    io.emit("listing_removed", {data: {listing_id: listing_id}});
-                    getListing(listing_id, function(listing){
-                        getUserInfo(listing.user_id, function(user){
-                            console.log(user.first_name + " " + user.last_name + "'s listing '" + listing.title + "' was removed because it has expired");
-                        }, function(){})
-                    }, function(){})
-                }, error_handler)
-            }, error_handler);
-        }
-    }, interval_in_milliseconds);
-}
+// function initExpiredListingGarbageCollector(interval_in_milliseconds){
+//     setInterval(function() {
+//         var expired_listings_arr = active_listings.getExpiredListings();
+//         function error_handler(e){
+//             console.log(e)
+//         }
+//         for(var i=0; i<expired_listings_arr.length; i++){
+//             var listing = expired_listings_arr[i];
+//             removeListing(listing._id, function(listing_id){
+//                 var alert = " Your listing '" + listing.title + "' has expired";
+//                 var notification_info = {alert: alert, category: "LISTING_EXPIRED"};
+//                 // var user = active_users.get(listing.user_id);
+//                 getUser(listing.user_id, function(user){
+//                     if(user != undefined){
+//                         sendNotification(notification_info, user.device_token, );
+//                     }
+//                     io.emit("listing_removed", {data: {listing_id: listing_id}});
+//                     getListing(listing_id, function(listing){
+//                         getUserInfo(listing.user_id, function(user){
+//                             console.log(user.first_name + " " + user.last_name + "'s listing '" + listing.title + "' was removed because it has expired");
+//                         }, function(){})
+//                     }, function(){})
+//                 }, error_handler)
+//             }, error_handler);
+//         }
+//     }, interval_in_milliseconds);
+// }
 // function recoverUsername(email_address){
 //     //TODO: implement details below
 //     //query User database for user with the given email address
@@ -2724,7 +2833,7 @@ function emitEvent(event_name, data, user_id_arr, notification_info){
                 if(user != undefined) {
                     // user.enqueueEvent(event);
                     if(notification_info != undefined){
-                        sendNotification(notification_info, user.device_token);
+                        sendNotification(notification_info, user.device_token, data.user_id, data.transaction_id);
                     }
                 }
             }
@@ -2873,11 +2982,15 @@ function toMongoIdObject(id){
     return new require('mongodb').ObjectID(id.toString());
 }
 
-function sendNotification(notification_info, device_token){
+function sendNotification(notification_info, device_token, user_id, transaction_id){
     // Enter the device token from the Xcode console
+
     var deviceToken = device_token;
 
-    // Prepare a new notification
+    var notification_database_object = {message: notification_info.alert, transaction_id: transaction_id, user_id: user_id, active: true};
+
+
+// Prepare a new notification
     var notification = new apn.Notification();
     // Specify your iOS app's Bundle ID (accessible within the project editor)
     notification.topic = 'bowen.jin.mealplanappiOS';
@@ -2904,11 +3017,17 @@ function sendNotification(notification_info, device_token){
         notification.category = notification_info.category;
     }
     // Actually send the notification
-    apnProvider.send(notification, deviceToken).then(function(result) {
-        // Check the result for any failed devices
-        console.log(result);
-        console.log(device_token);
+
+    addNotificationToDatabase(notification_database_object, function(){
+        apnProvider.send(notification, deviceToken).then(function(result) {
+            // Check the result for any failed devices
+            console.log(result);
+            console.log(device_token);
+        });
+    }, function(error){
+        console.log(error)
     });
+
 }
 
 
