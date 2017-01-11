@@ -334,18 +334,20 @@ io.on('connection', function (socket) {
             socket.emit('authenticate_response', {data: null, error:e});
             console.log(e);
         }
-        active_users.get(user_id, function(user){
-            if(user != undefined && (device_token != user.device_token)){
-                //actually its a device_token but that client ios app has a case that handles this string message;
-                // console.log("entered device_token: " + device_token)
-                // console.log("current device_token: " + active_users.get(user_id).device_token);
-                error_handler("tried to authenticate an invalid user_id/password combination");
-            }
-            else {
-                // console.log("entered device_token: " + device_token);
-                authenticate(user_id, password, device_token, callback, error_handler);
-            }
-        });
+        if(active_users != undefined){
+            active_users.get(user_id, function(user){
+                if(user != undefined && (device_token != user.device_token)){
+                    //actually its a device_token but that client ios app has a case that handles this string message;
+                    // console.log("entered device_token: " + device_token)
+                    // console.log("current device_token: " + active_users.get(user_id).device_token);
+                    error_handler("tried to authenticate an invalid user_id/password combination");
+                }
+                else {
+                    // console.log("entered device_token: " + device_token);
+                    authenticate(user_id, password, device_token, callback, error_handler);
+                }
+            });
+        }
     });
 
 
@@ -821,51 +823,50 @@ io.on('connection', function (socket) {
             socket.emit("update_user_location_response", {data: {updated_location: updated_location}, error: null});
             //notify all users, or all users in the same transaction with user whose location was updated,
             active_users.get(user_id, function(user){
-                active_transactions.getAllForUser(user_id, function(users_active_transactions){
-                    for(var i=0; i<users_active_transactions.length; i++) {
-                        var transaction = users_active_transactions[i];
-                        var other_user_id = transaction.getOtherUserId(user_id);
-                        var other_user = active_users.get(other_user_id, function (other_user) {
-                            if (other_user != undefined && user != undefined) {
-                                if (other_user.location != undefined && user.location != undefined) {
-                                    if (user.location.getDistanceFrom(other_user.location) <= 200 && transaction.notified != true) {
-                                        transaction.notified = true;
-                                        updateTransactionInDatabase(transaction, function () {
-                                            console.log(user.first_name + " " + user.last_name + " and " + other_user.first_name + " " + other_user.last_name + " are nearby! They are " + user.location.getDistanceFrom(other_user.location) + "m apart");
-                                            var alert = user.first_name + " " + user.last_name + " is nearby!"
-                                            var notification_info = {
-                                                alert: alert,
-                                                category: "TRANSACTION_OTHER_USER_NEARBY",
-                                                payload: {transaction_id: transaction._id.toString()}
-                                            };
-                                            sendNotification(notification_info, other_user.device_token)
-                                            var alert = other_user.first_name + " " + other_user.last_name + " is nearby!"
-                                            var notification_info = {
-                                                alert: alert,
-                                                category: "TRANSACTION_OTHER_USER_NEARBY",
-                                                payload: {transaction_id: transaction._id.toString()}
-                                            };
-                                            sendNotification(notification_info, user.device_token)
-                                        }, error_handler)
-                                    }
-                                    else if (transaction.notified == true && user.location.getDistanceFrom(other_user.location) >= 300) {
-                                        transaction.notified = false;
-                                        updateTransactionInDatabase(transaction, function () {
-                                        }, error_handler);
-                                    }
-                                }
-                                // var other_user_socket = io.sockets.connected[other_user.socket_id];
-                            }
-                        });
-
-                        io.emit("user_location_updated", {
-                            data: {
-                                user_id: user._id.toString(),
-                                transaction_id: null,
-                                updated_location: updated_location
-                            }, error: null
-                        });
-                    }
+                // active_transactions.getAllForUser(user_id, function(users_active_transactions){
+                //     for(var i=0; i<users_active_transactions.length; i++) {
+                //         var transaction = users_active_transactions[i];
+                //         var other_user_id = transaction.getOtherUserId(user_id);
+                //         var other_user = active_users.get(other_user_id, function (other_user) {
+                //             if (other_user != undefined && user != undefined) {
+                //                 if (other_user.location != undefined && user.location != undefined) {
+                //                     if (user.location.getDistanceFrom(other_user.location) <= 200 && transaction.notified != true) {
+                //                         transaction.notified = true;
+                //                         updateTransactionInDatabase(transaction, function () {
+                //                             console.log(user.first_name + " " + user.last_name + " and " + other_user.first_name + " " + other_user.last_name + " are nearby! They are " + user.location.getDistanceFrom(other_user.location) + "m apart");
+                //                             var alert = user.first_name + " " + user.last_name + " is nearby!"
+                //                             var notification_info = {
+                //                                 alert: alert,
+                //                                 category: "TRANSACTION_OTHER_USER_NEARBY",
+                //                                 payload: {transaction_id: transaction._id.toString()}
+                //                             };
+                //                             sendNotification(notification_info, other_user.device_token)
+                //                             var alert = other_user.first_name + " " + other_user.last_name + " is nearby!"
+                //                             var notification_info = {
+                //                                 alert: alert,
+                //                                 category: "TRANSACTION_OTHER_USER_NEARBY",
+                //                                 payload: {transaction_id: transaction._id.toString()}
+                //                             };
+                //                             sendNotification(notification_info, user.device_token)
+                //                         }, error_handler)
+                //                     }
+                //                     else if (transaction.notified == true && user.location.getDistanceFrom(other_user.location) >= 300) {
+                //                         transaction.notified = false;
+                //                         updateTransactionInDatabase(transaction, function () {
+                //                         }, error_handler);
+                //                     }
+                //                 }
+                //                 // var other_user_socket = io.sockets.connected[other_user.socket_id];
+                //             }
+                //         });
+                //     }
+                // });
+                io.emit("user_location_updated", {
+                    data: {
+                        user_id: user._id.toString(),
+                        transaction_id: null,
+                        updated_location: updated_location
+                    }, error: null
                 });
 
             });

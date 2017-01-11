@@ -10,6 +10,18 @@ function Location(latitude,longitude){
 
 Location.prototype = {
     constructor: Location,
+    initFromDatabase: function(location){
+        if(location != null && location != undefined){
+            this.latitude = location.latitude;
+            this.longitude = location.longitude;
+            this.last_update_time = location.last_update_time;
+        }
+        // else{
+        //     // this.latitude = null;
+        //     // this.longitude = null;
+        // }
+
+    },
     update: function(latitude, longitude){
         this.latitude = latitude;
         this.longitude = longitude;

@@ -1,5 +1,8 @@
 module.exports = User;
 
+var Location = require("./location.js")
+
+
 //User Database Schema:
 //we use all_listing
 //{_id, username, password, email_address, venmo_id, current_listing_ids, previous_listing_ids, previous_transaction_ids, all_transaction_ids, location}
@@ -44,7 +47,8 @@ User.prototype = {
         this.password = user.password;
         this.email_address = user.email_address;
         this.device_id = user.device_id;
-        this.location = user.location;
+        this.location = new Location();
+        this.location.initFromDatabase(user.location);
         this.venmo_id = user.venmo_id;
         this.socket_id = null;
         this.active = user.active;
