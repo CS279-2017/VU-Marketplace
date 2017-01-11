@@ -28,6 +28,9 @@ var UserInfo = require("./classes/user_info.js")
 var ListingInfo = require("./classes/listing_info.js")
 var Event = require("./classes/event.js");
 
+var Notification = require("./classes/notification.js");
+
+
 
 var ActiveUsers = require("./classes/active_users.js");
 var ActiveListings = require("./classes/active_listings.js");
@@ -60,7 +63,6 @@ exports.getActiveTransactions = getActiveTransactions;
 
 exports.getUserInfo = getUserInfo;
 exports.getListing = getListing;
-
 
 // create reusable transporter object using the default SMTP transport
 var transporter = nodemailer.createTransport({
@@ -125,7 +127,8 @@ server.listen(port,function () {
             return;
         }
         database = db;
-        
+        exports.database = database;
+
         //restore all active_listings and active_transactions
         getActiveListingsFromDatabase(function(listings){
             active_listings.initFromDatabase(listings);
@@ -148,7 +151,7 @@ server.listen(port,function () {
     });
 
     //remove all expired active_listings once a minute
-    initExpiredListingGarbageCollector(1000);
+    // initExpiredListingGarbageCollector(1000);
 });
 
 app.get('/', function (req, res) {
@@ -165,13 +168,16 @@ app.get('/', function (req, res) {
 
 //TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
 io.on('connection', function (socket) {
-    var user = active_users.getUserBySocketId(socket.id);
-    if(user != undefined){
-        console.log(user.first_name + " " + user.last_name + " has connected");
-    }
-    else{
-        console.log("A user has connected!");
-    }
+    
+    active_users.getUserBySocketId(socket.id, function(user){
+        if(user != undefined){
+            console.log(user.first_name + " " + user.last_name + " has connected");
+        }
+        else{
+            console.log("A user has connected!");
+        }
+    });
+
     // socket.emit('event', { data: 'server data' });
     //TODO: should active_listings and transactions be terminated? no unless terminated by other party
     //TODO: should user be logged out when disconnected? maybe
@@ -181,17 +187,18 @@ io.on('connection', function (socket) {
         //TODO: record that the user is disconnected
         //TODO: start sending push notifications rather than socket events for import events like
         //TODO: transaction requests and listing expirations and transaction accept or decline, tranaction terminations or confirmations
-        var user = active_users.getUserBySocketId(socket.id);
-        if(user != undefined){
-            console.log(user.first_name + " " + user.last_name + " has disconnected");
-        }
-        else{
-            console.log("A user has disconnected!");
-        }
-        var error_handler = function (e) {
-            console.log(e);
-            return;
-        }
+        active_users.getUserBySocketId(socket.id, function(user){
+            if(user != undefined){
+                console.log(user.first_name + " " + user.last_name + " has disconnected");
+            }
+            else{
+                console.log("A user has disconnected!");
+            }
+            var error_handler = function (e) {
+                console.log(e);
+                return;
+            }
+        });
     });
 
     socket.on('register_email_address', function(json) {
@@ -268,12 +275,15 @@ io.on('connection', function (socket) {
             //notify necessary clients that a user has logged is
             user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
             user.device_token = device_token;
-            active_users.get(user._id).device_token = device_token;
-            console.log("device_token: " + device_token);
             updateUserInDatabase(user, function(){
                 console.log("new device token: " + user.device_token + " for " + user.first_name + " " + user.last_name);
                 socket.emit("login_response", {data: {user_id: user._id}, error: null});
             }, error_handler)
+            // active_users.get(user._id, function(user){
+            //     user.device_token = device_token;
+            //     console.log("device_token: " + device_token);
+            //
+            // })
             // console.log("new device token: " + device_token + " for " + user.first_name + " " + user.last_name);
 
         };
@@ -325,16 +335,18 @@ io.on('connection', function (socket) {
             socket.emit('authenticate_response', {data: null, error:e});
             console.log(e);
         }
-        if(active_users.get(user_id) != undefined && (device_token != active_users.get(user_id).device_token)){
-            //actually its a device_token but that client ios app has a case that handles this string message;
-            // console.log("entered device_token: " + device_token)
-            // console.log("current device_token: " + active_users.get(user_id).device_token);
-            error_handler("tried to authenticate an invalid user_id/password combination");
-        }
-        else {
-            // console.log("entered device_token: " + device_token);
-            authenticate(user_id, password, device_token, callback, error_handler);
-        }
+        active_users.get(user_id, function(user){
+            if(user != undefined && (device_token != user.device_token)){
+                //actually its a device_token but that client ios app has a case that handles this string message;
+                // console.log("entered device_token: " + device_token)
+                // console.log("current device_token: " + active_users.get(user_id).device_token);
+                error_handler("tried to authenticate an invalid user_id/password combination");
+            }
+            else {
+                // console.log("entered device_token: " + device_token);
+                authenticate(user_id, password, device_token, callback, error_handler);
+            }
+        });
     });
 
 
@@ -355,12 +367,13 @@ io.on('connection', function (socket) {
         var price = json.price;
         var buy = json.buy;
         function callback(listing){
-            var user = active_users.get(user_id);
-            var buy_or_sell = listing.buy? "buy" : "sell";
-            console.log("Listing was made by " + user.first_name + " " + user.last_name + " to " + buy_or_sell + " '" + listing.title + "' for $" + listing.price);
-            socket.emit("make_listing_response", {data: {listing: listing}, error: null});
-            //emit event to all users that a new listing has been made
-            io.emit("listing_made", {data: {listing: listing}});
+            var user = active_users.get(user_id, function(user){
+                var buy_or_sell = listing.buy? "buy" : "sell";
+                console.log("Listing was made by " + user.first_name + " " + user.last_name + " to " + buy_or_sell + " '" + listing.title + "' for $" + listing.price);
+                socket.emit("make_listing_response", {data: {listing: listing}, error: null});
+                //emit event to all users that a new listing has been made
+                io.emit("listing_made", {data: {listing: listing}});
+            });
         }
         function error_handler(e){
             socket.emit("make_listing_response", {data: null, error: e});
@@ -383,21 +396,24 @@ io.on('connection', function (socket) {
         var buy = json.buy;
 
         authenticate(user_id, password, device_token, function(user){
-            var listing = active_listings.get(listing_id);
-            var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
-            if(user._id.toString() == listing.user_id.toString()){
-                updateListing(listing, new_listing, callback, error_handler)
-            }
-            else {
-                error_handler("This listing doesn't belong to you!");
-            }
+            active_listings.get(listing_id, function(listing){
+                var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
+                if(user._id.toString() == listing.user_id.toString()){
+                    updateListing(listing, new_listing, callback, error_handler)
+                }
+                else {
+                    error_handler("This listing doesn't belong to you!");
+                }
+            });
+
         }, error_handler)
         function callback(listing){
             socket.emit("update_listing_response", {data: {listing: listing}, error: null});
             //emit event to all users that a new listing has been made
-            var user = active_users.get(listing.user_id);
-            console.log("Listing with title " + listing.title + " was updated by " + user.first_name + " " + user.last_name)
-            io.emit("listing_updated", {data: {listing: listing}});
+            active_users.get(listing.user_id, function(user){
+                console.log("Listing with title " + listing.title + " was updated by " + user.first_name + " " + user.last_name)
+                io.emit("listing_updated", {data: {listing: listing}});
+            });
         }
         function error_handler(e){
             socket.emit("update_listing_response", {data: null, error: e});
@@ -425,19 +441,21 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         authenticate(user_id, password, device_token, function(user){
-            var listing = active_listings.get(listing_id);
-            if(listing != undefined){
-                if(listing.user_id.toString() == user_id.toString()){
-                    console.log("Listing '" + listing.title + "' was removed by " + user.first_name + " " + user.last_name);
-                    removeListing(listing_id, callback, error_handler)
+            active_listings.get(listing_id, function(listing){
+                if(listing != undefined){
+                    if(listing.user_id.toString() == user_id.toString()){
+                        console.log("Listing '" + listing.title + "' was removed by " + user.first_name + " " + user.last_name);
+                        removeListing(listing_id, callback, error_handler)
+                    }
+                    else{
+                        error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
+                    }
                 }
                 else{
-                    error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
+                    error_handler("listing was not found in active_listings");
                 }
-            }
-            else{
-                error_handler("listing was not found in active_listings");
-            }
+            });
+
 
         }, error_handler);
     });
@@ -473,18 +491,20 @@ io.on('connection', function (socket) {
                 //
                 //     }, error_handler)
                 // }, 60000)
-                var user = active_users.get(user_id);
-                console.log(user);
-                var price = (transaction.offer != undefined && transaction.offer != null) ? transaction.offer : transaction.price
+                active_users.get(user_id, function(user){
+                    console.log(user);
+                    var price = (transaction.offer != undefined && transaction.offer != null) ? transaction.offer : transaction.price
 
-                var alert = user.first_name + " " + user.last_name + " is requesting to " +
-                    (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + price;
-                var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE", payload: {transaction_id: transaction._id.toString()}};
+                    var alert = user.first_name + " " + user.last_name + " is requesting to " +
+                        (transaction.buy ? "sell " : "buy ") + transaction.title + " for " + price;
+                    var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_MADE", payload: {transaction_id: transaction._id.toString()}};
 
-                emitEvent("transaction_request_made", {
-                    transaction: transaction
-                }, [user_id, transaction.getOtherUserId(user_id)], notification_info)
-                //emit the event to both users, causes them to make cells
+                    emitEvent("transaction_request_made", {
+                        transaction: transaction
+                    }, [user_id, transaction.getOtherUserId(user_id)], notification_info)
+                    //emit the event to both users, causes them to make cells
+                });
+
 
             }catch(e){
                 error_handler(e.message)
@@ -546,41 +566,47 @@ io.on('connection', function (socket) {
             try {
                 //notify all users that a listing was removed
                 io.emit("listing_removed", {data: {listing_id: transaction.listing_id}});
-                var buyer = active_users.get(transaction.buyer_user_id);
-                var seller = active_users.get(transaction.seller_user_id);
-                var buyer_socket = io.sockets.connected[buyer.socket_id];
-                var seller_socket = io.sockets.connected[seller.socket_id];
-                emitEvent("transaction_request_accepted", {transaction_id: transaction_id.toString(), user_id: user_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
-                if(transaction.isAccepted()){
-                    emitEvent("transaction_started", {transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
-                }
-                var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
-                if(buyer_socket == undefined) {
-                    var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                    var other_user_name = other_user.first_name + " " + other_user.last_name;
-                    var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
-                    var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
-                    + "'" + transaction.title + "'";
-                    notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
-                    if(buyer != undefined) {
-                        sendNotification(notification_info, buyer.device_token);
-                    }
+                active_users.get(transaction.buyer_user_id, function(buyer){
+                    active_users.get(transaction.seller_user_id, function(seller){
+                        var buyer_socket = io.sockets.connected[buyer.socket_id];
+                        var seller_socket = io.sockets.connected[seller.socket_id];
+                        emitEvent("transaction_request_accepted", {transaction_id: transaction_id.toString(), user_id: user_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
+                        if(transaction.isAccepted()){
+                            emitEvent("transaction_started", {transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
+                        }
+                        var event = new Event("transaction_started", {transaction_id: transaction_id.toString()} , null)
+                        if(buyer_socket == undefined) {
+                            active_users.get(transaction.getOtherUserId(user_id), function(other_user){
+                                var other_user_name = other_user.first_name + " " + other_user.last_name;
+                                var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
+                                var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
+                                    + "'" + transaction.title + "'";
+                                notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
+                                if(buyer != undefined) {
+                                    sendNotification(notification_info, buyer.device_token);
+                                }
+                            });
 
-                }
-                if(seller_socket == undefined) {
-                    var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                    var other_user_name = other_user.first_name + " " + other_user.last_name;
-                    var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
-                    var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
-                        + "'" + transaction.title + "'";
-                    // notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
-                    notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
+                        }
+                        if(seller_socket == undefined) {
+                            active_users.get(transaction.getOtherUserId(user_id), function(other_user){
+                                var other_user_name = other_user.first_name + " " + other_user.last_name;
+                                var buying_or_selling = transaction.buyer_user_id == user_id ? "buying" : "selling"
+                                var alert = "Your transaction with " + other_user_name + " has begun! You are " + buying_or_selling
+                                    + "'" + transaction.title + "'";
+                                // notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction: transaction}};
+                                notification_info = {alert: alert, category: "TRANSACTION_STARTED", payload: {transaction_id: transaction._id.toString()}};
 
-                    if(seller != undefined){
-                        sendNotification(notification_info, seller.device_token);
-                    }
-                    // seller.enqueueEvent(event);
-                }
+                                if(seller != undefined){
+                                    sendNotification(notification_info, seller.device_token);
+                                }
+                                // seller.enqueueEvent(event);
+                            });
+
+                        }
+                    });
+
+                });
             }catch(e){
                 console.log(e);
                 return;
@@ -608,16 +634,20 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         function callback(transaction){
             try {
-                var user = active_users.get(user_id);
-                var user_socket = io.sockets.connected[user.socket_id];
-                var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                var other_user_socket = undefined;
-                if(other_user != undefined){
-                    other_user_socket = io.sockets.connected[other_user.socket_id];
-                }
-                var alert = "Your transaction request for '" + transaction.title + "' was declined by " + user.first_name +  " " + user.last_name;
-                var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_DECLINED"};
-                emitEvent("transaction_request_declined", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)], notification_info);
+                active_users.get(user_id, function(user){
+                    var user_socket = io.sockets.connected[user.socket_id];
+                    active_users.get(transaction.getOtherUserId(user_id), function(other_user){
+                        var other_user_socket = undefined;
+                        if(other_user != undefined){
+                            other_user_socket = io.sockets.connected[other_user.socket_id];
+                        }
+                        var alert = "Your transaction request for '" + transaction.title + "' was declined by " + user.first_name +  " " + user.last_name;
+                        var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_DECLINED"};
+                        emitEvent("transaction_request_declined", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)], notification_info);
+                    });
+
+                });
+
             }catch(e){
                 console.log(e);
                 return;
@@ -641,16 +671,19 @@ io.on('connection', function (socket) {
         var transaction_id = json.transaction_id;
         function callback(transaction){
             try {
-                var user = active_users.get(user_id);
-                var user_socket = io.sockets.connected[user.socket_id];
-                var other_user = active_users.get(transaction.getOtherUserId(user_id));
-                var other_user_socket = undefined;
-                if(other_user != undefined){
-                    other_user_socket = io.sockets.connected[other_user.socket_id];
-                }
-                var alert = user.first_name +  " " + user.last_name + "'s transaction request for '" + transaction.title + "' was withdrawn"; 
-                var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_WITHDRAWN"};
-                emitEvent("transaction_request_withdrawn", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)], notification_info);
+                active_users.get(user_id, function(user){
+                    var user_socket = io.sockets.connected[user.socket_id];
+                    active_users.get(transaction.getOtherUserId(user_id), function(other_user){
+                        var other_user_socket = undefined;
+                        if(other_user != undefined){
+                            other_user_socket = io.sockets.connected[other_user.socket_id];
+                        }
+                        var alert = user.first_name +  " " + user.last_name + "'s transaction request for '" + transaction.title + "' was withdrawn";
+                        var notification_info = {alert: alert, category: "TRANSACTION_REQUEST_WITHDRAWN"};
+                        emitEvent("transaction_request_withdrawn", {transaction_id: transaction._id.toString(), user_id: user_id}, [user_id, transaction.getOtherUserId(user_id)], notification_info);
+                    });
+                });
+
             }catch(e){
                 console.log(e);
                 return;
@@ -689,61 +722,29 @@ io.on('connection', function (socket) {
 
                // var event = new Event("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, null);
                // emitEvent("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id]);
-               var buyer = active_users.get(transaction.buyer_user_id);
-               var seller = active_users.get(transaction.seller_user_id);
-               var buyer_socket = io.sockets.connected[buyer.socket_id];
-               var seller_socket = io.sockets.connected[seller.socket_id];
-               var user = active_users.get(user_id);
-               var user_name = user.first_name + " " + user.last_name;
-               if(!transaction.isCompleted()){
-                   var alert = user_name + " has confirmed the transaction '" + transaction.title + "'";
-                   var notification_info = {alert: alert, payload: {transaction_id: transaction._id.toString()}, category: "TRANSACTION_CONFIRMED"};
-                   // var event = new Event("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, null);
-                   emitEvent("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id], notification_info);
+               active_users.get(transaction.buyer_user_id, function(buyer){
+                   active_users.get(transaction.seller_user_id, function(seller){
+                       var buyer_socket = io.sockets.connected[buyer.socket_id];
+                       var seller_socket = io.sockets.connected[seller.socket_id];
+                       active_users.get(user_id, function(user){
+                           var user_name = user.first_name + " " + user.last_name;
+                           if(!transaction.isCompleted()){
+                               var alert = user_name + " has confirmed the transaction '" + transaction.title + "'";
+                               var notification_info = {alert: alert, payload: {transaction_id: transaction._id.toString()}, category: "TRANSACTION_CONFIRMED"};
+                               // var event = new Event("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, null);
+                               emitEvent("transaction_confirmed", {user_id: user_id.toString(), transaction_id: transaction_id.toString()}, [transaction.buyer_user_id, transaction.seller_user_id], notification_info);
+                           }
+                           if(transaction.isCompleted()){
+                               console.log("The transaction '" + transaction.title + "' for $" + transaction.price + " was COMPLETED!");
 
-                   // if(buyer_socket != undefined) {
-                   //     buyer_socket.emit(event.name , event.message);
-                   // }
-                   // else{
-                   //     if(buyer != undefined) {
-                   //         sendNotification(notification_info, buyer.device_token);
-                   //     }
-                   // }
-                   // if(seller_socket != undefined) {
-                   //     seller_socket.emit(event.name , event.message);
-                   // }
-                   // else{
-                   //     if(seller != undefined) {
-                   //         sendNotification(notification_info, seller.device_token);
-                   //     }
-                   // }
-               }
-               if(transaction.isCompleted()){
-                   console.log("The transaction '" + transaction.title + "' for $" + transaction.price + " was COMPLETED!");
+                               var alert = "The transaction '" + transaction.title + "' was completed!";
+                               var notification_info = {alert: alert, payload: {transaction_id: transaction._id.toString()}, category: "TRANSACTION_COMPLETED"};
+                               emitEvent("transaction_completed", {transaction_id: transaction_id}, [transaction.buyer_user_id, transaction.seller_user_id], notification_info);
+                           }
+                       });
 
-                   var alert = "The transaction '" + transaction.title + "' was completed!";
-                   var notification_info = {alert: alert, payload: {transaction_id: transaction._id.toString()}, category: "TRANSACTION_COMPLETED"};
-                   emitEvent("transaction_completed", {transaction_id: transaction_id}, [transaction.buyer_user_id, transaction.seller_user_id], notification_info);
-
-                   //notify users that transaction is completed
-                   // var event = new Event("transaction_completed", {transaction_id: transaction_id}, null);
-                   // if(buyer_socket != undefined) {
-                   //     buyer_socket.emit(event.name , event.message);
-                   // }
-                   // else{
-                   //     if(buyer != undefined) {
-                   //         sendNotification(notification_info, buyer.device_token);
-                   //     }
-                   // }
-                   // if(seller_socket != undefined) {
-                   //     seller_socket.emit(event.name , event.message);
-                   // }
-                   // else{
-                   //     if(seller != undefined) {
-                   //         sendNotification(notification_info, seller.device_token);
-                   //     }
-                   // }
-               }
+                   });
+               });
            }catch(e){
                console.log(e);
                return;
@@ -776,14 +777,17 @@ io.on('connection', function (socket) {
            try {
                console.log("terminate Transactinon successful!")
                console.log(transaction)
-               var user = active_users.get(user_id);
-               var other_user = active_users.get(transaction.getOtherUserId(user_id));
-               var alert = user.first_name + " " + user.last_name + " has terminated the transaction '" + transaction.title + "'";
-               var notification_info = {alert: alert, category: "TRANSACTION_TERMINATED"};
-               if(other_user != undefined){
-                   sendNotification(notification_info, other_user.device_token);
-               }
-               emitEvent("transaction_terminated", {user_id: user_id, transaction_id: transaction_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
+               active_users.get(user_id, function(user){
+                   active_users.get(transaction.getOtherUserId(user_id), function(other_user){
+                       var alert = user.first_name + " " + user.last_name + " has terminated the transaction '" + transaction.title + "'";
+                       var notification_info = {alert: alert, category: "TRANSACTION_TERMINATED"};
+                       if(other_user != undefined){
+                           sendNotification(notification_info, other_user.device_token);
+                       }
+                       emitEvent("transaction_terminated", {user_id: user_id, transaction_id: transaction_id}, [transaction.buyer_user_id, transaction.seller_user_id]);
+                   });
+
+               });
            }catch(e){
                console.log(e);
                return;
@@ -817,55 +821,56 @@ io.on('connection', function (socket) {
         function callback(updated_location){
             socket.emit("update_user_location_response", {data: {updated_location: updated_location}, error: null});
             //notify all users, or all users in the same transaction with user whose location was updated,
-            var user = active_users.get(user_id)
-            var users_active_transactions = active_transactions.getAllForUser(user_id);
-            for(var i=0; i<users_active_transactions.length; i++){
-                var transaction = users_active_transactions[i];
-                var other_user_id = transaction.getOtherUserId(user_id);
-                var other_user = active_users.get(other_user_id);
-                if(other_user != undefined && user != undefined){
-                    if(other_user.location != undefined && user.location != undefined){
-                        if(user.location.getDistanceFrom(other_user.location) <= 200 && transaction.notified != true){
-                            transaction.notified = true;
-                            updateTransactionInDatabase(transaction, function(){
-                                console.log(user.first_name + " " + user.last_name + " and " + other_user.first_name + " " + other_user.last_name + " are nearby! They are " + user.location.getDistanceFrom(other_user.location) + "m apart");
-                                var alert = user.first_name + " " + user.last_name + " is nearby!"
-                                var notification_info = {alert: alert, category: "TRANSACTION_OTHER_USER_NEARBY", payload: {transaction_id: transaction._id.toString()}};
-                                sendNotification(notification_info, other_user.device_token)
-                                var alert = other_user.first_name + " " + other_user.last_name + " is nearby!"
-                                var notification_info = {alert: alert, category: "TRANSACTION_OTHER_USER_NEARBY", payload: {transaction_id: transaction._id.toString()}};
-                                sendNotification(notification_info, user.device_token)
-                            }, error_handler)
-                        }
-                        else if(transaction.notified == true && user.location.getDistanceFrom(other_user.location) >= 300){
-                            transaction.notified = false;
-                            updateTransactionInDatabase(transaction, function(){}, error_handler);
-                        }
+            active_users.get(user_id, function(user){
+                active_transactions.getAllForUser(user_id, function(users_active_transactions){
+                    for(var i=0; i<users_active_transactions.length; i++) {
+                        var transaction = users_active_transactions[i];
+                        var other_user_id = transaction.getOtherUserId(user_id);
+                        var other_user = active_users.get(other_user_id, function (other_user) {
+                            if (other_user != undefined && user != undefined) {
+                                if (other_user.location != undefined && user.location != undefined) {
+                                    if (user.location.getDistanceFrom(other_user.location) <= 200 && transaction.notified != true) {
+                                        transaction.notified = true;
+                                        updateTransactionInDatabase(transaction, function () {
+                                            console.log(user.first_name + " " + user.last_name + " and " + other_user.first_name + " " + other_user.last_name + " are nearby! They are " + user.location.getDistanceFrom(other_user.location) + "m apart");
+                                            var alert = user.first_name + " " + user.last_name + " is nearby!"
+                                            var notification_info = {
+                                                alert: alert,
+                                                category: "TRANSACTION_OTHER_USER_NEARBY",
+                                                payload: {transaction_id: transaction._id.toString()}
+                                            };
+                                            sendNotification(notification_info, other_user.device_token)
+                                            var alert = other_user.first_name + " " + other_user.last_name + " is nearby!"
+                                            var notification_info = {
+                                                alert: alert,
+                                                category: "TRANSACTION_OTHER_USER_NEARBY",
+                                                payload: {transaction_id: transaction._id.toString()}
+                                            };
+                                            sendNotification(notification_info, user.device_token)
+                                        }, error_handler)
+                                    }
+                                    else if (transaction.notified == true && user.location.getDistanceFrom(other_user.location) >= 300) {
+                                        transaction.notified = false;
+                                        updateTransactionInDatabase(transaction, function () {
+                                        }, error_handler);
+                                    }
+                                }
+                                // var other_user_socket = io.sockets.connected[other_user.socket_id];
+                            }
+                        });
+
+                        io.emit("user_location_updated", {
+                            data: {
+                                user_id: user._id.toString(),
+                                transaction_id: null,
+                                updated_location: updated_location
+                            }, error: null
+                        });
                     }
-                    // var other_user_socket = io.sockets.connected[other_user.socket_id];
-                }
-                // console.log("emitting user_location_updated");
-                // if(other_user_socket != undefined) {
-                //     other_user_socket.emit("user_location_updated", {
-                //         data: {
-                //             user_id: user._id.toString(),
-                //             transaction_id: transaction._id.toString(),
-                //             updated_location: updated_location
-                //         }, error: null
-                //     });
-                // }
-            }
+                });
 
-            var user = active_users.get(user_id);
-            // console.log(user.first_name + " " + user.last_name + " updated their location");
-
-            io.emit("user_location_updated", {
-                data: {
-                    user_id: user._id.toString(),
-                    transaction_id: null,
-                    updated_location: updated_location
-                }, error: null
             });
+
         }
         function error_handler(e){
             socket.emit("update_user_location_response", {data: null, error: e});
@@ -882,19 +887,21 @@ io.on('connection', function (socket) {
         function callback(updated_venmo_id){
             socket.emit("update_venmo_id_response", {data: {updated_venmo_id: updated_venmo_id}, error: null});
             //notify all users, or all users in the same transaction with user whose venmo_id was updated,
-            var user = active_users.get(user_id);
-            // var current_transaction_ids = user.current_transactions_ids;
-            try {
-                getUserInfo(user_id, function(user_info){
-                    console.log(user_info.first_name + " " + user_info.last_name + " updated his/her venmo_id")
-                }, function(){})
-                io.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id}, error: null});
+            var user = active_users.get(user_id, function(user){
+                try {
+                    getUserInfo(user_id, function(user_info){
+                        console.log(user_info.first_name + " " + user_info.last_name + " updated his/her venmo_id")
+                    }, function(){})
+                    io.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id}, error: null});
 
-            }catch(e){
-                console.log(e.message);
-                error_handler(e.message);
-                return;
-            }
+                }catch(e){
+                    console.log(e.message);
+                    error_handler(e.message);
+                    return;
+                }
+            });
+            // var current_transaction_ids = user.current_transactions_ids;
+
         }
         function error_handler(e){
             socket.emit("update_venmo_id_response", {data: null, error: e});
@@ -971,13 +978,15 @@ io.on('connection', function (socket) {
 
         function callback(){
             socket.emit("add_picture_to_listing_response", {data: null, error: null});
-            var listing = active_listings.get(listing_id);
-            if(listing != undefined){
-                io.emit("listing_updated", {data: {listing: listing}});
-            }
-            getUserInfo(user_id, function(user_info){
-                console.log(user_info.first_name + " " + user_info.last_name + " added a picture to the listing '" + listing.title + "'");
-            }, function(){})
+            active_listings.get(listing_id, function(listing){
+                if(listing != undefined){
+                    io.emit("listing_updated", {data: {listing: listing}});
+                }
+                getUserInfo(user_id, function(user_info){
+                    console.log(user_info.first_name + " " + user_info.last_name + " added a picture to the listing '" + listing.title + "'");
+                }, function(){})
+            });
+
         }
 
         function error_handler(e){
@@ -999,15 +1008,17 @@ io.on('connection', function (socket) {
 
         function callback(){
             socket.emit("delete_picture_from_listing_response", {data: null, error: null});
-            var listing = active_listings.get(listing_id);
-            if(listing != undefined){
-                io.emit("listing_updated", {data: {listing: listing}});
-            }
+            active_listings.get(listing_id, function(listing){
+                if(listing != undefined){
+                    io.emit("listing_updated", {data: {listing: listing}});
+                }
 
-            getUserInfo(user_id, function(user_info){
-                console.log(user_info.first_name + " " + user_info.last_name + " deleted a picture from the listing '" + listing.title + "'");
-            }, function(){})
-            // socket.emit("picture_added_to_listing", {data: {listing_id: listing_id}, error: null});
+                getUserInfo(user_id, function(user_info){
+                    console.log(user_info.first_name + " " + user_info.last_name + " deleted a picture from the listing '" + listing.title + "'");
+                }, function(){})
+                // socket.emit("picture_added_to_listing", {data: {listing_id: listing_id}, error: null});
+            });
+
         }
 
         function error_handler(e){
@@ -1026,31 +1037,35 @@ io.on('connection', function (socket) {
             socket.emit("send_chat_message_response", {data: null, error: null});
             //notify all user in the transaction that a new message has been sent
             try {
-                var transaction = active_transactions.get(transaction_id);
-                emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
-                // var buyer = transaction.buyer_user_id;
-                // var seller = transaction.seller_user_id;
-                // var buyer_socket = io.sockets.connected[buyer.socket_id];
-                // var seller_socket = io.sockets.connected[seller.socket_id];
-                // buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
-                // seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
-                var user = active_users.get(user_id);
-                var other_user_id = transaction.getOtherUserId(user_id);
-                var other_user = active_users.get(other_user_id);
-                var other_user_socket = undefined
-                if(other_user != undefined){
-                   other_user_socket = io.sockets.connected[other_user.socket_id];
-                }
-                // if(other_user_socket == undefined){
-                    var alert = user.first_name + " " + user.last_name + ": " + message_text;
-                    var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction_id: transaction._id.toString()}};
-                    if(other_user != undefined) {
-                        sendNotification(notification_info, other_user.device_token);
-                    }
-                // }
-                getUserInfo(user_id, function(user_info){
-                    console.log(user_info.first_name + " " + user_info.last_name + ": '" + message.text +"'");
-                }, function(){})
+                active_transactions.get(transaction_id, function(transaction){
+                    emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
+                    // var buyer = transaction.buyer_user_id;
+                    // var seller = transaction.seller_user_id;
+                    // var buyer_socket = io.sockets.connected[buyer.socket_id];
+                    // var seller_socket = io.sockets.connected[seller.socket_id];
+                    // buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+                    // seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+                    active_users.get(user_id, function(user){
+                        var other_user_id = transaction.getOtherUserId(user_id);
+                        var other_user = active_users.get(other_user_id, function(other_user){
+                            var other_user_socket = undefined
+                            if(other_user != undefined){
+                                other_user_socket = io.sockets.connected[other_user.socket_id];
+                            }
+                            // if(other_user_socket == undefined){
+                            var alert = user.first_name + " " + user.last_name + ": " + message_text;
+                            var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction_id: transaction._id.toString()}};
+                            if(other_user != undefined) {
+                                sendNotification(notification_info, other_user.device_token);
+                            }
+                            // }
+                            getUserInfo(user_id, function(user_info){
+                                console.log(user_info.first_name + " " + user_info.last_name + ": '" + message.text +"'");
+                            }, function(){})
+                        });
+                    });
+                });
+
             }catch(e){
                 console.log(e);
                 return;
@@ -1584,18 +1599,20 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
             //checks that verification_code is valid and email hasn't already been registered
             if(docs[0].reset_password_verification_code == verification_code){
                 if(docs[0].registered == true){
-                    var user = active_users.getForEmailAddress(email_address);
-                    if(user != undefined){
-                        user.password = password;
-                    }
-                    var collection_users = database.collection('users');
-                    collection_users.update({email_address:email_address}, {$set: {password : password}}, function(err, result) {
-                        if(err){
-                            error_handler(err);
-                            return;
+                    active_users.getForEmailAddress(email_address, function(user){
+                        if(user != undefined){
+                            user.password = password;
                         }
-                        callback();
+                        var collection_users = database.collection('users');
+                        collection_users.update({email_address:email_address}, {$set: {password : password}}, function(err, result) {
+                            if(err){
+                                error_handler(err);
+                                return;
+                            }
+                            callback();
+                        });
                     });
+
                 }
                 else{
                     error_handler(email_address + " hasn't been");
@@ -1629,17 +1646,19 @@ function login(email_address, password, device_token, callback, error_handler){
             user.active = true;
             user.device_token = device_token
             user.last_login_time = new Date().getTime();
+            user.logged_in = true;
+            user.device_token = device_token;
             updateUserInDatabase(user, function(){
-                try {
-                    //if not already logged in then add user to active_users
-                    if(active_users.get(user._id) == undefined) {
-                        active_users.add(user);
-                        active_users.get(user._id).device_token = device_token;
-                    }
-                }catch(error){
-                    error_handler(error.message);
-                    return;
-                }
+                // try {
+                //     //if not already logged in then add user to active_users
+                //     if(active_users.get(user._id) == undefined) {
+                //         active_users.add(user);
+                //         active_users.get(user._id).device_token = device_token;
+                //     }
+                // }catch(error){
+                //     error_handler(error.message);
+                //     return;
+                // }
                 if(callback != undefined){ callback(user); }
             }, error_handler)
 
@@ -1661,14 +1680,15 @@ function logout(user_id, password, device_token, callback, error_handler){
     //verify credentials of user calling logout
     authenticate(user_id, password, device_token, function(user){
         try {
-            var user = active_users.get(user_id);
-            user.active = false;
-            updateUserInDatabase(user, function(){
-                active_users.remove(user_id);
-                console.log(user.first_name + " " + user.last_name + " has logged out");
-                if(callback != undefined){ callback(); }
-            }, error_handler)
-
+            active_users.get(user_id, function(user){
+                user.active = false;
+                user.logged_in = false;
+                updateUserInDatabase(user, function(){
+                    // active_users.remove(user_id);
+                    console.log(user.first_name + " " + user.last_name + " has logged out");
+                    if(callback != undefined){ callback(); }
+                }, error_handler)
+            });
         }catch(e){
             error_handler(e.message);
             return;
@@ -1687,31 +1707,33 @@ function logout(user_id, password, device_token, callback, error_handler){
 //TODO: implement device_id
 function authenticate(user_id, password, device_token, callback, error_handler){
     password = hashPassword(password);
-    var user = active_users.get(user_id);
-    if(user == undefined){
-        if(error_handler != undefined){
-            error_handler("tried to authenticate an invalid user_id/password combination");
+    active_users.get(user_id, function(user){
+        if(user == undefined){
+            if(error_handler != undefined){
+                error_handler("tried to authenticate an invalid user_id/password combination");
+            }
         }
-    }
-    else if(user.password.toString() != password.toString()){
-        if(error_handler != undefined){
-            console.log("incorrect password");
-            console.log(user.password)
-            error_handler("tried to authenticate an invalid user_id/password combination");
+        else if(user.password.toString() != password.toString()){
+            if(error_handler != undefined){
+                console.log("incorrect password");
+                console.log(user.password)
+                error_handler("tried to authenticate an invalid user_id/password combination");
+            }
         }
-    }
-    else if(user.device_token != device_token){
-        if(error_handler != undefined){
-            console.log("incorrect device_token")
-            // console.log(user)
-            // console.log("current device token: " + user.device_token);
-            // console.log("entered device token: " + device_token);
-            error_handler("tried to authenticate an invalid user_id/password combination");
+        else if(user.device_token != device_token){
+            if(error_handler != undefined){
+                console.log("incorrect device_token")
+                // console.log(user)
+                // console.log("current device token: " + user.device_token);
+                // console.log("entered device token: " + device_token);
+                error_handler("tried to authenticate an invalid user_id/password combination");
+            }
         }
-    }
-    else{
-        callback(user);
-    }
+        else{
+            callback(user);
+        }
+    });
+
 }
 
 //1. first authenticate if successful then create a listing,
@@ -1753,11 +1775,7 @@ function makeListing(user_id, password, device_token, title, description, locati
             return;
         }
 
-        //limit the number of listings to 8
-        if(active_listings.getAllForUser(user_id).length >= max_listings){
-            error_handler("You cannot have more than " + max_listings + " listings")
-            return;
-        }
+
         var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
         var collection_listings = database.collection('listings');
         collection_listings.insert(new_listing, function (err, count, status) {
@@ -1836,32 +1854,35 @@ function updateListing(listing, new_listing, callback, error_handler){
 
 //TODO: update the listing upon removal, i.e set active to false
 function removeListing(listing_id, callback, error_handler){
-    var listing = active_listings.get(listing_id);
+    active_listings.get(listing_id, function(listing){
+        if(listing != undefined) {
+            listing.removed_time = new Date().getTime();
+            listing.active = false; //deactivate the listing
+            updateListingInDatabase(listing, function () {
+                var user = active_users.get(listing.user_id, function(user){
+                    active_listings.remove(listing_id);
+                    if (user != undefined) { //in case user has already logged out
+                        try {
+                            // user.removeCurrentListingId(listing_id);
+                            updateUserInDatabase(user, function(){
+
+                            }, error_handler)
+                        }catch(e){
+                            error_handler(e.message)
+                        }
+                    }
+                    if (callback != undefined) {
+                        callback(listing_id);
+                    }
+                })
+            }, error_handler);
+        }
+    });
     console.log("removeListing called");
     //TODO: updateListing removed because mongodb throws an error because of it for some reaosn, fix this later
     //TODO: all this causes is that removed listings won't have the most up to date info, however since listings are
     //TODO: never reused, this doesn't matter.
-    if(listing != undefined) {
-        listing.removed_time = new Date().getTime();
-        listing.active = false; //deactivate the listing
-        updateListingInDatabase(listing, function () {
-            var user = active_users.get(listing.user_id)
-            active_listings.remove(listing_id);
-            if (user != undefined) { //in case user has already logged out
-                try {
-                    // user.removeCurrentListingId(listing_id);
-                    updateUserInDatabase(user, function(){
 
-                    }, error_handler)
-                }catch(e){
-                    error_handler(e.message)
-                }
-            }
-            if (callback != undefined) {
-                callback(listing_id);
-            }
-        }, error_handler);
-    }
 }
 
 
@@ -1876,28 +1897,32 @@ function removeListing(listing_id, callback, error_handler){
 function makeTransactionRequest(user_id, password, device_token, listing_id, callback, error_handler, offer){
     authenticate(user_id, password, device_token, function(user) {
         var transaction_already_made_on_listing = false;
-        var users_current_transactions = active_transactions.getAllForUser(user_id);
-        for(var i =0; i< users_current_transactions.length; i++){
-            var transaction = users_current_transactions[i];
-            if(transaction != undefined) {
-                if (transaction.listing_id.toString() == listing_id.toString()) {
-                    error_handler("You have already made a transaction on this listing");
-                    return;
+        active_transactions.getAllForUser(user_id, function(users_current_transactions){
+            for(var i =0; i< users_current_transactions.length; i++){
+                var transaction = users_current_transactions[i];
+                if(transaction != undefined) {
+                    if (transaction.listing_id.toString() == listing_id.toString()) {
+                        error_handler("You have already made a transaction on this listing");
+                        return;
+                    }
                 }
             }
-        }
-        if(users_current_transactions.length >= max_transactions){
-            error_handler("You are involved in too many transactions, you cannot be in more than " + max_transactions + " transactions");
-            return;
-        }
-        var listing = active_listings.get(listing_id);
-        if(active_transactions.getAllForUser(listing.user_id).length >= max_transactions){
-            error_handler("The other user is currently involved in too many transactions");
-            return;
-        }
-        makeTransaction(user_id, listing_id, function (transaction) {
-            callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
-        }, error_handler)
+            if(users_current_transactions.length >= max_transactions){
+                error_handler("You are involved in too many transactions, you cannot be in more than " + max_transactions + " transactions");
+                return;
+            }
+            active_listings.get(listing_id, function(listing){
+                // if(active_transactions.getAllForUser(listing.user_id).length >= max_transactions){
+                //     error_handler("The other user is currently involved in too many transactions");
+                //     return;
+                // }
+                makeTransaction(user_id, listing_id, function (transaction) {
+                    callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
+                }, error_handler)
+            });
+
+        });
+
     }, error_handler);
     //called on a user (using user_id) and a listing (using listing_id)
 //1. authenticate, if successful proceed; else return message to error_handler ("invalid authentication info")
@@ -1910,48 +1935,49 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
     function makeTransaction(user_id, listing_id, callback, error_handler){
         try {
             var new_transaction = createTransactionFromListing(user_id, listing_id);
-            new_transaction.offer = offer;
+            // new_transaction.offer = offer;
         }catch(e){
             error_handler(e.message);
             return;
         }
         addTransactionToDatabase(new_transaction, function(new_transaction){
             try {
-                new_transaction.expiration_time = new Date().getTime() + 60000 * transaction_expiration_time_in_minutes;
-                active_transactions.add(new_transaction);
+                // new_transaction.expiration_time = new Date().getTime() + 60000 * transaction_expiration_time_in_minutes;
                 //Set 60 second time to respond to transaction_request
-                setTimeout(function(){
-                    var transaction = active_transactions.get(new_transaction._id);
-                    if(transaction != undefined) {
-                        var other_user_id = transaction.getOtherUserId(user_id);
-                        var collection = database.collection('users');
-                        collection.find({_id: new require('mongodb').ObjectID(other_user_id.toString())}).toArray(function(err, docs) {
-                            if (docs.length > 0) {
-                                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                                var user = new User();
-                                user.initFromDatabase(docs[0]);
-                                if (transaction.isAccepted() != true) {
-                                    declineTransactionRequest(user._id, user.password, user.device_token, transaction._id, function () {
-                                        emitEvent("transaction_request_declined",  {transaction_id: transaction._id.toString(), user_id: user._id}, [other_user_id, user_id]);
-                                        console.log(user.first_name + " " + user.last_name + " declined  transaction " + transaction.title + " due to exceeding time limit for response")
-                                    }, error_handler);
-                                }
-                            }
-                            else {
-                                error_handler("user with user_id " + other_user_id + " was not found");
-                            }
-                        });
-                    }
-                }, 60000 * transaction_expiration_time_in_minutes)
-                var user = active_users.get(user_id);
-                try{
-                    // user.addCurrentTransactionId(new_transaction._id);
-                    updateUserInDatabase(user, function(){
+                // setTimeout(function(){
+                //     var transaction = active_transactions.get(new_transaction._id);
+                //     if(transaction != undefined) {
+                //         var other_user_id = transaction.getOtherUserId(user_id);
+                //         var collection = database.collection('users');
+                //         collection.find({_id: new require('mongodb').ObjectID(other_user_id.toString())}).toArray(function(err, docs) {
+                //             if (docs.length > 0) {
+                //                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                //                 var user = new User();
+                //                 user.initFromDatabase(docs[0]);
+                //                 if (transaction.isAccepted() != true) {
+                //                     declineTransactionRequest(user._id, user.password, user.device_token, transaction._id, function () {
+                //                         emitEvent("transaction_request_declined",  {transaction_id: transaction._id.toString(), user_id: user._id}, [other_user_id, user_id]);
+                //                         console.log(user.first_name + " " + user.last_name + " declined  transaction " + transaction.title + " due to exceeding time limit for response")
+                //                     }, error_handler);
+                //                 }
+                //             }
+                //             else {
+                //                 error_handler("user with user_id " + other_user_id + " was not found");
+                //             }
+                //         });
+                //     }
+                // }, 60000 * transaction_expiration_time_in_minutes)
 
-                    }, error_handler)
-                }catch(e){
-                    error_handler(e.message);
-                }
+                active_transactions.add(new_transaction);
+                // var user = active_users.get(user_id);
+                // try{
+                //     // user.addCurrentTransactionId(new_transaction._id);
+                //     updateUserInDatabase(user, function(){
+                //
+                //     }, error_handler)
+                // }catch(e){
+                //     error_handler(e.message);
+                // }
                 //adds transaction_id to user that initiates
                 //user object is returned by authenticate
             }catch(e){error_handler(e.message)};
@@ -1961,27 +1987,28 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
         });
 
         function createTransactionFromListing(user_id, listing_id){
-            var listing = active_listings.get(listing_id);
-            if(listing == undefined){
-                throw {message: "makeTransaction: no listing found with listing_id "};
-                return;
-            }
-            //don't make transaction if listing has expired
-            if(listing.isExpired()){
-                throw {message: "makeTransaction: listing with id " + listing_id + " has expired"};
-                return;
-            }
-            var user_buy_id;
-            var user_sell_id;
-            if(listing.buy == true){
-                user_sell_id = user_id;
-                user_buy_id = listing.user_id;
-            }
-            else{
-                user_sell_id = listing.user_id;
-                user_buy_id = user_id;
-            }
-            return new Transaction(user_buy_id, user_sell_id, listing);
+            active_listings.get(listing_id, function(listing){
+                if(listing == undefined){
+                    throw {message: "makeTransaction: no listing found with listing_id "};
+                    return;
+                }
+                //don't make transaction if listing has expired
+                if(listing.isExpired()){
+                    throw {message: "makeTransaction: listing with id " + listing_id + " has expired"};
+                    return;
+                }
+                var user_buy_id;
+                var user_sell_id;
+                if(listing.buy == true){
+                    user_sell_id = user_id;
+                    user_buy_id = listing.user_id;
+                }
+                else{
+                    user_sell_id = listing.user_id;
+                    user_buy_id = user_id;
+                }
+                return new Transaction(user_buy_id, user_sell_id, listing);
+            });
         }
 
         function addTransactionToDatabase(new_transaction, callback){
@@ -2022,50 +2049,55 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
 //10. send a message to both users that transaction has begun
 function acceptTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
-        var transaction = active_transactions.get(transaction_id);
-        if(transaction == null || transaction == undefined){
-            error_handler("unable to find transaction with transaction_id: " + transaction_id);
-            return;
-        }
-        try {
-            transaction.acceptRequest(user._id);
-            updateTransactionInDatabase(transaction, function(){}, error_handler)
-            var listing = active_listings.get(transaction.listing_id);
-            //throws error if transaction_id has already been set
-            //or listing has already been deleted, means listing has already been accepted
-            if(listing == undefined || listing.transaction_id != null){
-                error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
+        active_transactions.get(transaction_id, function(transaction){
+            if(transaction == null || transaction == undefined){
+                error_handler("unable to find transaction with transaction_id: " + transaction_id);
                 return;
             }
-            //decline all other transactions in based on this listing besides current transaction
-            var transaction_arr = active_transactions.getAllForListingId(listing._id);
-            for(var i=0; i <transaction_arr.length; i++){
-                var transaction = transaction_arr[i];
-                if(transaction._id != transaction_id) {
-                    declineTransactionRequest(user_id, password, device_token, transaction._id, function (transaction_id) {
+            try {
+                transaction.acceptRequest(user._id);
+                updateTransactionInDatabase(transaction, function(){}, error_handler)
+                var listing = active_listings.get(transaction.listing_id, function(listing){
+                    //throws error if transaction_id has already been set
+                    //or listing has already been deleted, means listing has already been accepted
+                    if(listing == undefined || listing.transaction_id != null){
+                        error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
+                        return;
+                    }
+                    //decline all other transactions in based on this listing besides current transaction
+                    active_transactions.getAllForListingId(listing._id, function(transaction_arr){
+                        for(var i=0; i <transaction_arr.length; i++){
+                            var transaction = transaction_arr[i];
+                            if(transaction._id != transaction_id) {
+                                declineTransactionRequest(user_id, password, device_token, transaction._id, function (transaction_id) {
+                                }, error_handler)
+                            }
+                        }
+                    });
+
+
+                    listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
+                    //update listing in database
+                    removeListing(transaction.listing_id, function(){
+                        if(user != undefined) { //in case user has logged out
+                            // user.addCurrentTransactionId(transaction_id);
+                            updateUserInDatabase(user, function(){}, error_handler)
+                            transaction.start_time = new Date().getTime();
+                            updateTransactionInDatabase(transaction, function(){}, function(){});
+                            callback(transaction);
+                        }
                     }, error_handler)
-                }
+
+                    //throws error if user with the user_id has already accepted request or if user_id
+                    //doesn't match either user_id of the transactions
+                    //verify that the other user has already accepted_request if not throw error
+                });
+            }catch(e){
+                error_handler(e.message);
+                return;
             }
 
-            listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
-            //update listing in database
-            removeListing(transaction.listing_id, function(){
-                if(user != undefined) { //in case user has logged out
-                    // user.addCurrentTransactionId(transaction_id);
-                    updateUserInDatabase(user, function(){}, error_handler)
-                    transaction.start_time = new Date().getTime();
-                    updateTransactionInDatabase(transaction, function(){}, function(){});
-                    callback(transaction);
-                }
-            }, error_handler)
-
-            //throws error if user with the user_id has already accepted request or if user_id
-            //doesn't match either user_id of the transactions
-            //verify that the other user has already accepted_request if not throw error
-        }catch(e){
-            error_handler(e.message);
-            return;
-        }
+        });
 
 
     }, error_handler);
@@ -2079,51 +2111,53 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
 
 function declineTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
-        var transaction = active_transactions.get(transaction_id);
-        if(transaction == null || transaction == undefined){
-            error_handler("unable to find transaction with transaction_id: " + transaction_id);
-            return;
-        }
-        try {
-            transaction.declineRequest(user_id);
-            transaction.active = false;
-            //update transaction in database before deleting it so we have a record of the failed transaction
-            updateTransactionInDatabase(transaction, function(){
-            }, error_handler);
-            active_transactions.remove(transaction._id);
-            callback(transaction);
-            //throws error if user with the user_id has already accepted request or if user_id
-            //doesn't match either user_id of the transactions
-            //verify that the other user has already accepted_request if not throw error
-        }catch(e){
-            error_handler(e.message);
-            return;
-        }
-    }, error_handler);
+        var transaction = active_transactions.get(transaction_id, function(transaction){
+            if(transaction == null || transaction == undefined){
+                error_handler("unable to find transaction with transaction_id: " + transaction_id);
+                return;
+            }
+            try {
+                transaction.declineRequest(user_id);
+                transaction.active = false;
+                //update transaction in database before deleting it so we have a record of the failed transaction
+                updateTransactionInDatabase(transaction, function(){
+                }, error_handler);
+                active_transactions.remove(transaction._id);
+                callback(transaction);
+                //throws error if user with the user_id has already accepted request or if user_id
+                //doesn't match either user_id of the transactions
+                //verify that the other user has already accepted_request if not throw error
+            }catch(e){
+                error_handler(e.message);
+                return;
+            }
+        }, error_handler);
+    });
 }
 
 function withdrawTransactionRequest(user_id, password, device_token, transaction_id, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
-        var transaction = active_transactions.get(transaction_id);
-        if(transaction == null || transaction == undefined){
-            error_handler("unable to find transaction with transaction_id: " + transaction_id);
-            return;
-        }
-        try {
-            transaction.withdrawRequest(user_id);
-            transaction.active = false;
-            //update transaction in database before deleting it so we have a record of the failed transaction
-            updateTransactionInDatabase(transaction, function(){
-            }, error_handler);
-            active_transactions.remove(transaction._id);
-            callback(transaction);
-            //throws error if user with the user_id has already accepted request or if user_id
-            //doesn't match either user_id of the transactions
-            //verify that the other user has already accepted_request if not throw error
-        }catch(e){
-            error_handler(e.message);
-            return;
-        }
+        active_transactions.get(transaction_id, function(transaction){
+            if(transaction == null || transaction == undefined){
+                error_handler("unable to find transaction with transaction_id: " + transaction_id);
+                return;
+            }
+            try {
+                transaction.withdrawRequest(user_id);
+                transaction.active = false;
+                //update transaction in database before deleting it so we have a record of the failed transaction
+                updateTransactionInDatabase(transaction, function(){
+                }, error_handler);
+                active_transactions.remove(transaction._id);
+                callback(transaction);
+                //throws error if user with the user_id has already accepted request or if user_id
+                //doesn't match either user_id of the transactions
+                //verify that the other user has already accepted_request if not throw error
+            }catch(e){
+                error_handler(e.message);
+                return;
+            }
+        });
     }, error_handler);
 }
 
@@ -2136,35 +2170,37 @@ function withdrawTransactionRequest(user_id, password, device_token, transaction
 
 function confirmTransaction(user_id, password, device_token, transaction_id, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
-        var transaction = active_transactions.get(transaction_id);
-        if(transaction == undefined){
-            error_handler("confirmTransaction: transaction with id " + transaction_id + " was not found");
-            return;
-        }
-        try {
-            //confirms user_id has agreed to continue with the transaction
-            transaction.confirm(user_id);
-            updateTransactionInDatabase(transaction, function(){}, error_handler)
-            if(transaction.isCompleted() == true){
-                transaction.end_time = new Date().getTime();
-                transaction.active = false;
-                updateTransactionInDatabase(transaction, function(){
-                    try {
-                        active_transactions.remove(transaction_id);
-                    }catch(e){console.log(e.message)}
-                    callback(transaction);
-                }, error_handler)
+        active_transactions.get(transaction_id, function(transaction){
+            if(transaction == undefined){
+                error_handler("confirmTransaction: transaction with id " + transaction_id + " was not found");
+                return;
             }
-            else{
-                updateTransactionInDatabase(transaction, function () {
-                    callback(transaction);
-                }, error_handler);
+            try {
+                //confirms user_id has agreed to continue with the transaction
+                transaction.confirm(user_id);
+                updateTransactionInDatabase(transaction, function(){}, error_handler)
+                if(transaction.isCompleted() == true){
+                    transaction.end_time = new Date().getTime();
+                    transaction.active = false;
+                    updateTransactionInDatabase(transaction, function(){
+                        try {
+                            active_transactions.remove(transaction_id);
+                        }catch(e){console.log(e.message)}
+                        callback(transaction);
+                    }, error_handler)
+                }
+                else{
+                    updateTransactionInDatabase(transaction, function () {
+                        callback(transaction);
+                    }, error_handler);
 
+                }
+            }catch(e){
+                error_handler(e.message);
+                return;
             }
-        }catch(e){
-            error_handler(e.message);
-            return;
-        }
+        });
+
         //TODO: watch out for situation where both users confirm at the same time
     }, error_handler);
 }
@@ -2176,30 +2212,31 @@ function confirmTransaction(user_id, password, device_token, transaction_id, cal
 
 function terminateTransaction(user_id, password, device_token, transaction_id, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
-        var transaction = active_transactions.get(transaction_id);
-        if(transaction == undefined){
-            error_handler("terminateTransaction: transaction with id " + transaction_id + " was not found");
-            return;
-        }
-        try{
-            transaction.terminate(user_id)
-        }catch(e){
-            error_handler(e.message);
-            return;
-        }
+        active_transactions.get(transaction_id, function(transaction){
+            if(transaction == undefined){
+                error_handler("terminateTransaction: transaction with id " + transaction_id + " was not found");
+                return;
+            }
+            try{
+                transaction.terminate(user_id)
+            }catch(e){
+                error_handler(e.message);
+                return;
+            }
             transaction.active = false;
             transaction.end_time = new Date().getTime();
             updateTransactionInDatabase(transaction, function () {}, error_handler)
-        try {
-
             try {
-                active_transactions.remove(transaction_id);
-            }catch(e){console.log(e.message)}
-            callback(transaction);
 
-        }catch(e){
-            error_handler(e.message)
-        }
+                try {
+                    active_transactions.remove(transaction_id);
+                }catch(e){console.log(e.message)}
+                callback(transaction);
+
+            }catch(e){
+                error_handler(e.message)
+            }
+        });
     }, error_handler)
 }
 
@@ -2223,16 +2260,18 @@ function updateUserLocation(user_id, password, device_token, new_location, callb
 }
 
 function updateVenmoId(user_id, venmo_id, callback, error_handler) {
-    var user = active_users.get(user_id);
-    if (user != undefined) {
-        user.venmo_id = venmo_id;
-        updateUserInDatabase(user, function(){
-            callback(venmo_id);
-        }, error_handler)
-    }
-    else{
-        error_handler("user is undefined i.e not logged in, cannot set venmo_id");
-    }
+    active_users.get(user_id, function(user){
+        if (user != undefined) {
+            user.venmo_id = venmo_id;
+            updateUserInDatabase(user, function(){
+                callback(venmo_id);
+            }, error_handler)
+        }
+        else{
+            error_handler("user is undefined i.e not logged in, cannot set venmo_id");
+        }
+    });
+
 }
 
 function updateProfilePicture(user_id, profile_picture, callback, error_handler){
@@ -2292,29 +2331,31 @@ function addPictureToListing(listing_id, user_id, picture, callback, error_handl
     console.log("picture size: " + picture.length)
 
     if(picture.length <= max_picture_size){
-        var listing = active_listings.get(listing_id);
-        if(listing.user_id != user_id){
-            error_handler("You can only add pictures to your own listing!");
-            return;
-        }
-        if(listing != undefined){
-            if(listing.picture_ids != undefined && listing.picture_ids.length < max_pictures_per_listing){
-                var collection_pictures = database.collection('pictures');
-                collection_pictures.insert({picture: picture, user_id: toMongoIdObject(user_id)}, function(err,docsInserted){
-                    if(err){error_handler(err.message); return;}
+        active_listings.get(listing_id, function(listing){
+            if(listing.user_id != user_id){
+                error_handler("You can only add pictures to your own listing!");
+                return;
+            }
+            if(listing != undefined){
+                if(listing.picture_ids != undefined && listing.picture_ids.length < max_pictures_per_listing){
+                    var collection_pictures = database.collection('pictures');
+                    collection_pictures.insert({picture: picture, user_id: toMongoIdObject(user_id)}, function(err,docsInserted){
+                        if(err){error_handler(err.message); return;}
 
-                    console.log(docsInserted);
-                    listing.addPictureId(docsInserted.ops[0]._id);
-                    updateListingInDatabase(listing, callback, error_handler);
-                });
+                        console.log(docsInserted);
+                        listing.addPictureId(docsInserted.ops[0]._id);
+                        updateListingInDatabase(listing, callback, error_handler);
+                    });
+                }
+                else{
+                    error_handler("You can only add up to " + max_pictures_per_listing + " pictures per listing");
+                }
             }
             else{
-                error_handler("You can only add up to " + max_pictures_per_listing + " pictures per listing");
+                error_handler("invalid listing_id");
             }
-        }
-        else{
-            error_handler("invalid listing_id");
-        }
+        });
+
     }
     else{
         console.log("picture size: " + picture.length)
@@ -2323,13 +2364,15 @@ function addPictureToListing(listing_id, user_id, picture, callback, error_handl
 }
 
 function deletePictureFromListing(picture_id, listing_id, user_id, callback, error_handler){
-    var listing = active_listings.get(listing_id);
-    if(listing.user_id != user_id){
-        error_handler("You can only add pictures to your own listing!");
-        return;
-    }
-    listing.removePictureId(picture_id);
-    updateListingInDatabase(listing, callback, error_handler);
+    active_listings.get(listing_id, function(listing){
+        if(listing.user_id != user_id){
+            error_handler("You can only add pictures to your own listing!");
+            return;
+        }
+        listing.removePictureId(picture_id);
+        updateListingInDatabase(listing, callback, error_handler);
+    });
+
 }
 
 //1. authenticate
@@ -2338,21 +2381,22 @@ function deletePictureFromListing(picture_id, listing_id, user_id, callback, err
 //4. send a message in the conversation
 function sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
-        var transaction = active_transactions.get(transaction_id);
-        if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
-            try {
-                var message = transaction.sendChatMessage(user, message_text);
-                updateTransactionInDatabase(transaction, function(){
-                    callback(message);
-                }, error_handler)
-            }catch(e){
-                error_handler(e.message);
-                return;
+        active_transactions.get(transaction_id, function(transaction){
+            if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
+                try {
+                    var message = transaction.sendChatMessage(user, message_text);
+                    updateTransactionInDatabase(transaction, function(){
+                        callback(message);
+                    }, error_handler)
+                }catch(e){
+                    error_handler(e.message);
+                    return;
+                }
             }
-        }
-        else{
-            error_handler("user with user_id " + user_id + " tried to send a message to conversation in a transaction of which he/she is not apart of");
-        }
+            else{
+                error_handler("user with user_id " + user_id + " tried to send a message to conversation in a transaction of which he/she is not apart of");
+            }
+        });
     }, error_handler)
 }
 
@@ -2361,27 +2405,31 @@ function sendChatMessage(user_id, password, device_token, transaction_id, messag
 //3. return active_listings
 function getAllActiveListings(user_id, password, device_token, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
-        var all_active_listings = active_listings.getAll();
-        callback(all_active_listings);
+        active_listings.getAll(function(all_active_listings){
+            callback(all_active_listings);
+        });
+
     }, error_handler)
 }
-
-function getListingsWithHashTag(hash_tag, callback, error_handler){
-    try {
-        var listings = active_listings.getListingsWithHashTag(hash_tag);
-    }catch(e){
-        error_handler(e.message);
-        return;
-    }
-    callback(listings);
-}
+//
+// function getListingsWithHashTag(hash_tag, callback, error_handler){
+//     try {
+//         var listings = active_listings.getListingsWithHashTag(hash_tag);
+//     }catch(e){
+//         error_handler(e.message);
+//         return;
+//     }
+//     callback(listings);
+// }
 
 function getUsersActiveTransactions(user_id, password, device_token, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){
-        getUser(user_id, password, function(user){
+        getUser(user_id, function(user){
             if(user.password == hashPassword(password)){
-                var users_active_transactions = active_transactions.getAllForUser(user._id);
-                callback(users_active_transactions);
+                active_transactions.getAllForUser(user._id, function(users_active_transactions){
+                    callback(users_active_transactions);
+
+                });
             }
             else {
                 error_handler("getUserActiveTransactions: invalid user_id/password")
@@ -2397,8 +2445,9 @@ function getUsersActiveTransactions(user_id, password, device_token, callback, e
 
 function getUsersActiveListings(user_id, callback, error_handler){
     getUserInfo(user_id, function(user){
-        var users_active_listings = active_listings.getAllForUser(user._id);
-        callback(users_active_listings);
+        active_listings.getAllForUser(user._id, function(users_active_listings){
+            callback(users_active_listings);
+        });
     }, error_handler)
 }
 
@@ -2423,37 +2472,39 @@ function getUsersPreviousTransactions(user_id, callback, error_handler){
 
 //Finds user in active_users if not found, searches database, returns a UserInfo object made from the User
 function getUserInfo(user_id, callback, error_handler){
-    var user = active_users.get(user_id);
-    //if user is not in active_users, search database
-    if(user == undefined){
-        var collection = database.collection('users');
-        collection.find({_id: new require('mongodb').ObjectID(user_id.toString())}).toArray(function(err, docs) {
-            if (docs.length > 0) {
-                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                var user = new User();
-                user.initFromDatabase(docs[0]);
-                var user_info = new UserInfo(user);
-                user_info.logged_in = false;
-                callback(user_info);
+    active_users.get(user_id, function(user){
+        if(user == undefined){
+            var collection = database.collection('users');
+            collection.find({_id: new require('mongodb').ObjectID(user_id.toString())}).toArray(function(err, docs) {
+                if (docs.length > 0) {
+                    //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                    var user = new User();
+                    user.initFromDatabase(docs[0]);
+                    var user_info = new UserInfo(user);
+                    user_info.logged_in = false;
+                    callback(user_info);
 
-            }
-            else {
-                error_handler("user with user_id " + user_id + " was not found");
-            }
-        });
-    }
-    //if user is in active_users then logged in, thus set the parameter and return user;
-    else{
-        var user_info = new UserInfo(user);
-        user_info.logged_in = true;
-        callback(user_info)
-    }
+                }
+                else {
+                    error_handler("user with user_id " + user_id + " was not found");
+                }
+            });
+        }
+        //if user is in active_users then logged in, thus set the parameter and return user;
+        else{
+            var user_info = new UserInfo(user);
+            user_info.logged_in = true;
+            callback(user_info)
+        }
+    });
+    //if user is not in active_users, search database
+
 }
 
-function getUser(user_id, password, callback, error_handler){
-    password = hashPassword(password);
+function getUser(user_id, callback, error_handler){
+    // password = hashPassword(password);
     var collection = database.collection('users');
-    collection.find({_id: toMongoIdObject(user_id), password: password}).toArray(function(err, docs) {
+    collection.find({_id: toMongoIdObject(user_id)}).toArray(function(err, docs) {
         if(docs.length > 0) {
             //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
             var user = new User();
@@ -2468,54 +2519,58 @@ function getUser(user_id, password, callback, error_handler){
 }
 
 function getListing(listing_id, callback, error_handler){
-    var listing = active_listings.get(listing_id);
-    //if user is not in active_users, search database
-    if(listing == undefined){
-        var collection = database.collection('listings');
-        collection.find({_id: listing_id}).toArray(function(err, docs) {
-            if (docs.length > 0) {
-                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                var listing = new Listing();
-                listing.initFromDatabase(docs[0]);
-                var listing_info = new ListingInfo(listing);
-                listing_info.active = false;
-                callback(listing_info);
+    active_listings.get(listing_id, function(listing){
+        if(listing == undefined){
+            var collection = database.collection('listings');
+            collection.find({_id: listing_id}).toArray(function(err, docs) {
+                if (docs.length > 0) {
+                    //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                    var listing = new Listing();
+                    listing.initFromDatabase(docs[0]);
+                    var listing_info = new ListingInfo(listing);
+                    listing_info.active = false;
+                    callback(listing_info);
 
-            }
-            else {
-                error_handler("listing with listing_id " + listing_id + " was not found");
-            }
-        });
-    }
-    //if user is in active_users then logged in, thus set the parameter and return user;
-    else{
-        var listing_info = new ListingInfo(listing);
-        listing_info.active = true;
-        callback(listing_info)
-    }
+                }
+                else {
+                    error_handler("listing with listing_id " + listing_id + " was not found");
+                }
+            });
+        }
+        //if user is in active_users then logged in, thus set the parameter and return user;
+        else{
+            var listing_info = new ListingInfo(listing);
+            listing_info.active = true;
+            callback(listing_info)
+        }
+    });
+    //if user is not in active_users, search database
+
 }
 
 function getTransaction(transaction_id, callback, error_handler){
-    var transaction = active_transactions.get(transaction_id);
-    //if user is not in active_users, search database
-    if(transaction == undefined){
-        var collection = database.collection('transactions');
-        collection.find({_id: toMongoIdObject(transaction_id)}).toArray(function(err, docs) {
-            if (docs.length > 0) {
-                //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                var transaction = new Transaction();
-                transaction.initFromDatabase(docs[0]);
-                callback(transaction);
-            }
-            else {
-                error_handler("listing with listing_id " + listing_id + " was not found");
-            }
-        });
-    }
-    //if user is in active_users then logged in, thus set the parameter and return user;
-    else{
-        callback(transaction)
-    }
+    active_transactions.get(transaction_id, function(transaction){
+        //if user is not in active_users, search database
+        if(transaction == undefined){
+            var collection = database.collection('transactions');
+            collection.find({_id: toMongoIdObject(transaction_id)}).toArray(function(err, docs) {
+                if (docs.length > 0) {
+                    //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
+                    var transaction = new Transaction();
+                    transaction.initFromDatabase(docs[0]);
+                    callback(transaction);
+                }
+                else {
+                    error_handler("listing with listing_id " + listing_id + " was not found");
+                }
+            });
+        }
+        //if user is in active_users then logged in, thus set the parameter and return user;
+        else{
+            callback(transaction)
+        }
+    });
+
 }
 
 function getProfilePicture(user_id, callback, error_handler){
@@ -2627,16 +2682,18 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
             removeListing(listing._id, function(listing_id){
                 var alert = " Your listing '" + listing.title + "' has expired";
                 var notification_info = {alert: alert, category: "LISTING_EXPIRED"};
-                var user = active_users.get(listing.user_id);
-                if(user != undefined){
-                    sendNotification(notification_info, user.device_token);
-                }
-                io.emit("listing_removed", {data: {listing_id: listing_id}});
-                getListing(listing_id, function(listing){
-                    getUserInfo(listing.user_id, function(user){
-                        console.log(user.first_name + " " + user.last_name + "'s listing '" + listing.title + "' was removed because it has expired");
+                // var user = active_users.get(listing.user_id);
+                getUser(listing.user_id, function(user){
+                    if(user != undefined){
+                        sendNotification(notification_info, user.device_token);
+                    }
+                    io.emit("listing_removed", {data: {listing_id: listing_id}});
+                    getListing(listing_id, function(listing){
+                        getUserInfo(listing.user_id, function(user){
+                            console.log(user.first_name + " " + user.last_name + "'s listing '" + listing.title + "' was removed because it has expired");
+                        }, function(){})
                     }, function(){})
-                }, function(){})
+                }, error_handler)
             }, error_handler);
         }
     }, interval_in_milliseconds);
@@ -2651,7 +2708,8 @@ function initExpiredListingGarbageCollector(interval_in_milliseconds){
 //also accepts data which is a javascript object that holds the data that will passed in the event
 function emitEvent(event_name, data, user_id_arr, notification_info){
     for(var i=0; i<user_id_arr.length; i++){
-        var user = active_users.get(user_id_arr[i]);
+        // var user = active_users.get(user_id_arr[i]);
+        var user = getUser(user_id_arr[i]);
         var user_socket;
         if(user != undefined){
             user_socket = io.sockets.connected[user.socket_id];
@@ -2765,9 +2823,9 @@ function validateExpirationTime(expiration_time){
     if(!(typeof expiration_time == 'number')) {
         return "Please enter a valid date!";
     }else if( !(expiration_time >= new Date().getTime())){
-        return "You can't go back in time! Set a time in the future!"
+        return "Expiration Date Is In the Past! Please enter a valid expiration date!"
     }else if(!(expiration_time <= new Date().getTime() + 86400000 * 7)){
-       return "Set a time within the next week!"
+       return "Expiration Date Is Too Far In The Future! Set a Date Within 7 Days!"
     }
     else{
         return "";

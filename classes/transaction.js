@@ -59,6 +59,9 @@ var Transaction = function() {
             this.start_time = null;
 
             this.active = true;
+
+            this.picture_ids = listing.picture_ids;
+
         }
     }
 
@@ -136,6 +139,8 @@ var Transaction = function() {
             this.seller_accepted_request = transaction.seller_accepted_request;
             this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
             this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
+            
+            this.picture_ids = transaction.picture_ids;
 
             //amount offered in a transaction request, may differ from price
             if(transaction.offer != undefined){

@@ -29,6 +29,8 @@ function User(first_name, last_name, password, email){
     this.creation_time = new Date().getTime();
 
     this.active = true; //used for restoring logged in users after database crash
+    
+    this.logged_in = false;
 }
 
 User.prototype = {
@@ -47,6 +49,9 @@ User.prototype = {
         this.socket_id = null;
         this.active = user.active;
 
+        this.logged_in = user.logged_in
+
+
         if(user.device_token != undefined){
             this.device_token = user.device_token;
         }
@@ -56,6 +61,7 @@ User.prototype = {
         if(user.last_login_time != undefined){
             this.last_login_time = user.last_login_time;
         }
+        
 
     },
     addCurrentListingId: function(current_listing_id){
