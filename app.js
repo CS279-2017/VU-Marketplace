@@ -117,9 +117,6 @@ server.listen(port,function () {
     console.log('Example app listening at http://%s:%s', host, port)
     //TODO: whenever active_listing, active_transactions, or active_users is changed i.e add/remove is called,
     // TODO: all users must be notified of this change
-    active_listings = new ActiveListings();
-    active_transactions = new ActiveTransactions();
-    active_users = new ActiveUsers();
 
     MongoClient.connect(url, function (err, db) {
         if (err) {
@@ -127,7 +124,9 @@ server.listen(port,function () {
             return;
         }
         database = db;
-        exports.database = database;
+        active_listings = new ActiveListings(db);
+        active_transactions = new ActiveTransactions(db);
+        active_users = new ActiveUsers(db);
 
         //restore all active_listings and active_transactions
         getActiveListingsFromDatabase(function(listings){

@@ -1,16 +1,18 @@
 module.exports = ActiveUsers;
 var User = require("./user.js");
 
-var database = require("../app.js").database;
-
-var collection_users = database.collection('users');
+// var database = require("../app.js").database;
+//
+// var 
 
 
 
 //TODO: login/logout simply manipulates ActiveUsers, note current user object manipulation all revolve around username
 //TODO: may want to change focus to something else, may even want to remove usernames all together and only use real names
 //contains all active (online) users
-function ActiveUsers(){
+function ActiveUsers(database){
+    this.database = database;
+    this.collection_users = database.collection('users');
     // this.user_id_to_user = {};
 }
 //active_users now indexed by _id rather than username, thus making login indepedent of username
@@ -34,7 +36,7 @@ ActiveUsers.prototype = {
 
     },
     get: function(_id, callback){
-        collection_users.find({_id: toMongoIdObject(_id)}).toArray(function(err, docs) {
+        this.collection_users.find({_id: toMongoIdObject(_id)}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var user = new User()
                 user.initFromDatabase(docs[0]);
@@ -55,7 +57,7 @@ ActiveUsers.prototype = {
         //         return user;
         //     }
         // }
-        collection_users.find({email_address: email_address}).toArray(function(err, docs) {
+        this.collection_users.find({email_address: email_address}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var user = new User()
                 user.initFromDatabase(docs[0]);
@@ -86,7 +88,7 @@ ActiveUsers.prototype = {
     },
     //returns an array of all the users
     getAll: function(callback){
-        collection_users.find({active: true}).toArray(function(err, docs) {
+        this.collection_users.find({active: true}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_users = [];
                 for(var i=0; i<docs.length; i++){
@@ -108,7 +110,7 @@ ActiveUsers.prototype = {
     },
     //TODO: find some faster way to search users on socket id, maybe make another hashmap
     getUserBySocketId: function(socket_id, callback){
-        collection_users.find({socket_id: socket_id}).toArray(function(err, docs) {
+        this.collection_users.find({socket_id: socket_id}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var user = new User();
                 user.initFromDatabase(docs[0]);

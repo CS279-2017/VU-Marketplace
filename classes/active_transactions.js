@@ -4,18 +4,13 @@ var Transaction = require("./transaction.js");
 //transactions database contains both complete and incomplete transactions (can use Transaction variables to determine
 //the category of a transaction
 
-var database = require("../app.js").database;
+// var database = require("../app.js").database;
+//
+// var collection_transactions = database.collection('transactions');
 
-var collection_transactions = database.collection('transactions');
-
-function ActiveTransactions(){
-    this.transactions_id_to_transaction_map = {};
-
-    this.user_id_to_transactions_map = {};
-    this.transaction_id_to_user_id_map = {};
-
-    this.listing_id_to_transactions_map = {};
-    this.transaction_id_to_listing_id_map = {};
+function ActiveTransactions(database){
+    this.database = database;
+    this.collection_transactions = database.collection('transactions');
 }
 
 ActiveTransactions.prototype = {
@@ -108,7 +103,7 @@ ActiveTransactions.prototype = {
     },
     get: function (transaction_id, callback){
         // return this.transactions_id_to_transaction_map[transaction_id];
-        collection_transactions.find({_id: toMongoIdObject(_id)}).toArray(function(err, docs) {
+        this.collection_transactions.find({_id: toMongoIdObject(_id)}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 //checks that verification_code is valid and email hasn't already been registered
                 var transaction = new Transaction();
@@ -126,7 +121,7 @@ ActiveTransactions.prototype = {
     //gets all transactions involving a user with a given user_id
     //TODO: find a better way to perform these searching functions
     getAllForUser: function(user_id, callback){
-        collection_transactions.find({user_id: user_id}).toArray(function(err, docs) {
+        this.collection_transactions.find({user_id: user_id}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_transactions = [];
                 for(var i = 0; i < docs.length; i++){
@@ -157,7 +152,7 @@ ActiveTransactions.prototype = {
         // var transactions = this.listing_id_to_transactions_map[listing_id];
         // if(transactions == undefined){ return []; }
         // return transactions;
-        collection_transactions.find({listing_id: listing_id}).toArray(function(err, docs) {
+        this.collection_transactions.find({listing_id: listing_id}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_transactions = [];
                 for(var i = 0; i < docs.length; i++){
@@ -180,7 +175,7 @@ ActiveTransactions.prototype = {
         //     transactions_arr.push(this.transactions_id_to_transaction_map[key]);
         // }
         // return transactions_arr;
-        collection_transactions.find({active: true}).toArray(function(err, docs) {
+        this.collection_transactions.find({active: true}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_transactions = [];
                 for(var i = 0; i < docs.length; i++){

@@ -13,7 +13,7 @@ var Notification = function() {
     }
 
     Notification.prototype = {
-        constructor: Listing,
+        constructor: Notification,
         initFromDatabase: function (notification) {
             this._id = notification._id;
             this.user_id = notification.user_id;

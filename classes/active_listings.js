@@ -2,17 +2,13 @@ module.exports = ActiveListings;
 
 var Listing = require("./listing.js");
 
-var database = require("../app.js").database;
+// var database = require("../app.js").database;
 
-var collection_listings = database.collection('listings');
+// var collection_listings = database.collection('listings');
 
-function ActiveListings(){
-    //maintain a listings array so that listings are listed in some sequence
-    this.listings = [];
-    //maintain a map so that listings can be retrieved in constant time by _id
-    this.map = {};
-
-    this.hash_tag_map = {};
+function ActiveListings(database){
+    this.database = database;
+    this.collection_listings = database.collection('listings');
 }
 
 //always create transaction before deleting listing
@@ -74,7 +70,7 @@ ActiveListings.prototype = {
     },
     get: function(listing_id, callback){
         // return this.map[listing_id];
-        collection_listings.find({_id: toMongoIdObject(listing_id)}).toArray(function(err, docs) {
+        this.collection_listings.find({_id: toMongoIdObject(listing_id)}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 //checks that verification_code is valid and email hasn't already been registered
                 var listing = new Listing();
@@ -89,7 +85,7 @@ ActiveListings.prototype = {
     //returns an array of all the listings
     getAll: function(callback){
         // return this.listings;
-        collection_listings.find({active: true}).toArray(function(err, docs) {
+        this.collection_listings.find({active: true}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_listings = [];
                 for(var i = 0; i < docs.length; i++){
@@ -115,7 +111,7 @@ ActiveListings.prototype = {
         // // console.log("active_listings,getAllForUser:");
         // // console.log(transactions_arr)
         // return listings_arr;
-        collection_listings.find({user_id: user_id}).toArray(function(err, docs) {
+        this.collection_listings.find({user_id: user_id}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_listings = [];
                 for(var i = 0; i < docs.length; i++){
