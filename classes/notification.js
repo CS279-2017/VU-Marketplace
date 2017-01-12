@@ -20,6 +20,7 @@ var Notification = function() {
             this.user_id = notification.user_id;
             this.transaction_id = notification.transaction_id;
             this.message = notification.message;
+            this.send_user_id = notification.sender_user_id;
 
         }
     }

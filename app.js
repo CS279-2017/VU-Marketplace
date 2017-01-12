@@ -6,6 +6,9 @@ var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var apn = require('apn');
 
+var request = require("request");
+
+
 const crypto = require('crypto');
 const secret = 'vandylistisawesome';
 
@@ -22,6 +25,7 @@ var User = require("./classes/user.js");
 var Message = require("./classes/message.js");
 var Transaction = require("./classes/transaction.js");
 var Listing = require("./classes/listing.js");
+var Book = require("./classes/book.js");
 var Conversation = require("./classes/conversation.js");
 var Location = require("./classes/location.js")
 var UserInfo = require("./classes/user_info.js")
@@ -108,7 +112,6 @@ var max_picture_size = 700000
 var host = "";
 
 server.listen(port,function () {
-
     host = server.address().address
     if(host == "::"){
         host = "localhost"
@@ -167,15 +170,7 @@ app.get('/', function (req, res) {
 
 //TODO: when a user connects check if they are logged in, if not then tell them to login, this is done on the client side
 io.on('connection', function (socket) {
-    
-    // active_users.getUserBySocketId(socket.id, function(user){
-    //     if(user != undefined){
-    //         console.log(user.first_name + " " + user.last_name + " has connected");
-    //     }
-    //     else{
-    //         console.log("A user has connected!");
-    //     }
-    // });
+
 
     // socket.emit('event', { data: 'server data' });
     //TODO: should active_listings and transactions be terminated? no unless terminated by other party
@@ -1156,13 +1151,12 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
         var notification_id = json.notification_id
-        function callback(users_previous_transactions){
+        function callback(){
             //send all_active_listings back to client
-
-            socket.emit("get_users_previous_transactions_response", {data: {users_previous_transactions: users_previous_transactions}, error: null});
+            socket.emit("deactivate_notification_response", {data: null, error: null});
         }
         function error_handler(e){
-            socket.emit("get_users_previous_transactions_response", {data: null, error: e});
+            socket.emit("deactivate_notification_response", {data: null, error: e});
             console.log(e);
         }
         authenticate(user_id, password, device_token, function(user){
@@ -1274,6 +1268,33 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         getPicture(picture_id, callback, error_handler);
+    })
+
+    socket.on('search_books', function(json){
+        console.log("search_books called!")
+        var search_query = json.search_query;
+        var api_key = "4MCC8UA5"
+        var request_url = "http://isbndb.com/api/v2/json/" + api_key + "/books?q=" + search_query;
+        console.log(request_url);
+        request(request_url, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var books = [];
+                var json = JSON.parse(body)
+                var data = json.data;
+                // console.log(data.length);
+                for(var i=0; i<data.length; i++){
+                    var book = new Book(data[i]);
+                    console.log(book);
+                    books.push(book);
+                }
+                console.log("search_books_response success!")
+                socket.emit("search_books_response", {data: {books: books}, error: null});
+            }
+            else{
+                console.log("search_books_response failure!")
+                socket.emit("search_books_response", {data: null, error: "Search Query Failed"});
+            }
+        });
     })
 });
 
@@ -2651,17 +2672,12 @@ function getPicture(picture_id, callback, error_handler){
 
 function getUsersActiveNotifications(user_id, callback, error_handler){
     var collection = database.collection('notifications');
-    collection.find({user_id: toMongoIdObject(user_id), active: true}).toArray(function(err, docs) {
+    collection.find({user_id: user_id, active: true}).toArray(function(err, docs) {
         if(err){
             error_handler(err);
         }
         else {
-            if (docs.length > 0) {
-                callback(docs);
-            }
-            else {
-
-            }
+            callback(docs);
         }
     });
 }
@@ -2714,8 +2730,8 @@ function deactivateNotification(notification_id, callback, error_handler){
             }
         }
     });
-
 }
+
 
 function updateTransactionInDatabase(transaction, callback, error_handler){
     var collection_transactions = database.collection('transactions');
@@ -2819,24 +2835,31 @@ function emitEvent(event_name, data, user_id_arr, notification_info){
     for(var i=0; i<user_id_arr.length; i++){
         // var user = active_users.get(user_id_arr[i]);
         getUser(user_id_arr[i], function(user){
-            var user_socket;
-            if(user != undefined){
-                user_socket = io.sockets.connected[user.socket_id];
-            }
-            var event = new Event(event_name, data, null);
-            // var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
+            var notification_database_object = {message: notification_info.alert, transaction_id: data.transaction_id, user_id: user_id, sender_user_id: data.user_id, active: true, time_sent: new Date().getTime()};
+            addNotificationToDatabase(notification_database_object, function(){
+                var user_socket;
+                if(user != undefined){
+                    user_socket = io.sockets.connected[user.socket_id];
+                }
+                var event = new Event(event_name, data, null);
+                // var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
 
-            if(user_socket != undefined) {
-                user_socket.emit(event.name , event.message);
-            }
-            else{
-                if(user != undefined) {
-                    // user.enqueueEvent(event);
-                    if(notification_info != undefined){
-                        sendNotification(notification_info, user.device_token, data.user_id, data.transaction_id);
+                if(user_socket != undefined) {
+                    user_socket.emit(event.name , event.message);
+                }
+                else{
+                    if(user != undefined) {
+                        // user.enqueueEvent(event);
+                        if(notification_info != undefined){
+                            sendNotification(notification_info, user.device_token, data.user_id, data.transaction_id);
+                        }
                     }
                 }
-            }
+            }, function(error){
+                console.log(error)
+            });
+
+
         });
 
 
@@ -2987,9 +3010,6 @@ function sendNotification(notification_info, device_token, user_id, transaction_
 
     var deviceToken = device_token;
 
-    var notification_database_object = {message: notification_info.alert, transaction_id: transaction_id, user_id: user_id, active: true};
-
-
 // Prepare a new notification
     var notification = new apn.Notification();
     // Specify your iOS app's Bundle ID (accessible within the project editor)
@@ -3018,14 +3038,10 @@ function sendNotification(notification_info, device_token, user_id, transaction_
     }
     // Actually send the notification
 
-    addNotificationToDatabase(notification_database_object, function(){
-        apnProvider.send(notification, deviceToken).then(function(result) {
-            // Check the result for any failed devices
-            console.log(result);
-            console.log(device_token);
-        });
-    }, function(error){
-        console.log(error)
+    apnProvider.send(notification, deviceToken).then(function(result) {
+        // Check the result for any failed devices
+        console.log(result);
+        console.log(device_token);
     });
 
 }

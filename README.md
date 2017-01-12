@@ -3,13 +3,19 @@
 ##TODO:
 * Add a database of books, be able to search on those books and add listings under those categories
 
-
+###Listing API
+_id
+_book_id
+_description
+_location
+_creation_time
+_seller_id
+_
+_book_id
 ##COMPLETED:
 * ~~add ability to upload profile picture~~
 * ~~add limit on number of transactions per user to 3 and the number of listings to 8~~
 * ~~1 minute countdown timer for accepting a transaction request~~
-
-
 
 
 ###Events Received by Server from Client (Client -> Server)
