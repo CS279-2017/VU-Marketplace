@@ -3,6 +3,8 @@
 ##TODO:
 * Add a database of books, be able to search on those books and add listings under those categories
 
+* A listing is a template for transactions, transactions are created from listings, every listing can have multiple transactions requests created from it, of which the seller selects to accept.
+
 ###Listing API
 _id
 _book_id

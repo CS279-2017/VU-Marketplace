@@ -173,6 +173,21 @@ var Transaction = function() {
                 this.notified = transaction.notified; 
             }
             
+            if(transaction.seller_first_name != undefined){
+                this.seller_first_name = transaction.seller_first_name
+            }
+            if(transaction.seller_last_name != undefined){
+                this.seller_last_name = transaction.seller_last_name;
+            }
+            if(transaction.buyer_first_name != undefined){
+                this.buyer_first_name = transaction.buyer_first_name
+            }
+            if(transaction.buyer_last_name != undefined){
+                this.buyer_last_name = transaction.buyer_last_name;
+            }
+            
+           
+            
             
             this.active = transaction.active;
         },

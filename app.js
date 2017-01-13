@@ -361,7 +361,9 @@ io.on('connection', function (socket) {
         var location = json.location;
         var expiration_time = json.expiration_time;
         var price = json.price;
-        var buy = json.buy;
+        // var buy = json.buy;
+        //all listings are sell listings
+        var buy = false;
         function callback(listing){
             active_users.get(user_id, function(user){
                 var buy_or_sell = listing.buy? "buy" : "sell";
@@ -1839,29 +1841,34 @@ function makeListing(user_id, password, device_token, title, description, locati
 
 
         var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
-        var collection_listings = database.collection('listings');
-        collection_listings.insert(new_listing, function (err, count, status) {
-            if(err){error_handler(err.message);}
-            else{
-                collection_listings.find(new_listing).toArray(function(err, docs){
-                    if(docs.length == 1){
-                        new_listing.initFromDatabase(docs[0]);
-                        try {
-                            active_listings.add(new_listing);
-                            // user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
-                            updateUserInDatabase(user, function(){
+        active_users.get(user_id, function(user){
+            new_listing.first_name = user.first_name;
+            new_listing.last_name = user.last_name;
+            var collection_listings = database.collection('listings');
+            collection_listings.insert(new_listing, function (err, count, status) {
+                if(err){error_handler(err.message);}
+                else{
+                    collection_listings.find(new_listing).toArray(function(err, docs){
+                        if(docs.length == 1){
+                            new_listing.initFromDatabase(docs[0]);
+                            try {
+                                active_listings.add(new_listing);
+                                // user.addCurrentListingId(new_listing._id); //adds the new listing_id to user's current_listings
+                                updateUserInDatabase(user, function(){
 
-                            }, error_handler)
-                        }catch(e){error_handler(e.message)};
-                        if(callback != undefined){ callback(new_listing);}
-                    }
-                    else{
-                        error_handler("more than 1 listing inserted into database");
-                        return;
-                    }
-                });
-            }
-        });
+                                }, error_handler)
+                            }catch(e){error_handler(e.message)};
+                            if(callback != undefined){ callback(new_listing);}
+                        }
+                        else{
+                            error_handler("more than 1 listing inserted into database");
+                            return;
+                        }
+                    });
+                }
+            });
+        })
+
     }, error_handler)
 }
 
@@ -2002,51 +2009,20 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
             error_handler(e.message);
             return;
         }
-        addTransactionToDatabase(new_transaction, function(new_transaction){
-            try {
-                // new_transaction.expiration_time = new Date().getTime() + 60000 * transaction_expiration_time_in_minutes;
-                //Set 60 second time to respond to transaction_request
-                // setTimeout(function(){
-                //     var transaction = active_transactions.get(new_transaction._id);
-                //     if(transaction != undefined) {
-                //         var other_user_id = transaction.getOtherUserId(user_id);
-                //         var collection = database.collection('users');
-                //         collection.find({_id: new require('mongodb').ObjectID(other_user_id.toString())}).toArray(function(err, docs) {
-                //             if (docs.length > 0) {
-                //                 //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-                //                 var user = new User();
-                //                 user.initFromDatabase(docs[0]);
-                //                 if (transaction.isAccepted() != true) {
-                //                     declineTransactionRequest(user._id, user.password, user.device_token, transaction._id, function () {
-                //                         emitEvent("transaction_request_declined",  {transaction_id: transaction._id.toString(), user_id: user._id}, [other_user_id, user_id]);
-                //                         console.log(user.first_name + " " + user.last_name + " declined  transaction " + transaction.title + " due to exceeding time limit for response")
-                //                     }, error_handler);
-                //                 }
-                //             }
-                //             else {
-                //                 error_handler("user with user_id " + other_user_id + " was not found");
-                //             }
-                //         });
-                //     }
-                // }, 60000 * transaction_expiration_time_in_minutes)
+        active_users.get(new_transaction.buyer_user_id, function(buyer){
+            new_transaction.buyer_first_name = buyer.first_name;
+            new_transaction.buyer_last_name = buyer.last_name;
+            active_users.get(new_transaction.seller_user_id, function(seller){
+                new_transaction.seller_first_name = seller.first_name;
+                new_transaction.seller_last_name = seller.last_name;
+                addTransactionToDatabase(new_transaction, function(new_transaction){
+                    if(callback != undefined && callback != null){
+                        callback(new_transaction);
+                    }
+                });
+            });
+        })
 
-                active_transactions.add(new_transaction);
-                // var user = active_users.get(user_id);
-                // try{
-                //     // user.addCurrentTransactionId(new_transaction._id);
-                //     updateUserInDatabase(user, function(){
-                //
-                //     }, error_handler)
-                // }catch(e){
-                //     error_handler(e.message);
-                // }
-                //adds transaction_id to user that initiates
-                //user object is returned by authenticate
-            }catch(e){error_handler(e.message)};
-            if(callback != undefined && callback != null){
-                callback(new_transaction);
-            }
-        });
 
         function createTransactionFromListing(user_id, listing_id){
             active_listings.get(listing_id, function(listing){

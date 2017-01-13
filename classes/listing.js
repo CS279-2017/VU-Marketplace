@@ -37,6 +37,14 @@ var Listing = function() {
             this.transaction_id = listing.transaction_id;
             this.active = listing.active;
 
+            if(listing.first_name != undefined){
+                this.first_name = listing.first_name;
+            }
+            if(listing.last_name != undefined){
+                this.last_name = listing.last_name;
+            }
+
+
             //backward compatability
             if(listing.removed_time != undefined){
                 this.removed_time = listing.removed_time;
