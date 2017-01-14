@@ -126,12 +126,21 @@ ActiveListings.prototype = {
             }
         });
     },
-    getListingsWithHashTag: function(hash_tag){
-        // var listings = this.hash_tag_map[hash_tag];
-        // if(listings = undefined){
-        //     return [];
-        // }
-        // return listings;
+    getListingsWithBookIsbn: function(isbn13){
+        this.collection_listings.find({isbn13: isbn13}).toArray(function(err, docs) {
+            if(docs.length > 0) {
+                var active_listings = [];
+                for(var i = 0; i < docs.length; i++){
+                    var listing = new Listing();
+                    listing.initFromDatabase(docs[i]);
+                    active_listings.push(listing);
+                }
+                callback(active_listings);
+            }
+            else {
+                callback([]);
+            }
+        });
     },
     size: function(){
         // return this.listings.length;

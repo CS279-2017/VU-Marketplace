@@ -361,6 +361,7 @@ io.on('connection', function (socket) {
         var location = json.location;
         var expiration_time = json.expiration_time;
         var price = json.price;
+        var isbn13 = json.isbn13
         // var buy = json.buy;
         //all listings are sell listings
         var buy = false;
@@ -377,7 +378,7 @@ io.on('connection', function (socket) {
             socket.emit("make_listing_response", {data: null, error: e});
             console.log(e);
         }
-        makeListing(user_id, password, device_token, title, description, location, expiration_time, price, buy, callback, error_handler);
+        makeListing(user_id, password, device_token, title, description, location, expiration_time, price, buy, callback, error_handler, isbn13);
     });
 
     socket.on('update_listing', function(json){
@@ -481,14 +482,6 @@ io.on('connection', function (socket) {
             //send transaction request to other user first then notify calling user of success
             //upon receiving the make_transaction_request_response the intial calling user can make a transaction object
             try {
-                //Sends message to other user that a transaction has been made on their listing
-                // var this_user = active_users.get(user_id)
-                // var this_user_socket = io.sockets.connected[this_user.socket_id];
-                // setTimeout(function(){
-                //     declineTransactionRequest(transaction.getOtherUserId(user_id), password, transaction._id, function(){
-                //
-                //     }, error_handler)
-                // }, 60000)
                 active_users.get(user_id, function(user){
                     console.log(user);
                     var price = (transaction.offer != undefined && transaction.offer != null) ? transaction.offer : transaction.price
@@ -1212,18 +1205,18 @@ io.on('connection', function (socket) {
         }, error_handler)
     });
 
-    socket.on('get_listings_with_hash_tag', function(json){
+    socket.on('get_listings_with_book_isbn', function(json){
         // var login_info = json.login_info;
-       var hash_tag = json.hash_tag;
+       var isbn13 = json.isbn13;
         // authenticate()
 
         function callback(listings){
-            socket.emit("get_listings_with_hash_tag_response", {data: {listings: listings}, error: null})
+            socket.emit("get_listings_with_book_isbn_response", {data: {listings: listings}, error: null})
         }
         function error_handler(e){
-            socket.emit("get_listings_with_hash_tag_response", {data: null, error: e})
+            socket.emit("get_listings_with_book_isbn_response", {data: null, error: e})
         }
-        getListingsWithHashTag(hash_tag, callback, error_handler)
+        getListingsWithBookIsbn(isbn13, callback, error_handler)
     });
 
     socket.on('get_user', function(json){
@@ -1284,10 +1277,12 @@ io.on('connection', function (socket) {
                 var json = JSON.parse(body)
                 var data = json.data;
                 // console.log(data.length);
-                for(var i=0; i<data.length; i++){
-                    var book = new Book(data[i]);
-                    console.log(book);
-                    books.push(book);
+                if(data != undefined){
+                    for(var i=0; i<data.length; i++){
+                        var book = new Book(data[i]);
+                        console.log(book);
+                        books.push(book);
+                    }
                 }
                 console.log("search_books_response success!")
                 socket.emit("search_books_response", {data: {books: books}, error: null});
@@ -1807,40 +1802,40 @@ function authenticate(user_id, password, device_token, callback, error_handler){
 //5. notify all that a new listing has been added 
 
 //TODO: save the listing state i.e bool called active so that upon server crash, active_listings can be restored
-function makeListing(user_id, password, device_token, title, description, location, expiration_time, price, buy, callback, error_handler){
+function makeListing(user_id, password, device_token, title, description, location, expiration_time, price, buy, callback, error_handler, isbn13){
     authenticate(user_id, password, device_token, function(user){
         var error_string = "";
         //must be less than 30 characters
-        if(validateTitle(title) != ""){
-            error_string += (validateTitle(title) + "\n");
-        }
+        // if(validateTitle(title) != ""){
+        //     error_string += (validateTitle(title) + "\n");
+        // }
         //must be less than 140 characters
         if(validateDescription(description) != ""){
             error_string += (validateDescription(description) + "\n");
         }
         //must be a object with keys latitude and longitude
-        if(validateLocation(location) != ""){
-            error_string += (validateLocation(location) + "\n");
-        }
+        // if(validateLocation(location) != ""){
+        //     error_string += (validateLocation(location) + "\n");
+        // }
         //must be a value between now and 2020
-        if(validateExpirationTime(expiration_time) != ""){
-            error_string += (validateExpirationTime(expiration_time) + "\n");
-        }
+        // if(validateExpirationTime(expiration_time) != ""){
+        //     error_string += (validateExpirationTime(expiration_time) + "\n");
+        // }
         //must be a valid number
         else if(validatePrice(price) != ""){
             error_string += (validatePrice(price) + "\n");
         }
         //must be a boolean
-        if(validateBuy(buy) != ""){
-           error_string += (validateBuy(buy) + "\n");
-        }
+        // if(validateBuy(buy) != ""){
+        //    error_string += (validateBuy(buy) + "\n");
+        // }
         if(error_string != ""){
             error_handler(error_string);
             return;
         }
 
 
-        var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
+        var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy, isbn13);
         active_users.get(user_id, function(user){
             new_listing.first_name = user.first_name;
             new_listing.last_name = user.last_name;
@@ -1928,30 +1923,13 @@ function removeListing(listing_id, callback, error_handler){
             listing.removed_time = new Date().getTime();
             listing.active = false; //deactivate the listing
             updateListingInDatabase(listing, function () {
-                var user = active_users.get(listing.user_id, function(user){
-                    active_listings.remove(listing_id);
-                    if (user != undefined) { //in case user has already logged out
-                        try {
-                            // user.removeCurrentListingId(listing_id);
-                            updateUserInDatabase(user, function(){
-
-                            }, error_handler)
-                        }catch(e){
-                            error_handler(e.message)
-                        }
-                    }
-                    if (callback != undefined) {
-                        callback(listing_id);
-                    }
-                })
+                if (callback != undefined) {
+                    callback(listing_id);
+                }
             }, error_handler);
         }
     });
     console.log("removeListing called");
-    //TODO: updateListing removed because mongodb throws an error because of it for some reaosn, fix this later
-    //TODO: all this causes is that removed listings won't have the most up to date info, however since listings are
-    //TODO: never reused, this doesn't matter.
-
 }
 
 
@@ -1980,15 +1958,9 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
                 error_handler("You are involved in too many transactions, you cannot be in more than " + max_transactions + " transactions");
                 return;
             }
-            active_listings.get(listing_id, function(listing){
-                // if(active_transactions.getAllForUser(listing.user_id).length >= max_transactions){
-                //     error_handler("The other user is currently involved in too many transactions");
-                //     return;
-                // }
-                makeTransaction(user_id, listing_id, function (transaction) {
-                    callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
-                }, error_handler)
-            });
+            makeTransaction(user_id, listing_id, function (transaction) {
+                callback(transaction); //pass listing_id back for testing purposes (so owner of listing can accept)
+            }, error_handler)
 
         });
 
@@ -2012,11 +1984,16 @@ function makeTransactionRequest(user_id, password, device_token, listing_id, cal
         active_users.get(new_transaction.buyer_user_id, function(buyer){
             new_transaction.buyer_first_name = buyer.first_name;
             new_transaction.buyer_last_name = buyer.last_name;
+            new_transaction.buyer_venmo_id = buyer.venmo_id;
             active_users.get(new_transaction.seller_user_id, function(seller){
                 new_transaction.seller_first_name = seller.first_name;
                 new_transaction.seller_last_name = seller.last_name;
+                new_transaction.seller_venmo_id = seller.venmo_id;
                 addTransactionToDatabase(new_transaction, function(new_transaction){
                     if(callback != undefined && callback != null){
+                        // var listing =  active_listing.get(listing_id, function(listing){
+                        //     listing.addTransactionId(new_transaction._id);
+                        // })
                         callback(new_transaction);
                     }
                 });
@@ -2098,7 +2075,7 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
                 var listing = active_listings.get(transaction.listing_id, function(listing){
                     //throws error if transaction_id has already been set
                     //or listing has already been deleted, means listing has already been accepted
-                    if(listing == undefined || listing.transaction_id != null){
+                    if(listing == undefined || listing.active == false){
                         error_handler("user with user id " + user_id + "has already accepted another transaction for this listing");
                         return;
                     }
@@ -2114,16 +2091,12 @@ function acceptTransactionRequest(user_id, password, device_token, transaction_i
                     });
 
 
-                    listing.transaction_id = transaction_id; //set transaction_id to listing before updating it in database
+                    listing.active = false; //set transaction_id to listing before updating it in database
                     //update listing in database
                     removeListing(transaction.listing_id, function(){
-                        if(user != undefined) { //in case user has logged out
-                            // user.addCurrentTransactionId(transaction_id);
-                            updateUserInDatabase(user, function(){}, error_handler)
-                            transaction.start_time = new Date().getTime();
-                            updateTransactionInDatabase(transaction, function(){}, function(){});
-                            callback(transaction);
-                        }
+                        transaction.start_time = new Date().getTime();
+                        updateTransactionInDatabase(transaction, function(){}, function(){});
+                        callback(transaction);
                     }, error_handler)
 
                     //throws error if user with the user_id has already accepted request or if user_id
@@ -2157,14 +2130,9 @@ function declineTransactionRequest(user_id, password, device_token, transaction_
             try {
                 transaction.declineRequest(user_id);
                 transaction.active = false;
-                //update transaction in database before deleting it so we have a record of the failed transaction
                 updateTransactionInDatabase(transaction, function(){
+                    callback(transaction);
                 }, error_handler);
-                active_transactions.remove(transaction._id);
-                callback(transaction);
-                //throws error if user with the user_id has already accepted request or if user_id
-                //doesn't match either user_id of the transactions
-                //verify that the other user has already accepted_request if not throw error
             }catch(e){
                 error_handler(e.message);
                 return;
@@ -2449,16 +2417,16 @@ function getAllActiveListings(user_id, password, device_token, callback, error_h
 
     }, error_handler)
 }
-//
-// function getListingsWithHashTag(hash_tag, callback, error_handler){
-//     try {
-//         var listings = active_listings.getListingsWithHashTag(hash_tag);
-//     }catch(e){
-//         error_handler(e.message);
-//         return;
-//     }
-//     callback(listings);
-// }
+
+function getListingsWithBookIsbn(isbn13, callback, error_handler){
+    try {
+        var listings = active_listings.getListingsWithBookIsbn(isbn13);
+    }catch(e){
+        error_handler(e.message);
+        return;
+    }
+    callback(listings);
+}
 
 function getUsersActiveTransactions(user_id, password, device_token, callback, error_handler){
     authenticate(user_id, password, device_token, function(user){

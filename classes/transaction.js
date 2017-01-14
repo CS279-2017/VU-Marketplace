@@ -33,15 +33,17 @@ var Transaction = function() {
             }
         }
         if(listing != undefined) {
-            this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
-            this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
-            this.location = listing.location;
+            this.listing_id = listing._id;
+            // this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
+            // this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
+            // this.location = listing.location;
+            // this.location = listing.location;
             this.creation_time = new Date().getTime()
-            this.price = listing.price
+            // this.price = listing.price
             this.buyer_user_id = user_buy_id; //_id of User
             this.seller_user_id = user_sell_id; //_id of Seller
-            this.buy = listing.buy;
-            this.listing_id = listing._id; //listing_id
+            // this.buy = listing.buy;
+            // this.listing_id = listing._id; //listing_id
             this.conversation = new Conversation();
             if (listing.buy == true) {
                 this.buyer_accepted_request = null;
@@ -52,15 +54,15 @@ var Transaction = function() {
                 this.seller_accepted_request = null;
             } //booling containing with user_buy and user_sell have accepted the request, user that creates the transaction will
             // set the bool to yes automatically
-            this.buyer_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
-            this.seller_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
+            // this.buyer_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
+            // this.seller_confirmed_meet_up = null; //whether buyer confirms that transaction has been completed, null = not accepted, true = accepted, false = declined
             //in both initiate and confirm_meet_up any false indicates the transaction was canceled by one party
             this.end_time = null;
             this.start_time = null;
 
             this.active = true;
 
-            this.picture_ids = listing.picture_ids;
+            // this.picture_ids = listing.picture_ids;
 
         }
     }
@@ -125,22 +127,24 @@ var Transaction = function() {
         constructor: Transaction,
         initFromDatabase: function (transaction) {
             this._id = transaction._id
-            this.title = transaction.title;
-            this.description = transaction.description;
-            this.location = transaction.location;
+            // this.title = transaction.title;
+            // this.description = transaction.description;
+            // this.location = transaction.location;
             this.creation_time = transaction.creation_time;
-            this.price = transaction.price
+            // this.price = transaction.price
             this.buyer_user_id = transaction.buyer_user_id;
             this.seller_user_id = transaction.seller_user_id; //_id of Seller
-            this.buy = transaction.buy
+            // this.buy = transaction.buy
             this.listing_id = transaction.listing_id; //listing_id
+
             this.conversation = new Conversation(transaction.conversation);
+            
             this.buyer_accepted_request = transaction.buyer_accepted_request;
             this.seller_accepted_request = transaction.seller_accepted_request;
-            this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
-            this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
+            // this.buyer_confirmed_meet_up = transaction.buyer_confirmed_meet_up;
+            // this.seller_confirmed_meet_up = transaction.seller_confirmed_meet_up;
             
-            this.picture_ids = transaction.picture_ids;
+            // this.picture_ids = transaction.picture_ids;
 
             // if(transaction.owner_user_id){
             //     this.owner_user_id = transaction.owner_user_id;
@@ -179,11 +183,17 @@ var Transaction = function() {
             if(transaction.seller_last_name != undefined){
                 this.seller_last_name = transaction.seller_last_name;
             }
+            if(transaction.seller_venmo_id != undefined){
+                this.seller_venmo_id = transaction.seller_venmo_id;
+            }
             if(transaction.buyer_first_name != undefined){
                 this.buyer_first_name = transaction.buyer_first_name
             }
             if(transaction.buyer_last_name != undefined){
                 this.buyer_last_name = transaction.buyer_last_name;
+            }
+            if(transaction.buyer_venmo_id != undefined){
+                this.buyer_venmo_id = transaction.buyer_venmo_id;
             }
             
            

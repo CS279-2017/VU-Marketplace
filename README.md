@@ -5,15 +5,36 @@
 
 * A listing is a template for transactions, transactions are created from listings, every listing can have multiple transactions requests created from it, of which the seller selects to accept.
 
-###Listing API
-_id
-_book_id
-_description
-_location
-_creation_time
-_seller_id
-_
-_book_id
+* When making a new transaction (request), add its id to the transaction_ids of the listing its being made from
+
+* When a transaction_request is declined, remove the transaction from the listing_ids 
+
+###Transaction
+* _id
+* listing_id
+* creation_time
+* buyer_user_id
+* seller_user_id
+* conversation
+* buyer_accepted_request (default true)
+* seller_accepted_request (default null)
+* end_time
+* start_time
+* active (default true)
+
+* transactions have foreign keys to listing_id but listing_id doesn't have foreign key to transaction_id, in order to preserve the atomicity property of tables.
+* when creating transactions, check if listing is active to know if a transaction request can be made on the listing
+
+
+###Listing
+* _id
+* book_id
+* description
+* price
+* location
+* creation_time
+* book_id 
+
 ##COMPLETED:
 * ~~add ability to upload profile picture~~
 * ~~add limit on number of transactions per user to 3 and the number of listings to 8~~

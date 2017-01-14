@@ -3,7 +3,7 @@
 //Listings are removed after they expire, or they are removed manually by the user, or they are removed when a transaction based
 //on the listing has started, at the point remove all other transactions based on that listing
 var Listing = function() {
-    function Listing(user_id, title, description, location, expiration_time, price, buy) {
+    function Listing(user_id, title, description, location, expiration_time, price, buy, isbn13) {
         //Listing(id, titile, description, location, creation_time, expiration_time, price, buy)
         //this._id (this will be initialized when listing retrieved from database)
         this.user_id = user_id;
@@ -14,10 +14,13 @@ var Listing = function() {
         this.expiration_time = expiration_time;
         this.price = price;
         this.buy = buy; //true or false whether this is a buy listing
-        this.transaction_id = null;
+        // this.transaction_id = null;
+        // this.transaction_ids = [];
         this.active = true;
 
         this.removed_time = null;
+        
+        this.isbn13 = isbn13
 
         this.picture_ids = [];
     }
@@ -34,7 +37,7 @@ var Listing = function() {
             this.expiration_time = listing.expiration_time
             this.price = listing.price;
             this.buy = listing.buy;
-            this.transaction_id = listing.transaction_id;
+            // this.transaction_id = listing.transaction_id;
             this.active = listing.active;
 
             if(listing.first_name != undefined){
@@ -53,6 +56,9 @@ var Listing = function() {
             if(listing.picture_ids != undefined){
                 this.picture_ids = listing.picture_ids;
             }
+            if(listing.isbn13 != undefined){
+                this.isbn13 = listing.isbn13
+            }
 
         },
         update: function(listing){
@@ -62,6 +68,15 @@ var Listing = function() {
             this.expiration_time = listing.expiration_time;
             this.price = listing.price;
             this.buy = listing.buy;
+        },
+        addTransactionId: function(transaction_id){
+            // this.transaction_ids.push(transaction_id.toString());
+        },
+        removeTransactionId: function(transaction_id){
+            // var index = this.transaction_ids.indexOf(transaction_id.toString());
+            // if(index != -1){
+            //     this.transaction_ids.splice(index, 1)
+            // }
         },
         addPictureId: function(picture_id){
             this.picture_ids.push(picture_id.toString());
