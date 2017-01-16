@@ -74,7 +74,7 @@ ActiveListings.prototype = {
             if(docs.length > 0) {
                 //checks that verification_code is valid and email hasn't already been registered
                 var listing = new Listing();
-                listinginitFromDatabase(docs[0]);
+                listing.initFromDatabase(docs[0]);
                 callback(listing);
             }
             else {
@@ -126,10 +126,26 @@ ActiveListings.prototype = {
             }
         });
     },
-    getListingsWithBookIsbn: function(isbn13){
+    getListingsWithBookIsbn: function(isbn13, callback){
         this.collection_listings.find({isbn13: isbn13}).toArray(function(err, docs) {
+            var active_listings = [];
             if(docs.length > 0) {
-                var active_listings = [];
+                for(var i = 0; i < docs.length; i++){
+                    var listing = new Listing();
+                    listing.initFromDatabase(docs[i]);
+                    active_listings.push(listing);
+                }
+                callback(active_listings);
+            }
+            else {
+                callback([]);
+            }
+        });
+    },
+    getListingsWithUserId: function(user_id, callback){
+        this.collection_listings.find({user_id: toMongoIdObject(user_id.toString())}).toArray(function(err, docs) {
+            var active_listings = [];
+            if(docs.length > 0) {
                 for(var i = 0; i < docs.length; i++){
                     var listing = new Listing();
                     listing.initFromDatabase(docs[i]);
@@ -164,4 +180,8 @@ ActiveListings.prototype = {
         // return expired_listings_arr;
     },
 
+}
+
+function toMongoIdObject(id){
+    return new require('mongodb').ObjectID(id.toString());
 }

@@ -121,7 +121,7 @@ ActiveTransactions.prototype = {
     //gets all transactions involving a user with a given user_id
     //TODO: find a better way to perform these searching functions
     getAllForUser: function(user_id, callback){
-        {$or: [{expires: {$gte: new Date()}}, {expires: null}]}
+        // {$or: [{expires: {$gte: new Date()}}, {expires: null}]}
         this.collection_transactions.find({ $and: [{active: true}, {$or: [{buyer_user_id: user_id.toString()}, {seller_user_id: user_id.toString()}]}]}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_transactions = [];

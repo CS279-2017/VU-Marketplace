@@ -1,4 +1,4 @@
-module.exports = User;
+
 
 var Location = require("./location.js")
 
@@ -34,6 +34,9 @@ function User(first_name, last_name, password, email){
     this.active = true; //used for restoring logged in users after database crash
     
     this.logged_in = false;
+    
+    this.buying_listing_ids = [];
+    this.selling_listing_ids = [];
 }
 
 User.prototype = {
@@ -64,6 +67,12 @@ User.prototype = {
         }
         if(user.last_login_time != undefined){
             this.last_login_time = user.last_login_time;
+        }
+        if(user.buying_listing_ids != undefined){
+            this.buying_listing_ids = user.buying_listing_ids;
+        }
+        if(user.selling_listing_ids != undefined){
+            this.selling_listing_ids = user.selling_listing_ids;
         }
         
 
@@ -133,3 +142,5 @@ User.prototype = {
         // return top_event;
     }
 }
+
+module.exports = User;

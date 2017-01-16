@@ -15,6 +15,7 @@ function ActiveUsers(database){
     this.collection_users = database.collection('users');
     // this.user_id_to_user = {};
 }
+
 //active_users now indexed by _id rather than username, thus making login indepedent of username
 ActiveUsers.prototype = {
     constructor: ActiveUsers,

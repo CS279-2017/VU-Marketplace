@@ -3,16 +3,19 @@
 //Listings are removed after they expire, or they are removed manually by the user, or they are removed when a transaction based
 //on the listing has started, at the point remove all other transactions based on that listing
 var Listing = function() {
-    function Listing(user_id, title, description, location, expiration_time, price, buy, isbn13) {
+    function Listing(user_id, title, description, location, expiration_time, price, buy, isbn13, author_names) {
         //Listing(id, titile, description, location, creation_time, expiration_time, price, buy)
         //this._id (this will be initialized when listing retrieved from database)
         this.user_id = user_id;
-        this.title = title;
-        this.description = description;
         this.location = location;
         this.creation_time = new Date().getTime();
         this.expiration_time = expiration_time;
+
+        this.title = title;
+        this.description = description;
+        this.author_names = author_names;
         this.price = price;
+
         this.buy = buy; //true or false whether this is a buy listing
         // this.transaction_id = null;
         // this.transaction_ids = [];
@@ -29,13 +32,16 @@ var Listing = function() {
         constructor: Listing,
         initFromDatabase: function (listing) {
             this._id = listing._id;
-            this.user_id = listing.user_id
+
             this.title = listing.title;
             this.description = listing.description;
+            this.author_names = listing.author_names;
+            this.price = listing.price;
+
+            this.user_id = listing.user_id
             this.location = listing.location;
             this.creation_time = listing.creation_time;
             this.expiration_time = listing.expiration_time
-            this.price = listing.price;
             this.buy = listing.buy;
             // this.transaction_id = listing.transaction_id;
             this.active = listing.active;
@@ -58,6 +64,9 @@ var Listing = function() {
             }
             if(listing.isbn13 != undefined){
                 this.isbn13 = listing.isbn13
+            }
+            if(listing.author_names != undefined){
+                this.author_names = listing.author_names;
             }
 
         },

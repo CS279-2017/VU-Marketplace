@@ -34,8 +34,11 @@ var Transaction = function() {
         }
         if(listing != undefined) {
             this.listing_id = listing._id;
-            // this.title = listing.title; //copy over from listing (since listing will be deleted from active_listings
-            // this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
+
+            this.title = listing.title;//copy over from listing (since listing will be deleted from active_listings
+            this.description = listing.description; //copy over from listing (since listing will be deleted from active_listings
+            this.author_names = listing.author_names;
+            this.price = listing.price;
             // this.location = listing.location;
             // this.location = listing.location;
             this.creation_time = new Date().getTime()
@@ -127,15 +130,19 @@ var Transaction = function() {
         constructor: Transaction,
         initFromDatabase: function (transaction) {
             this._id = transaction._id
-            // this.title = transaction.title;
-            // this.description = transaction.description;
+            this.listing_id = transaction.listing_id; //listing_id
+
+            this.title = transaction.title;
+            this.description = transaction.description;
+            this.author_names = transaction.author_names;
+            this.price = transaction.price
+
+
             // this.location = transaction.location;
             this.creation_time = transaction.creation_time;
-            // this.price = transaction.price
             this.buyer_user_id = transaction.buyer_user_id;
             this.seller_user_id = transaction.seller_user_id; //_id of Seller
             // this.buy = transaction.buy
-            this.listing_id = transaction.listing_id; //listing_id
 
             this.conversation = new Conversation(transaction.conversation);
             
