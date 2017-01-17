@@ -1,5 +1,5 @@
 var assert = require('assert');
-var app = require("../app.js");
+var app = require("../old/app.js");
 var request = require("request");
 var base_url = "http://localhost:3000/"
 

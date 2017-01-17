@@ -1,8 +1,11 @@
-function User(first_name, last_name, email_address){
+function User(first_name, last_name, password, email_address){
     //TODO: find way to get a unique id that we can then assign the user, probably have to get it by querying the Database
     this._id = undefined;
     this.first_name = first_name;
     this.last_name = last_name;
+    if(password != undefined){
+        this.password = password;
+    }
     this.email_address = email_address
 
     this.device_token = undefined;
@@ -28,6 +31,9 @@ User.prototype = {
         if(user._id != undefined){
             this._id = user._id.toString();
         }
+        // if(user.password != undefined){
+        //     this.password = user.password;
+        // }
         if(user.first_name != undefined){
             this.first_name = user.first_name;
         }
@@ -80,6 +86,10 @@ User.prototype = {
         this.selling_listing_ids.push(listing_id.toString());
     },
 
+}
+
+function toMongoIdObject(id){
+    return new require('mongodb').ObjectID(id.toString());
 }
 
 module.exports = User;

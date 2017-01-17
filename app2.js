@@ -29,6 +29,7 @@ var Notification = require("./classes/notification2.js");
 
 var UsersCollection = require("./classes/users_collection")
 var ListingsCollection = require("./classes/listings_collection")
+var MessagesCollection = require("./classes/messages_collection")
 
 
 // create reusable transporter object using the default SMTP transport
@@ -71,6 +72,7 @@ var host = "";
 
 var listings_collection;
 var users_collection;
+var messages_collection;
 
 server.listen(port,function () {
     host = server.address().address
@@ -86,11 +88,9 @@ server.listen(port,function () {
             return;
         }
         database = db;
-        users_collection = UsersCollection(db);
-        listings_collection = ListingsCollection(db);
-
-
-
+        users_collection = new UsersCollection(db);
+        listings_collection = new ListingsCollection(db);
+        messages_collection = new MessagesCollection(db);
     });
 });
 
@@ -220,7 +220,7 @@ io.on('connection', function (socket) {
         }
         
         if(users_collection != undefined){
-            users_collection.get(user_id, function(user){
+            users_collection.get([user_id], function(user){
                 if(user != undefined && (device_token != user.device_token)){
                     error_handler("tried to authenticate an invalid user_id/password combination");
                 }
@@ -244,17 +244,16 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
 
-        var location = json.location;
-        var expiration_time = json.expiration_time;
-
-        var title = json.title;
+        var book = json.book;
         var description = json.description;
         var price = json.price;
-        var isbn13 = json.isbn13
-        var author_names = json.author_names;
-        // var buy = json.buy;
-        //all listings are sell listings
-        var buy = false;
+
+        // var location = json.location;
+        // var expiration_time = json.expiration_time;
+        // var title = json.title;
+        // var isbn13 = json.isbn13
+        // var author_names = json.author_names;
+        // var buy = false;
         
         authenticate(user_id, password, device_token, function(user){
             var error_string = "";
@@ -268,11 +267,13 @@ io.on('connection', function (socket) {
                 error_handler(error_string);
                 return;
             }
-            var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy, isbn13, author_names);
+            var new_listing = new Listing(user_id, book, description, price);
+            // var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy, isbn13, author_names);
             users_collection.get(user_id, function(user){
                 new_listing.first_name = user.first_name;
                 new_listing.last_name = user.last_name;
                 listings_collection.add(new_listing, function(listing){
+                    console.log(listing);
                     callback(listing);
                 }, error_handler)
             })
@@ -381,6 +382,63 @@ io.on('connection', function (socket) {
 
 
         }, error_handler);
+    });
+
+    socket.on('get_listings', function(json){
+        var listing_ids = json.listing_ids;
+        function callback(listing){
+            //send all_listings_collection back to client
+            socket.emit("get_listing_response", {data: {listings: listings}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_listing_response", {data: null, error: e});
+            console.log(e);
+        }
+        listings_collection.get(listing_ids, function(listings){
+            callback(listings);
+        }, error_handler);
+    });
+
+    socket.on('get_listings_with_isbn', function(json){
+        // var login_info = json.login_info;
+        var isbn13 = json.isbn13;
+        // authenticate()
+
+        function callback(listings){
+            socket.emit("get_listings_with_isbn_response", {data: {listings: listings}, error: null})
+        }
+        function error_handler(e){
+            socket.emit("get_listings_with_isbn_response", {data: null, error: e})
+        }
+        try {
+            listings_collection.getListingsWithBookIsbn(isbn13, function(listings){
+                callback(listings);
+            });
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
+    });
+
+    socket.on('get_listings_with_user_id', function(json){
+        // var login_info = json.login_info;
+        var user_id = json.user_id;
+        // authenticate()
+
+        function callback(listings){
+            socket.emit("get_listings_with_user_id_response", {data: {listings: listings}, error: null})
+        }
+        function error_handler(e){
+            socket.emit("get_listings_with_user_id_response", {data: null, error: e})
+        }
+        try {
+            listings_collection.getListingsWithUserId(user_id, function(listings){
+                callback(listings);
+            });
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
     });
     
     socket.on('update_user_location', function(json){
@@ -492,6 +550,22 @@ io.on('connection', function (socket) {
         }
     });
 
+    socket.on('get_profile_pictures', function(json){
+        var user_id = json.user_ids;
+        function callback(profile_pictures){
+            socket.emit("get_profile_picture_response", {data: {profile_picture: profile_pictures}, error: null});
+            // socket.emit("profile_picture_gotten", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
+            var end = new Date().getTime();
+            console.log("getProfilePicture time taken: " + (end - start));
+        }
+        function error_handler(e){
+            socket.emit("get_profile_picture_response", {data: null, error: e});
+            console.log(e);
+        }
+        var start = new Date().getTime();
+        // getProfilePictures(user_ids, callback, error_handler);
+    });
+
     socket.on('update_picture', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -583,110 +657,96 @@ io.on('connection', function (socket) {
         }
     });
 
-    socket.on('send_chat_message', function(json){
+    socket.on('get_picture', function(json){
+        var start = new Date().getTime();
+        var picture_id = json.picture_id;
+        function callback(picture){
+            socket.emit("get_picture_response", {data: {picture_id: picture_id.toString(), picture: picture}, error: null});
+            // socket.emit("picture_gotten", {data: {picture_id_id: picture_id.toString(), picture: profile_picture}, error: null});
+            // console.log("emitting profile_picture_gotten took " + (end1 - start1) + " milliseconds.")
+            var end = new Date().getTime();
+            console.log("getPicture execution time: " + (end - start));
+        }
+        function error_handler(e){
+            socket.emit("get_picture_response", {data: null, error: e});
+            console.log(e);
+        }
+        getPicture(picture_id, callback, error_handler);
+    })
+    
+    socket.on('send_message', function(json){
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
-        var transaction_id = json.transaction_id;
+        var to_user_id = json.to_user_id;
         var message_text = json.message_text;
-        function callback(message){
-            socket.emit("send_chat_message_response", {data: null, error: null});
-            //notify all user in the transaction that a new message has been sent
-            try {
-                active_transactions.get(transaction_id, function(transaction){
-                    emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
-                    // var buyer = transaction.buyer_user_id;
-                    // var seller = transaction.seller_user_id;
-                    // var buyer_socket = io.sockets.connected[buyer.socket_id];
-                    // var seller_socket = io.sockets.connected[seller.socket_id];
-                    // buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
-                    // seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
-                    users_collection.get(user_id, function(user){
-                        var other_user_id = transaction.getOtherUserId(user_id);
-                        users_collection.get(other_user_id, function(other_user){
-                            var other_user_socket = undefined
-                            if(other_user != undefined){
-                                other_user_socket = io.sockets.connected[other_user.socket_id];
-                            }
-                            // if(other_user_socket == undefined){
-                            var alert = user.first_name + " " + user.last_name + ": " + message_text;
-                            var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction_id: transaction._id.toString()}};
-                            if(other_user != undefined) {
-                                sendNotification(notification_info, other_user.device_token, user._id, transaction._id);
-                            }
-                            // }
-                            getUserInfo(user_id, function(user_info){
-                                console.log(user_info.first_name + " " + user_info.last_name + ": '" + message.text +"'");
-                            }, function(){})
-                        });
-                    });
-                });
 
-            }catch(e){
-                console.log(e);
-                return;
-            }
+        function callback(message){
+            socket.emit("send_message_response", {data: {message: message}, error: null});
         }
         function error_handler(e){
+            socket.emit("send_message_response", {data: null, error: e});
             console.log(e);
         }
-        sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler)
-    });
+        authenticate(user_id, password, device_token, function(user){
+            var message = new Message(message_text, user_id, to_user_id);
+            messages_collection.add(message, function(message){
+                var alert = user.first_name + " " + user.last_name + ": " + message_text;
+                var notification_info = {alert: alert, category: "MESSAGE_SENT", payload: {from_user_id: user_id, to_user_id: to_user_id}};
+                emitEvent("message_sent", message, [to_user_id], notification_info);
+                callback(message);
+            }, error_handler)
+        }, error_handler)
+    })
 
-    // socket.on('get_all_listings', function(json){
+    // socket.on('send_chat_message', function(json){
     //     var user_id = json.user_id;
     //     var password = json.password;
     //     var device_token = json.device_token
+    //     var transaction_id = json.transaction_id;
+    //     var message_text = json.message_text;
+    //     function callback(message){
+    //         socket.emit("send_chat_message_response", {data: null, error: null});
+    //         //notify all user in the transaction that a new message has been sent
+    //         try {
+    //             active_transactions.get(transaction_id, function(transaction){
+    //                 emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
+    //                 // var buyer = transaction.buyer_user_id;
+    //                 // var seller = transaction.seller_user_id;
+    //                 // var buyer_socket = io.sockets.connected[buyer.socket_id];
+    //                 // var seller_socket = io.sockets.connected[seller.socket_id];
+    //                 // buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+    //                 // seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
+    //                 users_collection.get(user_id, function(user){
+    //                     var other_user_id = transaction.getOtherUserId(user_id);
+    //                     users_collection.get(other_user_id, function(other_user){
+    //                         var other_user_socket = undefined
+    //                         if(other_user != undefined){
+    //                             other_user_socket = io.sockets.connected[other_user.socket_id];
+    //                         }
+    //                         // if(other_user_socket == undefined){
+    //                         var alert = user.first_name + " " + user.last_name + ": " + message_text;
+    //                         var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction_id: transaction._id.toString()}};
+    //                         if(other_user != undefined) {
+    //                             sendNotification(notification_info, other_user.device_token, user._id, transaction._id);
+    //                         }
+    //                         // }
+    //                         getUserInfo(user_id, function(user_info){
+    //                             console.log(user_info.first_name + " " + user_info.last_name + ": '" + message.text +"'");
+    //                         }, function(){})
+    //                     });
+    //                 });
+    //             });
     //
-    //     function callback(all_listings_collection){
-    //         //send all_listings_collection back to client
-    //         socket.emit("get_all_listings_collection_response", {data: {all_listings_collection: all_listings_collection}, error: null});
-    //         var end = new Date().getTime()
-    //         console.log("getAllActiveListings() time taken : " + (end - start));
+    //         }catch(e){
+    //             console.log(e);
+    //             return;
+    //         }
     //     }
     //     function error_handler(e){
-    //         socket.emit("get_all_listings_collection_response", {data: null, error: e});
     //         console.log(e);
     //     }
-    //     var start = new Date().getTime()
-    //     getAllActiveListings(user_id, password, device_token, callback, error_handler)
-    // });
-
-    // socket.on('get_users_active_transactions', function(json){
-    //     var user_id = json.user_id;
-    //     var password = json.password;
-    //     var device_token = json.device_token
-    //
-    //     function callback(users_active_transactions){
-    //         //send all_listings_collection back to client
-    //         socket.emit("get_users_active_transactions_response", {data: {users_active_transactions: users_active_transactions}, error: null});
-    //         var end = new Date().getTime();
-    //         console.log("getAllActiveTransactions() time taken : " + (end - start));
-    //     }
-    //     function error_handler(e){
-    //         socket.emit("get_users_active_transactions_response", {data: null, error: e});
-    //         console.log(e);
-    //     }
-    //     var start = new Date().getTime();
-    //     getUsersActiveTransactions(user_id, password, device_token, callback, error_handler)
-    // });
-    //
-    // socket.on('get_users_previous_transactions', function(json){
-    //     var user_id = json.user_id;
-    //     var password = json.password;
-    //     var device_token = json.device_token
-    //     function callback(users_previous_transactions){
-    //         //send all_listings_collection back to client
-    //
-    //         socket.emit("get_users_previous_transactions_response", {data: {users_previous_transactions: users_previous_transactions}, error: null});
-    //     }
-    //     function error_handler(e){
-    //         socket.emit("get_users_previous_transactions_response", {data: null, error: e});
-    //         console.log(e);
-    //     }
-    //     authenticate(user_id, password, device_token, function(user){
-    //         getUsersPreviousTransactions(user_id, callback, error_handler)
-    //     }, error_handler);
+    //     sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler)
     // });
 
     socket.on('get_users_active_notifications', function(json){
@@ -729,66 +789,11 @@ io.on('connection', function (socket) {
         }, error_handler);
     });
 
-    socket.on('get_listings', function(json){
-        var listing_ids = json.listing_ids;
-        function callback(listing){
-            //send all_listings_collection back to client
-            socket.emit("get_listing_response", {data: {listings: listings}, error: null});
-        }
-        function error_handler(e){
-            socket.emit("get_listing_response", {data: null, error: e});
-            console.log(e);
-        }
-        listings_collection.get(listing_ids, function(listings){
-            callback(listings);
-        }, error_handler);
-    });
 
-    socket.on('get_listings_with_isbn', function(json){
-        // var login_info = json.login_info;
-        var isbn13 = json.isbn13;
-        // authenticate()
-
-        function callback(listings){
-            socket.emit("get_listings_with_isbn_response", {data: {listings: listings}, error: null})
-        }
-        function error_handler(e){
-            socket.emit("get_listings_with_isbn_response", {data: null, error: e})
-        }
-        try {
-            listings_collection.getListingsWithBookIsbn(isbn13, function(listings){
-                callback(listings);
-            });
-        }catch(e){
-            error_handler(e.message);
-            return;
-        }
-    });
-
-    socket.on('get_listings_with_user_id', function(json){
-        // var login_info = json.login_info;
-        var user_id = json.user_id;
-        // authenticate()
-
-        function callback(listings){
-            socket.emit("get_listings_with_user_id_response", {data: {listings: listings}, error: null})
-        }
-        function error_handler(e){
-            socket.emit("get_listings_with_user_id_response", {data: null, error: e})
-        }
-        try {
-            listings_collection.getListingsWithUserId(user_id, function(listings){
-                callback(listings);
-            });
-        }catch(e){
-            error_handler(e.message);
-            return;
-        }
-    });
 
     socket.on('get_users', function(json){
         var user_ids = json.user_ids;
-        function callback(user_info){
+        function callback(users){
             //send all_listings_collection back to client
             socket.emit("get_user_response", {data: {users: users}, error: null});
         }
@@ -796,41 +801,11 @@ io.on('connection', function (socket) {
             socket.emit("get_user_response", {data: null, error: e});
             console.log(e);
         }
-        users_collection.get()
+        users_collection.get(user_ids, function(users){
+            callback(users);
+        }, error_handler);
     });
 
-    // socket.on('get_profile_pictures', function(json){
-    //     var user_id = json.user_ids;
-    //     function callback(profile_pictures){
-    //         socket.emit("get_profile_picture_response", {data: {profile_picture: profile_pictures, error: null});
-    //         // socket.emit("profile_picture_gotten", {data: {user_id: user_id.toString(), profile_picture: profile_picture}, error: null});
-    //         var end = new Date().getTime();
-    //         console.log("getProfilePicture time taken: " + (end - start));
-    //     }
-    //     function error_handler(e){
-    //         socket.emit("get_profile_picture_response", {data: null, error: e});
-    //         console.log(e);
-    //     }
-    //     var start = new Date().getTime();
-    //     getProfilePictures(user_ids, callback, error_handler);
-    // })
-
-    // socket.on('get_picture', function(json){
-    //     var start = new Date().getTime();
-    //     var picture_id = json.picture_id;
-    //     function callback(picture){
-    //         socket.emit("get_picture_response", {data: {picture_id: picture_id.toString(), picture: picture}, error: null});
-    //         // socket.emit("picture_gotten", {data: {picture_id_id: picture_id.toString(), picture: profile_picture}, error: null});
-    //         // console.log("emitting profile_picture_gotten took " + (end1 - start1) + " milliseconds.")
-    //         var end = new Date().getTime();
-    //         console.log("getPicture execution time: " + (end - start));
-    //     }
-    //     function error_handler(e){
-    //         socket.emit("get_picture_response", {data: null, error: e});
-    //         console.log(e);
-    //     }
-    //     getPicture(picture_id, callback, error_handler);
-    // })
 
     socket.on('search_books', function(json){
         console.log("search_books called!")
@@ -1265,23 +1240,21 @@ function login(email_address, password, device_token, callback, error_handler){
     console.log("login called");
     var collection = database.collection('users');
     collection.find({email_address: email_address, password: password}).toArray(function(err, docs) {
+        if(err){
+            error_handler(err);
+        }
         if(docs.length > 0) {
             //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
             var user = new User();
-            user.initFromDatabase(docs[0]);
+            user.update(docs[0]);
             user.active = true;
-            user.device_token = device_token
             user.last_login_time = new Date().getTime();
             user.logged_in = true;
             user.device_token = device_token;
-            updateUserInDatabase(user, function(){
+            users_collection.add(user, function(user){
+                console.log(user);
                 if(callback != undefined){ callback(user); }
-            }, error_handler)
-
-            // console.log(user.email_address + " is logged in");
-            //return user._id, use this to authenticate, thus login is independent of login credentials
-
-
+            }, error_handler);
         }
         else{
             //if not found: alert user that login failed, because incorrect email_address/password
@@ -1299,7 +1272,7 @@ function logout(user_id, password, device_token, callback, error_handler){
             users_collection.get(user_id, function(user){
                 user.active = false;
                 user.logged_in = false;
-                updateUserInDatabase(user, function(){
+                users_collection.add(user, function(user){
                     console.log(user.first_name + " " + user.last_name + " has logged out");
                     if(callback != undefined){ callback(); }
                 }, error_handler)
@@ -1313,33 +1286,8 @@ function logout(user_id, password, device_token, callback, error_handler){
 
 function authenticate(user_id, password, device_token, callback, error_handler){
     password = hashPassword(password);
-    users_collection.get(user_id, function(user){
-        if(user == undefined){
-            if(error_handler != undefined){
-                error_handler("tried to authenticate an invalid user_id/password combination");
-            }
-        }
-        else if(user.password.toString() != password.toString()){
-            if(error_handler != undefined){
-                console.log("incorrect password");
-                console.log(user.password)
-                error_handler("tried to authenticate an invalid user_id/password combination");
-            }
-        }
-        else if(user.device_token != device_token){
-            if(error_handler != undefined){
-                console.log("incorrect device_token")
-                // console.log(user)
-                // console.log("current device token: " + user.device_token);
-                // console.log("entered device token: " + device_token);
-                error_handler("tried to authenticate an invalid user_id/password combination");
-            }
-        }
-        else{
-            callback(user);
-        }
-    });
-
+    var authentication_info = {user_id: user_id, password: password, device_token: device_token};
+    users_collection.authenticate(authentication_info, callback, error_handler);
 }
 
 function validateListing(listing){
@@ -1472,26 +1420,26 @@ function deletePictureFromListing(picture_id, listing_id, user_id, callback, err
 
 }
 
-function sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler){
-    authenticate(user_id, password, device_token, function(user){
-        active_transactions.get(transaction_id, function(transaction){
-            if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
-                try {
-                    var message = transaction.sendChatMessage(user, message_text);
-                    updateTransactionInDatabase(transaction, function(){
-                        callback(message);
-                    }, error_handler)
-                }catch(e){
-                    error_handler(e.message);
-                    return;
-                }
-            }
-            else{
-                error_handler("user with user_id " + user_id + " tried to send a message to conversation in a transaction of which he/she is not apart of");
-            }
-        });
-    }, error_handler)
-}
+// function sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler){
+//     authenticate(user_id, password, device_token, function(user){
+//         active_transactions.get(transaction_id, function(transaction){
+//             if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
+//                 try {
+//                     var message = transaction.sendChatMessage(user, message_text);
+//                     updateTransactionInDatabase(transaction, function(){
+//                         callback(message);
+//                     }, error_handler)
+//                 }catch(e){
+//                     error_handler(e.message);
+//                     return;
+//                 }
+//             }
+//             else{
+//                 error_handler("user with user_id " + user_id + " tried to send a message to conversation in a transaction of which he/she is not apart of");
+//             }
+//         });
+//     }, error_handler)
+// }
 
 //1. authenticate
 //2. get listings_collection
@@ -1536,7 +1484,7 @@ function getUsersPreviousTransactions(user_id, callback, error_handler){
             var previous_transactions_arr = [];
             for(var i=0; i<docs.length; i++){
                 var transaction = new Transaction();
-                transaction.initFromDatabase(docs[i]);
+                transaction.update(docs[i]);
                 previous_transactions_arr.push(transaction);
             }
             callback(previous_transactions_arr);
@@ -1552,7 +1500,7 @@ function getUserInfo(user_id, callback, error_handler){
                 if (docs.length > 0) {
                     //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                     var user = new User();
-                    user.initFromDatabase(docs[0]);
+                    user.update(docs[0]);
                     var user_info = new UserInfo(user);
                     user_info.logged_in = false;
                     callback(user_info);
@@ -1579,7 +1527,7 @@ function getUser(user_id, callback, error_handler){
         if(docs.length > 0) {
             //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
             var user = new User();
-            user.initFromDatabase(docs[0]);
+            user.update(docs[0]);
             callback(user)
         }
         else{
@@ -1602,7 +1550,7 @@ function getTransaction(transaction_id, callback, error_handler){
                 if (docs.length > 0) {
                     //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
                     var transaction = new Transaction();
-                    transaction.initFromDatabase(docs[0]);
+                    transaction.update(docs[0]);
                     callback(transaction);
                 }
                 else {
@@ -1747,32 +1695,9 @@ function updateListingInDatabase(listing, callback, error_handler){
 
 function updateUserInDatabase(user, callback, error_handler){
     var collection = database.collection('users');
-    collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, user , function(err, result) {
+    collection.update({_id:new require('mongodb').ObjectID(user._id.toString())}, {$set: user} , function(err, result) {
         if(err){error_handler(err); return;}
         if(callback != undefined){ callback(); }
-    });
-}
-
-function getActiveUsersFromDatabase(callback, error_handler){
-    var collection_users = database.collection('users');
-    collection_users.find({active: true}).toArray(function(err, docs){
-        if(err){error_handler(err.message);}
-        else{callback(docs);}
-    });
-}
-function getActiveListingsFromDatabase(callback, error_handler){
-    var collection_listings = database.collection('listings');
-    collection_listings.find({active: true}).toArray(function(err, docs){
-        if(err){error_handler(err.message);}
-        else{callback(docs);}
-    });
-}
-
-function getActiveTransactionsFromDatabase(callback, error_handler){
-    var collection_transactions = database.collection('transactions');
-    collection_transactions.find({active: true}).toArray(function(err, docs){
-        if(err){error_handler(err.message);}
-        else{callback(docs);}
     });
 }
 
@@ -1853,10 +1778,10 @@ function validateTitle(title){
 }
 
 function validateDescription(description){
-    if(!(description.length > 0 )){
-        return "Looks like you didn't enter a description!"
-    }
-    else if(!(description.length <= 400)){
+    // if(!(description.length > 0 )){
+    //     return "Looks like you didn't enter a description!"
+    // }
+    if(!(description.length <= 400)){
         return "Description must be 400 characters or less!"
     }
     else{

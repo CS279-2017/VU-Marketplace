@@ -1,21 +1,24 @@
 
 
-function Message(text, from_user_id, to_user_id, time_sent){
+function Message(text, from_user_id, to_user_id){
+    this._id = undefined;
     this.text = text;
-    this.from_user_id = user_id;
-    this.to_user_id = //must be username rather than user to avoid circular reference
-        //if we ever need the user's info we can look up the user using this username;
-        this.time_sent = time_sent;
+    this.from_user_id = from_user_id
+    this.to_user_id = to_user_id
+    this.time_sent = new Date().getTime();
 }
 
 Message.prototype = {
     constructor: Message,
     update: function(message){
+        if(message._id != undefined){
+            this._id = message._id.toString();
+        }
         if(message.text != undefined){
             this.text = message.text;
         }
         if(message.from_user_id != undefined){
-            this.from_user_id = message.user_id;
+            this.from_user_id = message.from_user_id;
         }
         if(message.to_user_id != undefined){
             this.to_user_id != message.to_user_id;
@@ -24,6 +27,10 @@ Message.prototype = {
             this.time_sent = message.time_sent;
         }
     }
+}
+
+function toMongoIdObject(id){
+    return new require('mongodb').ObjectID(id.toString());
 }
 
 module.exports = Message;

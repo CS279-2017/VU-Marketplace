@@ -10,8 +10,10 @@ function ListingsCollection(database){
 ListingsCollection.prototype = {
     constructor: ListingsCollection,
     add: function(listing, callback, error_handler) {
+        var collection_listings = this.collection_listings;
         if(listing._id != undefined){
-            this.collection_listings.update({_id: toMongoIdObject(listing._id.toString())}, listing, {upsert: true}, function (err, count, status) {
+            listing._id = toMongoIdObject(listing._id);
+            this.collection_listings.update({_id: listing._id}, {$set: listing}, {upsert: true}, function (err, count, status) {
                 if(err){error_handler(err.message);}
                 else{
                     if(callback != undefined && callback != null){callback(listing);}
@@ -22,10 +24,11 @@ ListingsCollection.prototype = {
             this.collection_listings.insert(listing, function (err, count, status) {
                 if(err){error_handler(err.message);}
                 else{
-                    this.collection_listings.find(listing).toArray(function(err, docs){
+                    //this cannot be used to reference collection listings inside closure thus we must assign and use a local variable
+                    collection_listings.find(listing).toArray(function(err, docs){
                         if(docs.length == 1){
                             listing.update(docs[0]);
-                            if(callback != undefined){ callback(new_listing);}
+                            if(callback != undefined){ callback(listing);}
                         }
                         else{
                             error_handler("more than 1 listing inserted into database");
@@ -56,21 +59,15 @@ ListingsCollection.prototype = {
                     listing.update(docs[j]);
                     listings_arr.push(listing);
                 }
-                callback(listings_arr);
+                if(listings_arr.length == 1){
+                    callback(listings_arr[0]);
+                }
+                else{
+                    callback(listings_arr);
+                }
             }
             else{
                 error_handler("No users were found");
-            }
-        });
-        this.collection_listings.find({_id: toMongoIdObject(listing_id)}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                //checks that verification_code is valid and email hasn't already been registered
-                var listing = new Listing();
-                listing.update(docs[0]);
-                callback(listing);
-            }
-            else {
-                error_handler("Listing with id " + listing_id + " wasn't found");
             }
         });
     },

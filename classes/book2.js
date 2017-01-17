@@ -4,12 +4,19 @@ function Book(book){
     }
     if(book.author_data != undefined){
         var authors = [];
+        var author_names = "";
         for(var i=0; i<book.author_data.length; i++){
             var author = book.author_data[i]
+
             if(author != undefined && author.name != undefined){
                 authors.push(author.name);
+                if(author_names != ""){
+                    author_names += "; "
+                }
+                author_names += author.name
             }
         }
+        this.author_names = author_names;
         this.authors = authors;
     }
     if(book.isbn10 != undefined){

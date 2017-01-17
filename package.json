@@ -2,10 +2,10 @@
   "name": "mealplanappserver",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "app2.js",
   "scripts": {
     "test": "mocha",
-    "start": "node app.js"
+    "start": "node app2.js"
   },
   "author": "Bowen Jin",
   "license": "ISC",

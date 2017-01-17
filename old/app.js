@@ -21,24 +21,24 @@ var url = 'mongodb://localhost:27017/mealplanappserver';
 var database;
 
 //import classes
-var User = require("./classes/user.js");
-var Message = require("./classes/message.js");
-var Transaction = require("./classes/transaction.js");
-var Listing = require("./classes/listing.js");
-var Book = require("./classes/book.js");
-var Conversation = require("./classes/conversation.js");
-var Location = require("./classes/location.js")
-var UserInfo = require("./classes/user_info.js")
-var ListingInfo = require("./classes/listing_info.js")
-var Event = require("./classes/event.js");
+var User = require("./../classes/old/user.js");
+var Message = require("./../classes/old/message.js");
+var Transaction = require("./../classes/old/transaction.js");
+var Listing = require("./../classes/old/listing.js");
+var Book = require("./../classes/old/book.js");
+var Conversation = require("./../classes/old/conversation.js");
+var Location = require("./../classes/old/location.js")
+var UserInfo = require("./../classes/old/user_info.js")
+var ListingInfo = require("./../classes/old/listing_info.js")
+var Event = require("./../classes/old/event.js");
 
-var Notification = require("./classes/notification.js");
+var Notification = require("./../classes/old/notification.js");
 
 
 
-var ActiveUsers = require("./classes/active_users.js");
-var ActiveListings = require("./classes/active_listings.js");
-var ActiveTransactions = require("./classes/active_transactions.js");
+var ActiveUsers = require("./../classes/old/active_users.js");
+var ActiveListings = require("./../classes/old/active_listings.js");
+var ActiveTransactions = require("./../classes/old/active_transactions.js");
 
 //methods that are exported in module
 var exports = module.exports = {};
