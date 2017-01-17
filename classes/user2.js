@@ -73,19 +73,6 @@ User.prototype = {
         }
     },
 
-    addBuyingListingId: function(listing_id){
-        if(this.buying_listing_ids == undefined){
-            this.buying_listing_ids = [];
-        }
-        this.buying_listing_ids.push(listing_id.toString());
-    },
-    addSellingListingId: function(listing_id){
-        if(this.selling_listing_ids == undefined){
-            this.selling_listing_ids = [];
-        }
-        this.selling_listing_ids.push(listing_id.toString());
-    },
-
 }
 
 function toMongoIdObject(id){

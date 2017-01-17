@@ -130,7 +130,48 @@ UsersCollection.prototype = {
                 error_handler("authentication failed");
             }
         });
-    }
+    },
+    addBuyingListingId: function(user_id, listing_id, callback, error_handler){
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {addToSet: {buying_listing_ids: listing_id}}, function (err, count, status) {
+            if(!err && count == 1){
+                callback();
+            }
+            else{
+                error_handler("addPictureId failed");
+            }
+        });
+    },
+    removeBuyingListingId: function(user_id, listing_id, callback, error_handler){
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {pull: {buying_listing_ids: listing_id}}, function (err, count, status) {
+            if(!err && count > 0){
+                callback();
+            }
+            else{
+                error_handler("addPictureId failed");
+            }
+        });
+    },
+    addSellingListingId: function(user_id, listing_id, callback, error_handler){
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {addToSet: {selling_listing_ids: listing_id}}, function (err, count, status) {
+            if(!err && count == 1){
+                callback();
+            }
+            else{
+                error_handler("addPictureId failed");
+            }
+        });
+    },
+    removeSellingListingId: function(user_id, listing_id, callback, error_handler){
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {pull: {selling_listing_ids: listing_id}}, function (err, count, status) {
+            if(!err && count > 0){
+                callback();
+            }
+            else{
+                error_handler("addPictureId failed");
+            }
+        });
+    },
+
 }
 
 function toMongoIdObject(id){

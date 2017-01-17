@@ -2,34 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/classes/messages_collection.js" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/message_collection.js" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/old/app.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/active_listings.js" afterPath="$PROJECT_DIR$/classes/old/active_listings.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/active_transactions.js" afterPath="$PROJECT_DIR$/classes/old/active_transactions.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/active_users.js" afterPath="$PROJECT_DIR$/classes/old/active_users.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/book.js" afterPath="$PROJECT_DIR$/classes/old/book.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/conversation.js" afterPath="$PROJECT_DIR$/classes/old/conversation.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/event.js" afterPath="$PROJECT_DIR$/classes/old/event.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/listing.js" afterPath="$PROJECT_DIR$/classes/old/listing.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/listing_info.js" afterPath="$PROJECT_DIR$/classes/old/listing_info.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/location.js" afterPath="$PROJECT_DIR$/classes/old/location.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/message.js" afterPath="$PROJECT_DIR$/classes/old/message.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/notification.js" afterPath="$PROJECT_DIR$/classes/old/notification.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/transaction.js" afterPath="$PROJECT_DIR$/classes/old/transaction.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/user.js" afterPath="$PROJECT_DIR$/classes/old/user.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/classes/user_info.js" afterPath="$PROJECT_DIR$/classes/old/user_info.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app2.js" afterPath="$PROJECT_DIR$/app2.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/book2.js" afterPath="$PROJECT_DIR$/classes/book2.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/listing2.js" afterPath="$PROJECT_DIR$/classes/listing2.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/listings_collection.js" afterPath="$PROJECT_DIR$/classes/listings_collection.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/message2.js" afterPath="$PROJECT_DIR$/classes/message2.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/notification_collection.js" afterPath="$PROJECT_DIR$/classes/notification_collection.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/user2.js" afterPath="$PROJECT_DIR$/classes/user2.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/users_collection.js" afterPath="$PROJECT_DIR$/classes/users_collection.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/package.json" afterPath="$PROJECT_DIR$/package.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/test.js" afterPath="$PROJECT_DIR$/test/test.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -62,16 +38,6 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="notification_collection.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/classes/notification_collection.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="150">
-              <caret line="15" column="39" selection-start-line="15" selection-start-column="39" selection-end-line="15" selection-end-column="39" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="book_collection.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/book_collection.js">
           <provider selected="true" editor-type-id="text-editor">
@@ -82,11 +48,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="listings_collection.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/classes/listings_collection.js">
+      <file leaf-file-name="book2.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/classes/book2.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-194">
-              <caret line="32" column="28" selection-start-line="32" selection-start-column="26" selection-end-line="32" selection-end-column="28" />
+            <state relative-caret-position="-137">
+              <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -95,28 +61,38 @@
       <file leaf-file-name="listing2.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/listing2.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="256">
-              <caret line="64" column="9" selection-start-line="64" selection-start-column="9" selection-end-line="64" selection-end-column="9" />
+            <state relative-caret-position="345">
+              <caret line="23" column="39" selection-start-line="23" selection-start-column="39" selection-end-line="23" selection-end-column="39" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="book2.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/classes/book2.js">
+      <file leaf-file-name="notification_collection.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/classes/notification_collection.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+            <state relative-caret-position="315">
+              <caret line="40" column="36" selection-start-line="40" selection-start-column="36" selection-end-line="40" selection-end-column="36" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="app2.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app2.js">
+      <file leaf-file-name="listings_collection.js" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/classes/listings_collection.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="125">
-              <caret line="805" column="26" selection-start-line="805" selection-start-column="26" selection-end-line="805" selection-end-column="26" />
+            <state relative-caret-position="300">
+              <caret line="37" column="45" selection-start-line="37" selection-start-column="45" selection-end-line="37" selection-end-column="45" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="notification2.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/classes/notification2.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-2">
+              <caret line="11" column="7" selection-start-line="11" selection-start-column="7" selection-end-line="11" selection-end-column="7" />
               <folding />
             </state>
           </provider>
@@ -125,18 +101,18 @@
       <file leaf-file-name="message2.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/message2.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="30">
+            <state relative-caret-position="-197">
               <caret line="2" column="47" selection-start-line="2" selection-start-column="47" selection-end-line="2" selection-end-column="47" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="users_collection.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="users_collection.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/users_collection.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="125">
-              <caret line="105" column="11" selection-start-line="105" selection-start-column="4" selection-end-line="105" selection-end-column="11" />
+            <state relative-caret-position="271">
+              <caret line="180" column="32" selection-start-line="180" selection-start-column="17" selection-end-line="180" selection-end-column="32" />
               <folding />
             </state>
           </provider>
@@ -145,8 +121,8 @@
       <file leaf-file-name="user2.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/user2.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="7" column="5" selection-start-line="7" selection-start-column="5" selection-end-line="7" selection-end-column="5" />
+            <state relative-caret-position="240">
+              <caret line="16" column="13" selection-start-line="16" selection-start-column="13" selection-end-line="16" selection-end-column="13" />
               <folding />
             </state>
           </provider>
@@ -195,14 +171,14 @@
         <option value="$PROJECT_DIR$/classes/message.js" />
         <option value="$PROJECT_DIR$/package.json" />
         <option value="$PROJECT_DIR$/classes/book2.js" />
-        <option value="$PROJECT_DIR$/classes/user2.js" />
-        <option value="$PROJECT_DIR$/classes/listings_collection.js" />
         <option value="$PROJECT_DIR$/classes/notification_collection.js" />
         <option value="$PROJECT_DIR$/classes/message2.js" />
         <option value="$PROJECT_DIR$/classes/message_collection.js" />
-        <option value="$PROJECT_DIR$/classes/listing2.js" />
         <option value="$PROJECT_DIR$/app2.js" />
+        <option value="$PROJECT_DIR$/classes/user2.js" />
+        <option value="$PROJECT_DIR$/classes/listing2.js" />
         <option value="$PROJECT_DIR$/classes/users_collection.js" />
+        <option value="$PROJECT_DIR$/classes/listings_collection.js" />
       </list>
     </option>
   </component>
@@ -213,8 +189,8 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="154" />
-    <option name="y" value="37" />
+    <option name="x" value="71" />
+    <option name="y" value="50" />
     <option name="width" value="1101" />
     <option name="height" value="735" />
   </component>
@@ -429,15 +405,15 @@
       <workItem from="1481915101487" duration="27000000" />
       <workItem from="1482428352978" duration="38424000" />
       <workItem from="1483978739276" duration="45638000" />
-      <workItem from="1484537842103" duration="31441000" />
+      <workItem from="1484537842103" duration="37198000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="642869000" />
+    <option name="totallyTimeSpent" value="648626000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="154" y="37" width="1101" height="735" extended-state="0" />
+    <frame x="71" y="50" width="1101" height="735" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19444445" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -789,18 +765,26 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/notification2.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="11" column="7" selection-start-line="11" selection-start-column="7" selection-end-line="11" selection-end-column="7" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/package.json">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
           <caret line="7" column="24" selection-start-line="7" selection-start-column="24" selection-end-line="7" selection-end-column="24" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app2.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-550">
+          <caret line="805" column="26" selection-start-line="805" selection-start-column="26" selection-end-line="805" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/classes/message2.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-197">
+          <caret line="2" column="47" selection-start-line="2" selection-start-column="47" selection-end-line="2" selection-end-column="47" />
           <folding />
         </state>
       </provider>
@@ -813,34 +797,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/notification_collection.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="15" column="39" selection-start-line="15" selection-start-column="39" selection-end-line="15" selection-end-column="39" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/book2.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
+        <state relative-caret-position="-137">
           <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/user2.js">
+    <entry file="file://$PROJECT_DIR$/classes/notification2.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="7" column="5" selection-start-line="7" selection-start-column="5" selection-end-line="7" selection-end-column="5" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/classes/message2.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="2" column="47" selection-start-line="2" selection-start-column="47" selection-end-line="2" selection-end-column="47" />
+        <state relative-caret-position="-2">
+          <caret line="11" column="7" selection-start-line="11" selection-start-column="7" selection-end-line="11" selection-end-column="7" />
           <folding />
         </state>
       </provider>
@@ -853,34 +821,42 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/listings_collection.js">
+    <entry file="file://$PROJECT_DIR$/classes/users_collection.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-194">
-          <caret line="32" column="28" selection-start-line="32" selection-start-column="26" selection-end-line="32" selection-end-column="28" />
+        <state relative-caret-position="271">
+          <caret line="180" column="32" selection-start-line="180" selection-start-column="17" selection-end-line="180" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/classes/user2.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="16" column="13" selection-start-line="16" selection-start-column="13" selection-end-line="16" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/classes/notification_collection.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="40" column="36" selection-start-line="40" selection-start-column="36" selection-end-line="40" selection-end-column="36" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/classes/listing2.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="256">
-          <caret line="64" column="9" selection-start-line="64" selection-start-column="9" selection-end-line="64" selection-end-column="9" />
+        <state relative-caret-position="345">
+          <caret line="23" column="39" selection-start-line="23" selection-start-column="39" selection-end-line="23" selection-end-column="39" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app2.js">
+    <entry file="file://$PROJECT_DIR$/classes/listings_collection.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="125">
-          <caret line="805" column="26" selection-start-line="805" selection-start-column="26" selection-end-line="805" selection-end-column="26" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/classes/users_collection.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="125">
-          <caret line="105" column="11" selection-start-line="105" selection-start-column="4" selection-end-line="105" selection-end-column="11" />
+        <state relative-caret-position="300">
+          <caret line="37" column="45" selection-start-line="37" selection-start-column="45" selection-end-line="37" selection-end-column="45" />
           <folding />
         </state>
       </provider>
