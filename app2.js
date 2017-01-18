@@ -432,6 +432,7 @@ io.on('connection', function (socket) {
             socket.emit("get_listings_with_user_id_response", {data: null, error: e})
         }
         try {
+            // console.log("calling listings_collections.getListingsWithUserId");
             listings_collection.getListingsWithUserId(user_id, function(listings){
                 callback(listings);
             });
@@ -815,16 +816,31 @@ io.on('connection', function (socket) {
         var user_ids = json.user_ids;
         function callback(users){
             //send all_listings_collection back to client
-            socket.emit("get_user_response", {data: {users: users}, error: null});
+            socket.emit("get_users_response", {data: {users: users}, error: null});
         }
         function error_handler(e){
-            socket.emit("get_user_response", {data: null, error: e});
+            socket.emit("get_users_response", {data: null, error: e});
             console.log(e);
         }
         users_collection.get(user_ids, function(users){
             callback(users);
         }, error_handler);
     });
+
+    socket.on('get_user', function(json){
+        var user_id = json.user_id;
+        function callback(users){
+            //send all_listings_collection back to client
+            socket.emit("get_user_response", {data: {users: users}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_user_response", {data: null, error: e});
+            console.log(e);
+        }
+        users_collection.get(user_id, function(users){
+            callback(users);
+        }, error_handler);
+    })
 
 
     socket.on('search_books', function(json){

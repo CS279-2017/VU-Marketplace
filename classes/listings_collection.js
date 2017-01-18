@@ -140,18 +140,23 @@ ListingsCollection.prototype = {
         });
     },
     getListingsWithUserId: function(user_id, callback){
-        this.collection_listings.find({user_id: user_id.toString()}).toArray(function(err, docs) {
+        this.collection_listings.find({$or: [{user_id: user_id.toString()}, {buyer_user_ids: {$elemMatch: {user_id: user_id.toString()}}}]}).toArray(function(err, docs) {
             var active_listings = [];
-            if(docs.length > 0) {
-                for(var i = 0; i < docs.length; i++){
-                    var listing = new Listing();
-                    listing.update(docs[i]);
-                    active_listings.push(listing);
+            if(!err){
+                if(docs.length > 0) {
+                    for(var i = 0; i < docs.length; i++){
+                        var listing = new Listing();
+                        listing.update(docs[i]);
+                        active_listings.push(listing);
+                    }
+                    callback(active_listings);
                 }
-                callback(active_listings);
+                else {
+                    callback([]);
+                }
             }
-            else {
-                callback([]);
+            else{
+                console.log(err);
             }
         });
     },

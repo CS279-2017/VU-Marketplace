@@ -100,18 +100,18 @@ MessagesCollection.prototype = {
         });
     },
     //TODO: find some faster way to search messages on socket id, maybe make another hashmap
-    getMessageBySocketId: function(socket_id, callback){
-        this.collection_messages.find({socket_id: socket_id}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                var message = new Message();
-                message.update(docs[0]);
-                callback(message);
-            }
-            else{
-                callback([])
-            }
-        });
-    },
+    // getLastForUserId: function(user_id, callback, error_handler){
+    //     this.collection_messages.find({user_id: socket_id}).toArray(function(err, docs) {
+    //         if(docs.length > 0) {
+    //             var message = new Message();
+    //             message.update(docs[0]);
+    //             callback(message);
+    //         }
+    //         else{
+    //             callback([])
+    //         }
+    //     });
+    // },
 }
 
 function toMongoIdObject(id){
