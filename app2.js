@@ -274,7 +274,9 @@ io.on('connection', function (socket) {
                 new_listing.last_name = user.last_name;
                 listings_collection.add(new_listing, function(listing){
                     console.log(listing);
-                    callback(listing);
+                    users_collection.addSellingListingId(user_id, listing._id.toString(), function(){
+                        callback(listing);
+                    }, error_handler)
                 }, error_handler)
             })
 
@@ -701,6 +703,11 @@ io.on('connection', function (socket) {
         var device_token = json.device_token
         var to_user_id = json.to_user_id;
         var message_text = json.message_text;
+        
+        var listing_id = json.listing_id;
+
+        //listing that the message is inquiring about can be undefined/null
+        var listing_id = json.listing_id
 
         function callback(message){
             socket.emit("send_message_response", {data: {message: message}, error: null});
@@ -711,11 +718,23 @@ io.on('connection', function (socket) {
         }
         authenticate(user_id, password, device_token, function(user){
             var message = new Message(message_text, user_id, to_user_id);
+            //add message to database and send out notification
             messages_collection.add(message, function(message){
                 var alert = user.first_name + " " + user.last_name + ": " + message_text;
                 var notification_info = {alert: alert, category: "MESSAGE_SENT", payload: {from_user_id: user_id, to_user_id: to_user_id}};
                 emitEvent("message_sent", message, [to_user_id], notification_info);
-                callback(message);
+
+                //add user_id to buyer_ids of the listing
+                if(listing_id != undefined && listing_id != null){
+                    listings_collection.addBuyerId(listing_id, user_id, function(){
+                        callback(message);
+                    }, error_handler)
+                }
+                else{
+                    callback(message);
+                }
+                
+                
             }, error_handler)
         }, error_handler)
     })
@@ -829,9 +848,9 @@ io.on('connection', function (socket) {
 
     socket.on('get_user', function(json){
         var user_id = json.user_id;
-        function callback(users){
+        function callback(user){
             //send all_listings_collection back to client
-            socket.emit("get_user_response", {data: {users: users}, error: null});
+            socket.emit("get_user_response", {data: {user: user}, error: null});
         }
         function error_handler(e){
             socket.emit("get_user_response", {data: null, error: e});
@@ -1548,9 +1567,10 @@ function getUserInfo(user_id, callback, error_handler){
             });
         }
         else{
-            var user_info = new UserInfo(user);
-            user_info.logged_in = true;
-            callback(user_info)
+            var new_user = new User();
+            new_user.update(user)
+            new_user.logged_in = true;
+            callback(new_user)
         }
     });
 
@@ -1639,7 +1659,6 @@ function getPicture(picture_id, callback, error_handler){
 function getUsersActiveNotifications(user_id, callback, error_handler){
     var collection = database.collection('notifications');
     collection.find({user_id: toMongoIdObject(user_id.toString()), active: true}).toArray(function(err, docs) {
-        console.log(docs);
         if(err){
             error_handler(err);
         }
@@ -1656,7 +1675,6 @@ function getNotification(notification_id, callback, error_handler){
             error_handler(err);
         }
         else {
-            console.log(docs);
             if (docs.length > 0) {
                 callback(docs[0]);
             }

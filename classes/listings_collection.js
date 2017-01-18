@@ -181,7 +181,8 @@ ListingsCollection.prototype = {
         });
     },
     addBuyerId: function(listing_id, buyer_id, callback, error_handler){
-        this.collection_listings.update({_id: toMongoIdObject(listing_id), active: true}, {$addToSet: {buyer_user_ids: buyer_id}}, function (err, count, status) {
+        //adds buyer_id to buyer_ids of listing if it doesn't already exist and if buyer is the seller, also only if listing is active
+        this.collection_listings.update({$and: [{_id: toMongoIdObject(listing_id), active: true}, {$not: {user_id: buyer_id}}]}, {$addToSet: {buyer_user_ids: buyer_id}}, function (err, count, status) {
             if(!err && count == 1){
                 callback();
             }

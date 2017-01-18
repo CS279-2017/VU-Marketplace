@@ -45,7 +45,6 @@ UsersCollection.prototype = {
         for(var i=0; i< user_ids.length; i++){
             user_id_arr.push(toMongoIdObject(user_ids[i]));
         }
-        console.log(user_id_arr);
 
         this.collection_users.find({_id: {$in:user_id_arr}}).toArray(function(err, docs) {
             if(docs.length > 0){
@@ -131,8 +130,9 @@ UsersCollection.prototype = {
             }
         });
     },
+    //adds listing_id to buying_listing_ids of user, if called multiple times for same user_id and listing_id, will only add listing_id once.
     addBuyingListingId: function(user_id, listing_id, callback, error_handler){
-        this.collection_users.update({_id: toMongoIdObject(user_id)}, {addToSet: {buying_listing_ids: listing_id}}, function (err, count, status) {
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {$addToSet: {buying_listing_ids: listing_id}}, function (err, count, status) {
             if(!err && count == 1){
                 callback();
             }
@@ -152,7 +152,7 @@ UsersCollection.prototype = {
         });
     },
     addSellingListingId: function(user_id, listing_id, callback, error_handler){
-        this.collection_users.update({_id: toMongoIdObject(user_id)}, {addToSet: {selling_listing_ids: listing_id}}, function (err, count, status) {
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {$addToSet: {selling_listing_ids: listing_id}}, function (err, count, status) {
             if(!err && count == 1){
                 callback();
             }
