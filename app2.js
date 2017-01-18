@@ -440,6 +440,26 @@ io.on('connection', function (socket) {
             return;
         }
     });
+
+    socket.on('get_conversation', function(json){
+        var user_id = json.user_id;
+        var other_user_id = json.other_user_id;
+
+        function callback(conversation){
+            socket.emit("get_conversation_response", {data: {conversation: conversation}, error: null})
+        }
+        function error_handler(e){
+            socket.emit("get_conversation_response", {data: null, error: e})
+        }
+        try {
+            messages_collection.getConversation(user_id, other_user_id, function(conversation){
+                callback(conversation);
+            }, error_handler);
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
+    })
     
     socket.on('update_user_location', function(json){
         var user_id = json.user_id;
