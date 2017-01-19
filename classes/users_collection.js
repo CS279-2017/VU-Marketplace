@@ -119,7 +119,7 @@ UsersCollection.prototype = {
         var password = authentication_info.password;
         var device_token = authentication_info.device_token;
 
-        this.collection_users.find({_id: toMongoIdObject(user_id), password: password, device_token: device_token}).toArray(function(err, docs) {
+        this.collection_users.find({_id: toMongoIdObject(user_id), password: password, device_token: device_token, active: true}).toArray(function(err, docs) {
             if(!err){
                 if(docs.length > 0) {
                     var user = new User();

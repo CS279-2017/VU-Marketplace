@@ -449,7 +449,11 @@ io.on('connection', function (socket) {
 
     socket.on('get_conversation', function(json){
         var user_id = json.user_id;
+        var password = json.password;
+        var device_token = json.device_token;
+
         var other_user_id = json.other_user_id;
+
 
         function callback(conversation){
             socket.emit("get_conversation_response", {data: {conversation: conversation}, error: null})
@@ -458,14 +462,48 @@ io.on('connection', function (socket) {
             socket.emit("get_conversation_response", {data: null, error: e})
         }
         try {
-            conversation_collection.getForPairUserIds(user_id, other_user_id, function(conversation){
-                //change to return conversation object?
-                callback(conversation.messages);
+            authenticate(user_id, password, device_token, function(user){
+                conversation_collection.getForPairUserIds(user._id, other_user_id, function(conversation){
+                    //change to return conversation object?
+                    callback(conversation);
+                }, error_handler)
             }, error_handler)
+
         }catch(e){
             error_handler(e.message);
             return;
         }
+    })
+
+    socket.on('get_conversations_with_listing_id', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var device_token = json.device_token;
+
+        var listing_id = json.listing_id;
+
+        function callback(conversations){
+            socket.emit("get_conversations_with_listing_id_response", {data: {conversations: conversations}, error: null})
+        }
+        function error_handler(e){
+            socket.emit("get_conversations_with_listing_id_response", {data: null, error: e})
+        }
+
+        try {
+            authenticate(user_id, password, device_token, function(user){
+                listings_collection.get(listing_id, function(listing){
+                    conversation_collection.getOneToMany(user._id, listing.buyer_user_ids, function(conversations){
+                        //change to return conversation object?
+                        callback(conversations);
+                    }, error_handler)
+                }, error_handler)
+            }, error_handler)
+
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
+        
     })
     
     socket.on('update_user_location', function(json){
