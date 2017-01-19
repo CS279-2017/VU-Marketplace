@@ -162,7 +162,7 @@ ListingsCollection.prototype = {
     },
     deactivate: function(listing_id, callback, error_handler){
         this.collection_listings.update({_id: toMongoIdObject(listing_id), active: true}, {$set: {active: false, deactivate_time: new Date().getTime()}}, function (err, count, status) {
-            if(!err && count == 1){
+            if(!err && count.nModified == 1){
                 callback();
             }
             else{
@@ -172,7 +172,7 @@ ListingsCollection.prototype = {
     },
     activate: function(listing_id, callback, error_handler){
         this.collection_listings.update({_id: toMongoIdObject(listing_id), active: false}, {$set: {active: true}}, function (err, count, status) {
-            if(!err && count == 1){
+            if(!err && count.nModified == 1){
                 callback();
             }
             else{
@@ -182,18 +182,20 @@ ListingsCollection.prototype = {
     },
     addBuyerId: function(listing_id, buyer_id, callback, error_handler){
         //adds buyer_id to buyer_ids of listing if it doesn't already exist and if buyer is the seller, also only if listing is active
-        this.collection_listings.update({$and: [{_id: toMongoIdObject(listing_id), active: true}, {$not: {user_id: buyer_id}}]}, {$addToSet: {buyer_user_ids: buyer_id}}, function (err, count, status) {
-            if(!err && count == 1){
+        this.collection_listings.update({$and: [{_id: toMongoIdObject(listing_id), active: true}, {user_id: {$ne: buyer_id}}]}, {$addToSet: {buyer_user_ids: buyer_id}}, function (err, count, status) {
+            if(!err){
                 callback();
             }
             else{
+                console.log("err:" + err)
+                console.log("count: " + count);
                 error_handler("addBuyerId failed");
             }
         });
     },
     addPictureId: function(listing_id, picture_id, callback, error_handler){
         this.collection_listings.update({_id: toMongoIdObject(listing_id)}, {addToSet: {picture_ids: picture_id}}, function (err, count, status) {
-            if(!err && count == 1){
+            if(!err && count.nModified == 1){
                 callback();
             }
             else{
@@ -203,7 +205,7 @@ ListingsCollection.prototype = {
     },
     removePictureId: function(listing_id, picture_id, callback, error_handler){
         this.collection_listings.update({_id: toMongoIdObject(listing_id)}, {$pull: {picture_ids: picture_id}}, function (err, count, status) {
-            if(!err && count == 1){
+            if(!err && count.nModified == 1){
                 callback();
             }
             else{

@@ -120,54 +120,62 @@ UsersCollection.prototype = {
         var device_token = authentication_info.device_token;
 
         this.collection_users.find({_id: toMongoIdObject(user_id), password: password, device_token: device_token}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                var user = new User();
-                user.update(docs[0]);
-                callback(user);
+            if(!err){
+                if(docs.length > 0) {
+                    var user = new User();
+                    user.update(docs[0]);
+                    callback(user);
+                }
+                else{
+                    error_handler("authentication failed");
+                }
             }
             else{
                 error_handler("authentication failed");
             }
+
         });
     },
     //adds listing_id to buying_listing_ids of user, if called multiple times for same user_id and listing_id, will only add listing_id once.
     addBuyingListingId: function(user_id, listing_id, callback, error_handler){
         this.collection_users.update({_id: toMongoIdObject(user_id)}, {$addToSet: {buying_listing_ids: listing_id}}, function (err, count, status) {
-            if(!err && count == 1){
+            if(!err){
                 callback();
             }
             else{
-                error_handler("addPictureId failed");
+                console.log("err:" + err)
+                console.log("count: " + count);
+                error_handler("addBuyingListingId failed");
             }
         });
     },
     removeBuyingListingId: function(user_id, listing_id, callback, error_handler){
         this.collection_users.update({_id: toMongoIdObject(user_id)}, {pull: {buying_listing_ids: listing_id}}, function (err, count, status) {
-            if(!err && count > 0){
+            if(!err){
                 callback();
             }
             else{
-                error_handler("addPictureId failed");
+                error_handler("removeBuyingListingId failed");
             }
         });
     },
     addSellingListingId: function(user_id, listing_id, callback, error_handler){
         this.collection_users.update({_id: toMongoIdObject(user_id)}, {$addToSet: {selling_listing_ids: listing_id}}, function (err, count, status) {
-            if(!err && count == 1){
+            if(!err){
                 callback();
             }
             else{
-                error_handler("addPictureId failed");
+                error_handler("addSellingListingId failed");
             }
         });
     },
     removeSellingListingId: function(user_id, listing_id, callback, error_handler){
         this.collection_users.update({_id: toMongoIdObject(user_id)}, {pull: {selling_listing_ids: listing_id}}, function (err, count, status) {
-            if(!err && count > 0){
+            if(!err){
                 callback();
             }
             else{
-                error_handler("addPictureId failed");
+                error_handler("removeSellingListingId failed");
             }
         });
     },

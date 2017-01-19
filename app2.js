@@ -30,6 +30,7 @@ var Notification = require("./classes/notification2.js");
 var UsersCollection = require("./classes/users_collection")
 var ListingsCollection = require("./classes/listings_collection")
 var MessagesCollection = require("./classes/messages_collection")
+var ConversationsCollection = require("./classes/conversations_collection")
 
 
 // create reusable transporter object using the default SMTP transport
@@ -73,6 +74,7 @@ var host = "";
 var listings_collection;
 var users_collection;
 var messages_collection;
+var conversation_collection;
 
 server.listen(port,function () {
     host = server.address().address
@@ -91,6 +93,7 @@ server.listen(port,function () {
         users_collection = new UsersCollection(db);
         listings_collection = new ListingsCollection(db);
         messages_collection = new MessagesCollection(db);
+        conversation_collection = new ConversationsCollection(db);
     });
 });
 
@@ -455,9 +458,10 @@ io.on('connection', function (socket) {
             socket.emit("get_conversation_response", {data: null, error: e})
         }
         try {
-            messages_collection.getConversation(user_id, other_user_id, function(conversation){
-                callback(conversation);
-            }, error_handler);
+            conversation_collection.getForPairUserIds(user_id, other_user_id, function(conversation){
+                //change to return conversation object?
+                callback(conversation.messages);
+            }, error_handler)
         }catch(e){
             error_handler(e.message);
             return;
@@ -720,21 +724,25 @@ io.on('connection', function (socket) {
             var message = new Message(message_text, user_id, to_user_id);
             //add message to database and send out notification
             messages_collection.add(message, function(message){
-                var alert = user.first_name + " " + user.last_name + ": " + message_text;
-                var notification_info = {alert: alert, category: "MESSAGE_SENT", payload: {from_user_id: user_id, to_user_id: to_user_id}};
-                emitEvent("message_sent", message, [to_user_id], notification_info);
+                conversation_collection.addMessage(message, function(){
+                    //sends notification to user receiving the message
+                    var alert = user.first_name + " " + user.last_name + ": " + message_text;
+                    var notification_info = {alert: alert, category: "MESSAGE_SENT", payload: {from_user_id: user_id, to_user_id: to_user_id}};
+                    emitEvent("message_sent", message, [to_user_id], notification_info);
 
-                //add user_id to buyer_ids of the listing
-                if(listing_id != undefined && listing_id != null){
-                    listings_collection.addBuyerId(listing_id, user_id, function(){
+                    //add user_id to buyer_ids of the listing
+                    if(listing_id != undefined && listing_id != null){
+                        //adds to a set, thus can call multiple times without adding repeats
+                        listings_collection.addBuyerId(listing_id, user_id, function(){
+                            callback(message);
+                        }, error_handler)
+                    }
+                    else{
+                        //if listing_id isn't passed with message, it isn't attached to a listing,
+                        //however it is still added to message_collection and to a conversation
                         callback(message);
-                    }, error_handler)
-                }
-                else{
-                    callback(message);
-                }
-                
-                
+                    }
+                }, error_handler);
             }, error_handler)
         }, error_handler)
     })
@@ -1768,7 +1776,7 @@ function emitEvent(event_name, data, user_id_arr, notification_info){
                 if(user != undefined){
                     user_socket = io.sockets.connected[user.socket_id];
                 }
-                var event = new Event(event_name, data, null);
+                // var event = new Event(event_name, data, null);
                 // var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
 
                 if(user_socket != undefined) {

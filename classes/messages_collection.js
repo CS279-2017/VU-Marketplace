@@ -72,33 +72,33 @@ MessagesCollection.prototype = {
 
     },
 
-    getConversation: function(user_id1, user_id2, callback, error_handler){
-        this.collection_messages.find(
-            {$or:[
-                {$and:
-                    [{to_user_id: user_id1},
-                    {from_user_id: user_id2}]
-                },
-                {$and:
-                    [{to_user_id: user_id2},
-                        {from_user_id: user_id1}]
-                }
-            ]}
-        ).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                var active_messages = [];
-                for(var i=0; i<docs.length; i++){
-                    var message = new Message();
-                    message.update(docs[i]);
-                    active_messages.push(message);
-                }
-                callback(active_messages);
-            }
-            else{
-                callback([])
-            }
-        });
-    },
+    // getConversation: function(user_id1, user_id2, callback, error_handler){
+    //     this.collection_messages.find(
+    //         {$or:[
+    //             {$and:
+    //                 [{to_user_id: user_id1},
+    //                 {from_user_id: user_id2}]
+    //             },
+    //             {$and:
+    //                 [{to_user_id: user_id2},
+    //                     {from_user_id: user_id1}]
+    //             }
+    //         ]}
+    //     ).toArray(function(err, docs) {
+    //         if(docs.length > 0) {
+    //             var active_messages = [];
+    //             for(var i=0; i<docs.length; i++){
+    //                 var message = new Message();
+    //                 message.update(docs[i]);
+    //                 active_messages.push(message);
+    //             }
+    //             callback(active_messages);
+    //         }
+    //         else{
+    //             callback([])
+    //         }
+    //     });
+    // },
     //TODO: find some faster way to search messages on socket id, maybe make another hashmap
     // getLastForUserId: function(user_id, callback, error_handler){
     //     this.collection_messages.find({user_id: socket_id}).toArray(function(err, docs) {
