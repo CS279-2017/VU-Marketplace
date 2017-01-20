@@ -448,6 +448,26 @@ io.on('connection', function (socket) {
         }
     });
 
+    socket.on('get_listings_most_recent', function(json){
+        var number = json.number;
+        function callback(listings){
+            socket.emit("get_listings_most_recent_response", {data: {listings: listings}, error: null})
+        }
+        function error_handler(e){
+            socket.emit("get_listings_most_recent_response", {data: null, error: e})
+        }
+        try {
+            // console.log("calling listings_collections.getListingsWithUserId");
+            listings_collection.getMostRecent(number, function(listings){
+                console.log(listings);
+                callback(listings);
+            });
+        }catch(e){
+            error_handler(e.message);
+            return;
+        }
+    })
+
     socket.on('get_conversation', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -922,7 +942,6 @@ io.on('connection', function (socket) {
                 if(data != undefined){
                     for(var i=0; i<data.length; i++){
                         var book = new Book(data[i]);
-                        console.log(book);
                         books.push(book);
                     }
                 }

@@ -160,6 +160,27 @@ ListingsCollection.prototype = {
             }
         });
     },
+    getMostRecent: function(number, callback, error_handler){
+        this.collection_listings.find().sort({creation_time: -1}).limit(number).toArray(function(err, docs) {
+            var most_recent_listings = [];
+            if(!err){
+                if(docs.length > 0) {
+                    for(var i = 0; i < docs.length; i++){
+                        var listing = new Listing();
+                        listing.update(docs[i]);
+                        most_recent_listings.push(listing);
+                    }
+                    callback(most_recent_listings);
+                }
+                else {
+                    callback([]);
+                }
+            }
+            else{
+                error_handler(err);
+            }
+        });
+    },
     deactivate: function(listing_id, callback, error_handler){
         this.collection_listings.update({_id: toMongoIdObject(listing_id), active: true}, {$set: {active: false, deactivate_time: new Date().getTime()}}, function (err, count, status) {
             if(!err && count.nModified == 1){
