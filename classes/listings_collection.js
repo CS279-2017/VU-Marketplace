@@ -107,22 +107,22 @@ ListingsCollection.prototype = {
             }
         });
     },
-    getAllForUser: function(user_id, callback){
-        this.collection_listings.find({$or: [{user_id: user_id.toString()}, {buyer_user_ids: {$elemMatch: user_id.toString()}}]}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                var active_listings = [];
-                for(var i = 0; i < docs.length; i++){
-                    var listing = new Listing();
-                    listing.update(docs[i]);
-                    active_listings.push(listing);
-                }
-                callback(active_listings);
-            }
-            else {
-                callback([]);
-            }
-        });
-    },
+    // getAllForUser: function(user_id, callback){
+    //     this.collection_listings.find({$or: [{user_id: user_id.toString()}, {buyer_user_ids: {$elemMatch: user_id.toString()}}]}).toArray(function(err, docs) {
+    //         if(docs.length > 0) {
+    //             var active_listings = [];
+    //             for(var i = 0; i < docs.length; i++){
+    //                 var listing = new Listing();
+    //                 listing.update(docs[i]);
+    //                 active_listings.push(listing);
+    //             }
+    //             callback(active_listings);
+    //         }
+    //         else {
+    //             callback([]);
+    //         }
+    //     });
+    // },
     getListingsWithBookIsbn: function(isbn13, callback){
         this.collection_listings.find({isbn13: isbn13}).toArray(function(err, docs) {
             var active_listings = [];
