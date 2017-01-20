@@ -439,6 +439,7 @@ io.on('connection', function (socket) {
         try {
             // console.log("calling listings_collections.getListingsWithUserId");
             listings_collection.getListingsWithUserId(user_id, function(listings){
+                console.log(listings);
                 callback(listings);
             });
         }catch(e){
@@ -745,9 +746,6 @@ io.on('connection', function (socket) {
         var device_token = json.device_token
         var to_user_id = json.to_user_id;
         var message_text = json.message_text;
-        
-        var listing_id = json.listing_id;
-
         //listing that the message is inquiring about can be undefined/null
         var listing_id = json.listing_id
 
@@ -769,6 +767,7 @@ io.on('connection', function (socket) {
                     emitEvent("message_sent", message, [to_user_id], notification_info);
 
                     //add user_id to buyer_ids of the listing
+                    console.log(listing_id);
                     if(listing_id != undefined && listing_id != null){
                         //adds to a set, thus can call multiple times without adding repeats
                         listings_collection.addBuyerId(listing_id, user_id, function(){
@@ -1568,7 +1567,7 @@ function getUsersActiveTransactions(user_id, password, device_token, callback, e
 
 function getUsersActiveListings(user_id, callback, error_handler){
     getUserInfo(user_id, function(user){
-        listings_collection.getAllForUser(user._id, function(users_listings_collection){
+        listings_collection.getAllForUser(user._id.toString(), function(users_listings_collection){
             callback(users_listings_collection);
         });
     }, error_handler)

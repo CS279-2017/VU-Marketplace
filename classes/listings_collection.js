@@ -108,7 +108,7 @@ ListingsCollection.prototype = {
         });
     },
     getAllForUser: function(user_id, callback){
-        this.collection_listings.find({user_id: user_id}).toArray(function(err, docs) {
+        this.collection_listings.find({$or: [{user_id: user_id.toString()}, {buyer_user_ids: {$elemMatch: user_id.toString()}}]}).toArray(function(err, docs) {
             if(docs.length > 0) {
                 var active_listings = [];
                 for(var i = 0; i < docs.length; i++){
@@ -140,7 +140,7 @@ ListingsCollection.prototype = {
         });
     },
     getListingsWithUserId: function(user_id, callback){
-        this.collection_listings.find({$or: [{user_id: user_id.toString()}, {buyer_user_ids: {$elemMatch: {user_id: user_id.toString()}}}]}).toArray(function(err, docs) {
+        this.collection_listings.find({$or: [{user_id: user_id.toString()}, {buyer_user_ids: {$elemMatch: {$eq: user_id.toString()}}}]}).toArray(function(err, docs) {
             var active_listings = [];
             if(!err){
                 if(docs.length > 0) {
