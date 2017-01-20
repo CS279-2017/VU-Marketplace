@@ -930,18 +930,43 @@ io.on('connection', function (socket) {
     socket.on('search_books', function(json){
         console.log("search_books called!")
         var search_query = json.search_query;
+        var google_api_key = "AIzaSyDbFhHzgxWBrYnIU0EvS5m4wjp-DuCC7ms";
         var api_key = "4MCC8UA5"
+        var google_request_url = "https://www.googleapis.com/books/v1/volumes?q=" + search_query + "&key=" + google_api_key
         var request_url = "http://isbndb.com/api/v2/json/" + api_key + "/books?q=" + search_query;
-        console.log(request_url);
-        request(request_url, function (error, response, body) {
+        // console.log(request_url);
+        // request(request_url, function (error, response, body) {
+        //     if (!error && response.statusCode == 200) {
+        //         var books = [];
+        //         var json = JSON.parse(body)
+        //         var data = json.data;
+        //         // console.log(data.length);
+        //         if(data != undefined){
+        //             for(var i=0; i<data.length; i++){
+        //                 var book = new Book();
+        //                 book.initWithIsbnDb(data[i])
+        //                 books.push(book);
+        //             }
+        //         }
+        //         console.log("search_books_response success!")
+        //         socket.emit("search_books_response", {data: {books: books}, error: null});
+        //     }
+        //     else{
+        //         console.log("search_books_response failure!")
+        //         socket.emit("search_books_response", {data: null, error: "Search Query Failed"});
+        //     }
+        // });
+
+        request(google_request_url, function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 var books = [];
                 var json = JSON.parse(body)
-                var data = json.data;
-                // console.log(data.length);
-                if(data != undefined){
-                    for(var i=0; i<data.length; i++){
-                        var book = new Book(data[i]);
+                var totalItems = json.totalItems;
+                var items = json.items;
+                if(items != undefined){
+                    for(var i=0; i<items.length; i++){
+                        var book = new Book();
+                        book.initWithGoogleBooks(items[i]);
                         books.push(book);
                     }
                 }
