@@ -121,7 +121,108 @@ io.on('connection', function (socket) {
             console.log(e);
             return;
         }
-        registerEmailAddress(email_address, callback, error_handler);
+        email_address = email_address.toLowerCase() //converts email_address to lowercase because email_addresses are case insensitive
+        //validate email address is real
+        if(validateEmail(email_address) == false){
+            //return a object type that has an error message
+            error_handler("invalid email address");
+            return;
+        }
+        //validate email address is vanderbilt.edu
+        if(validateVanderbiltEmail(email_address) == false){
+            error_handler("Must be a valid vanderbilt.edu email address")
+            return;
+        }
+        //validate email address send out verification email
+        try {
+            //generates veritification code and sends out email containing the code to email_address
+            sendVerificationEmail(email_address);
+        }catch(e){
+            console.log(e.message);
+        }
+
+        //returns the verification_code and asychronously adds it to the database
+        function sendVerificationEmail(email_address){
+            //first ensure that email address has not already been verified
+            //if the email address exists but hasn't been verified delete the email address
+            function makeVerificationCode(length){
+                var text = "";
+                // var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                var possible = "0123456789";
+
+                for( var i=0; i < length; i++ )
+                    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+                return text;
+            }
+            var verification_code = makeVerificationCode(6);
+            var collection = database.collection('emails');
+            collection.find({email_address: email_address}).toArray(function(err, docs) {
+                if(docs.length > 0) {
+                    //if email has already been registered throw error saying email is taken
+                    if(docs[0].registered == true){
+                        error_handler("email address has already been registered")
+                        return;
+                    }
+                    // else{
+                    //     collection.remove({email_address: email_address}, function(err, result) {
+                    //         if (err) {console.log(err);}
+                    //         console.log("Successfully removed entry with email_address = " + email_address);
+                    //     });
+                    // }
+                }
+                //adds the verification code and email to database
+                insertVerificationCode();
+                //TODO: For testing purposes, dont actually send emails!
+                sendEmail(email_address, verification_code);
+            });
+            //email address, verified, registered, verification_code
+            //generate a random verification code
+
+            function insertVerificationCode(){
+                //TODO: add a number of attempts that gets incremented everytime an attempt is wrong, once a certain number is reached
+                //TODO: delete the entry
+                var email = {email_address: email_address, registered: false, verification_code: verification_code}
+                //adding unique index on email_address ensures no duplicate email_addresses
+                collection.ensureIndex({email_address: 1}, {unique:true}, function(){
+                    collection.update({email_address: email_address}, email, {upsert: true}, function (err, result) {
+                        if (err) {
+                            if(err.message.indexOf('duplicate key error') >= 0){
+                                // a friendly message that replaces the duplicate error
+                                error_handler('email_address has been taken, cannot register ' + email_address);
+                            }
+                            else {
+                                error_handler(err);
+                            }
+                            return;
+                        } else {
+                            console.log('Inserted verification code '+verification_code+' into the email database under email address '+email_address);
+                            if(callback != undefined){ callback(verification_code, email_address);}
+                        }
+                        // database.close();
+                    });
+                });
+            }
+            function sendEmail(email_address, verification_code){
+                // setup e-mail data with unicode symbols
+                var mailOptions = {
+                    from: '"VandyList" <mealplanapp@gmail.com>', // sender address
+                    to: email_address, // list of receivers
+                    subject: 'Verification Code for VandyList', // Subject line
+                    text: 'Verification Code: ' + verification_code, // plaintext body
+                };
+
+                // send mail with defined transport object
+                transporter.sendMail(mailOptions, function(error, info){
+                    if(error){
+                        return console.log(error);
+                    }
+                    console.log('Message sent: ' + info.response);
+                    //send verification_code to callback as well as email (for testing purposes)
+                });
+            }
+            return verification_code;
+        }
     });
 
     socket.on('register_verification_code', function(json){
@@ -169,8 +270,10 @@ io.on('connection', function (socket) {
         var email_address = json.email_address.toLowerCase();
         var password = json.password;
         var device_token = json.device_token;
+        
         var socket_id = socket.id
 
+        console.log('login received!')
         //TODO: should we allow logging in from multiple devices at once? for now yes
         users_collection.login(email_address, password, device_token, socket_id, function(user){
             socket.emit("login_response", {data: {user: user}, error: null});
@@ -184,6 +287,10 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
+
+        var socket_id = socket.id
+
+        console.log('logout called');
         function callback(){
             socket.emit("logout_response", {data: null, error: null});
         }
@@ -192,8 +299,10 @@ io.on('connection', function (socket) {
             console.log(e);
         }
 
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
+            console.log("authentication successful!")
             users_collection.logout(user._id, function(){
+                console.log('logout successful!')
                 console.log(user.first_name + " " + user.last_name + " has logged out");
                 if(callback != undefined){ callback(); }
             }, error_handler)
@@ -229,6 +338,8 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
 
+        var socket_id = socket.id
+
         var book = json.book;
         var description = json.description;
         var price = json.price;
@@ -240,7 +351,7 @@ io.on('connection', function (socket) {
         // var author_names = json.author_names;
         // var buy = false;
         
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             var error_string = "";
             if(validateDescription(description) != ""){
                 error_string += (validateDescription(description) + "\n");
@@ -282,6 +393,8 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
 
+        var socket_id = socket.id
+
         var listing_id = json.listing_id
         var title = json.title;
         var description = json.description;
@@ -290,7 +403,7 @@ io.on('connection', function (socket) {
         var price = json.price;
         var buy = json.buy;
 
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             listings_collection.get(listing_id, function(listing){
                 var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
                 if(user._id.toString() == listing.user_id.toString()){
@@ -332,6 +445,8 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
 
+        var socket_id = socket.id
+
         var listing_id = json.listing_id
         var callback = function(listing_id){
             socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
@@ -342,7 +457,7 @@ io.on('connection', function (socket) {
             socket.emit("remove_listing_response", {data: null, error: e});
             console.log(e);
         }
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             listings_collection.get(listing_id, function(listing){
                 if(listing != undefined){
                     if(listing.user_id.toString() == user_id.toString()){
@@ -455,6 +570,8 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token;
 
+        var socket_id = socket.id
+
         var other_user_id = json.other_user_id;
 
 
@@ -465,7 +582,7 @@ io.on('connection', function (socket) {
             socket.emit("get_conversation_response", {data: null, error: e})
         }
         try {
-            authenticate(user_id, password, device_token, function(user){
+            authenticate(user_id, password, device_token, socket_id, function(user){
                 conversation_collection.getForPairUserIds(user._id, other_user_id, function(conversation){
                     //change to return conversation object?
                     callback(conversation);
@@ -483,6 +600,8 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token;
 
+        var socket_id = socket.id
+
         var listing_id = json.listing_id;
 
         function callback(conversations){
@@ -493,7 +612,7 @@ io.on('connection', function (socket) {
         }
 
         try {
-            authenticate(user_id, password, device_token, function(user){
+            authenticate(user_id, password, device_token, socket_id, function(user){
                 listings_collection.get(listing_id, function(listing){
                     conversation_collection.getOneToMany(user._id, listing.buyer_user_ids, function(conversations){
                         //change to return conversation object?
@@ -514,9 +633,11 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
 
+        var socket_id = socket.id
+
         var new_location = json.new_location;
 
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             if(validateLocation(new_location) == ""){
                 //transform the ordered pair into a Location object (regardless of whether it was a Location or just a normal
                 //object)
@@ -555,6 +676,9 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
+
+        var socket_id = socket.id
+
         var venmo_id = json.venmo_id;
         function callback(updated_venmo_id){
             socket.emit("update_venmo_id_response", {data: {updated_venmo_id: updated_venmo_id}, error: null});
@@ -563,7 +687,7 @@ io.on('connection', function (socket) {
             socket.emit("update_venmo_id_response", {data: null, error: e});
             console.log(e);
         }
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             users_collection.updateVenmoId(user_id, venmo_id, function(){
                 callback(venmo_id);
             }, error_handler)
@@ -576,7 +700,9 @@ io.on('connection', function (socket) {
         var device_token = json.device_token
         var profile_picture = json.profile_picture;
 
-        authenticate(user_id, password, device_token, function(user){
+        var socket_id = socket.id
+
+        authenticate(user_id, password, device_token, socket_id, function(user){
             updateProfilePicture(user_id, profile_picture, callback, error_handler)
         }, error_handler)
 
@@ -615,13 +741,15 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
 
+        var socket_id = socket.id
+
         var picture_id = json.picture_id;
         var picture = json.picture;
 
         getUserInfo(user_id, function(user_info){
             console.log(user_info.first_name + " " + user_info.last_name + " called update_picture")
         }, function(){})
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             updatePicture(picture_id, user_id, picture, callback, error_handler)
         }, error_handler)
 
@@ -644,9 +772,11 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
 
+        var socket_id = socket.id
+
         var listing_id = json.listing_id
         var picture = json.picture;
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             addPictureToListing(listing_id, user_id, picture, callback , error_handler)
         });
 
@@ -674,9 +804,11 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
 
+        var socket_id = socket.id
+
         var listing_id = json.listing_id
         var picture_id = json.picture_id;
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             deletePictureFromListing(picture_id, listing_id, user_id, callback, error_handler)
         });
 
@@ -722,6 +854,10 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
+
+        var socket_id = socket.id
+
+
         var to_user_id = json.to_user_id;
         var message_text = json.message_text;
         //listing that the message is inquiring about can be undefined/null
@@ -734,7 +870,7 @@ io.on('connection', function (socket) {
             socket.emit("send_message_response", {data: null, error: e});
             console.log(e);
         }
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             var message = new Message(message_text, user_id, to_user_id);
             //add message to database and send out notification
             messages_collection.add(message, function(message){
@@ -760,62 +896,15 @@ io.on('connection', function (socket) {
                 }, error_handler);
             }, error_handler)
         }, error_handler)
-    })
-
-    // socket.on('send_chat_message', function(json){
-    //     var user_id = json.user_id;
-    //     var password = json.password;
-    //     var device_token = json.device_token
-    //     var transaction_id = json.transaction_id;
-    //     var message_text = json.message_text;
-    //     function callback(message){
-    //         socket.emit("send_chat_message_response", {data: null, error: null});
-    //         //notify all user in the transaction that a new message has been sent
-    //         try {
-    //             active_transactions.get(transaction_id, function(transaction){
-    //                 emitEvent("chat_message_sent", {transaction_id: transaction_id, message: message}, [transaction.buyer_user_id, transaction.seller_user_id])
-    //                 // var buyer = transaction.buyer_user_id;
-    //                 // var seller = transaction.seller_user_id;
-    //                 // var buyer_socket = io.sockets.connected[buyer.socket_id];
-    //                 // var seller_socket = io.sockets.connected[seller.socket_id];
-    //                 // buyer_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
-    //                 // seller_socket.emit("chat_message_sent", {data: {transaction_id: transaction_id, message: message}, error: null});
-    //                 users_collection.get(user_id, function(user){
-    //                     var other_user_id = transaction.getOtherUserId(user_id);
-    //                     users_collection.get(other_user_id, function(other_user){
-    //                         var other_user_socket = undefined
-    //                         if(other_user != undefined){
-    //                             other_user_socket = io.sockets.connected[other_user.socket_id];
-    //                         }
-    //                         // if(other_user_socket == undefined){
-    //                         var alert = user.first_name + " " + user.last_name + ": " + message_text;
-    //                         var notification_info = {alert: alert, category: "CHAT_MESSAGE_SENT", payload: {transaction_id: transaction._id.toString()}};
-    //                         if(other_user != undefined) {
-    //                             sendNotification(notification_info, other_user.device_token, user._id, transaction._id);
-    //                         }
-    //                         // }
-    //                         getUserInfo(user_id, function(user_info){
-    //                             console.log(user_info.first_name + " " + user_info.last_name + ": '" + message.text +"'");
-    //                         }, function(){})
-    //                     });
-    //                 });
-    //             });
-    //
-    //         }catch(e){
-    //             console.log(e);
-    //             return;
-    //         }
-    //     }
-    //     function error_handler(e){
-    //         console.log(e);
-    //     }
-    //     sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler)
-    // });
+    });
 
     socket.on('get_users_active_notifications', function(json){
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
+
+        var socket_id = socket.id
+
         function callback(users_active_notification){
             //send all_listings_collection back to client
 
@@ -825,7 +914,7 @@ io.on('connection', function (socket) {
             socket.emit("get_users_active_notifications_response", {data: null, error: e});
             console.log(e);
         }
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             getUsersActiveNotifications(user_id, callback, error_handler)
         }, error_handler);
     });
@@ -834,6 +923,9 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
+
+        var socket_id = socket.id
+
         var notification_id = json.notification_id
         function callback(){
             //send all_listings_collection back to client
@@ -843,7 +935,7 @@ io.on('connection', function (socket) {
             socket.emit("deactivate_notification_response", {data: null, error: e});
             console.log(e);
         }
-        authenticate(user_id, password, device_token, function(user){
+        authenticate(user_id, password, device_token, socket_id, function(user){
             getNotification(notification_id, function(notification){
                 if(notification.user_id == user_id){
                     deactivateNotification(notification_id, callback, error_handler)
@@ -949,108 +1041,7 @@ io.on('connection', function (socket) {
 //note we pass an error handler method to each of these methods, if the methods are called, they are passed
 //a string that describes the error
 function registerEmailAddress(email_address, callback, error_handler){
-    email_address = email_address.toLowerCase() //converts email_address to lowercase because email_addresses are case insensitive
-    //validate email address is real
-    if(validateEmail(email_address) == false){
-        //return a object type that has an error message
-        error_handler("invalid email address");
-        return;
-    }
-    //validate email address is vanderbilt.edu
-    if(validateVanderbiltEmail(email_address) == false){
-        error_handler("Must be a valid vanderbilt.edu email address")
-        return;
-    }
-    //validate email address send out verification email
-    try {
-        //generates veritification code and sends out email containing the code to email_address
-        sendVerificationEmail(email_address);
-    }catch(e){
-        console.log(e.message);
-    }
 
-    //returns the verification_code and asychronously adds it to the database
-    function sendVerificationEmail(email_address){
-        //first ensure that email address has not already been verified
-        //if the email address exists but hasn't been verified delete the email address
-        function makeVerificationCode(length){
-            var text = "";
-            // var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            var possible = "0123456789";
-
-            for( var i=0; i < length; i++ )
-                text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-            return text;
-        }
-        var verification_code = makeVerificationCode(6);
-        var collection = database.collection('emails');
-        collection.find({email_address: email_address}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                //if email has already been registered throw error saying email is taken
-                if(docs[0].registered == true){
-                    error_handler("email address has already been registered")
-                    return;
-                }
-                // else{
-                //     collection.remove({email_address: email_address}, function(err, result) {
-                //         if (err) {console.log(err);}
-                //         console.log("Successfully removed entry with email_address = " + email_address);
-                //     });
-                // }
-            }
-            //adds the verification code and email to database
-            insertVerificationCode();
-            //TODO: For testing purposes, dont actually send emails!
-            sendEmail(email_address, verification_code);
-        });
-        //email address, verified, registered, verification_code
-        //generate a random verification code
-
-        function insertVerificationCode(){
-            //TODO: add a number of attempts that gets incremented everytime an attempt is wrong, once a certain number is reached
-            //TODO: delete the entry
-            var email = {email_address: email_address, registered: false, verification_code: verification_code}
-            //adding unique index on email_address ensures no duplicate email_addresses
-            collection.ensureIndex({email_address: 1}, {unique:true}, function(){
-                collection.update({email_address: email_address}, email, {upsert: true}, function (err, result) {
-                    if (err) {
-                        if(err.message.indexOf('duplicate key error') >= 0){
-                            // a friendly message that replaces the duplicate error
-                            error_handler('email_address has been taken, cannot register ' + email_address);
-                        }
-                        else {
-                            error_handler(err);
-                        }
-                        return;
-                    } else {
-                        console.log('Inserted verification code '+verification_code+' into the email database under email address '+email_address);
-                        if(callback != undefined){ callback(verification_code, email_address);}
-                    }
-                    // database.close();
-                });
-            });
-        }
-        function sendEmail(email_address, verification_code){
-            // setup e-mail data with unicode symbols
-            var mailOptions = {
-                from: '"VandyList" <mealplanapp@gmail.com>', // sender address
-                to: email_address, // list of receivers
-                subject: 'Verification Code for VandyList', // Subject line
-                text: 'Verification Code: ' + verification_code, // plaintext body
-            };
-
-            // send mail with defined transport object
-            transporter.sendMail(mailOptions, function(error, info){
-                if(error){
-                    return console.log(error);
-                }
-                console.log('Message sent: ' + info.response);
-                //send verification_code to callback as well as email (for testing purposes)
-            });
-        }
-        return verification_code;
-    }
     //notify client that verification email has been sent (client moves to text page with verification code username and password)
     //TODO:return message that indicates validation of email was successful
     return true;
@@ -1470,53 +1461,8 @@ function deletePictureFromListing(picture_id, listing_id, user_id, callback, err
 //1. authenticate
 //2. get listings_collection
 //3. return listings_collection
-function getAllActiveListings(user_id, password, device_token, callback, error_handler){
-    authenticate(user_id, password, device_token, function(user){
-        listings_collection.getAll(function(all_listings_collection){
-            callback(all_listings_collection);
-        });
 
-    }, error_handler)
-}
 
-function getUsersActiveTransactions(user_id, password, device_token, callback, error_handler){
-    authenticate(user_id, password, device_token, function(user){
-        getUser(user_id, function(user){
-            // if(user.password == hashPassword(password)){
-            active_transactions.getAllForUser(user._id, function(users_active_transactions){
-                console.log(users_active_transactions);
-                callback(users_active_transactions);
-            });
-        }, error_handler)
-    }, error_handler);
-}
-
-function getUsersActiveListings(user_id, callback, error_handler){
-    getUserInfo(user_id, function(user){
-        listings_collection.getAllForUser(user._id.toString(), function(users_listings_collection){
-            callback(users_listings_collection);
-        });
-    }, error_handler)
-}
-
-function getUsersPreviousTransactions(user_id, callback, error_handler){
-    var collection_transactions = database.collection('transactions');
-    // var mongo = new require('mongodb');
-    // var user_id = mongo.ObjectID(user_id.toString())
-    collection_transactions.find({active: false, buyer_accepted_request: true, seller_accepted_request: true, $or: [{buyer_user_id: user_id}, {seller_user_id: user_id}]}).toArray(function(err, docs){
-        if(err){error_handler(err.message);}
-        else{
-            //retrieves all transactions where active = false from database and sends it back in array;
-            var previous_transactions_arr = [];
-            for(var i=0; i<docs.length; i++){
-                var transaction = new Transaction();
-                transaction.update(docs[i]);
-                previous_transactions_arr.push(transaction);
-            }
-            callback(previous_transactions_arr);
-        }
-    });
-}
 
 function getUserInfo(user_id, callback, error_handler){
     users_collection.get(user_id, function(user){

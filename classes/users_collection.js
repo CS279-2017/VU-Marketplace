@@ -122,59 +122,52 @@ UsersCollection.prototype = {
     },
     authenticate: function(user_id, password, device_token, socket_id, callback, error_handler){
         password = hashPassword(password);
-        var collection_users = this.collection_users
-        // var add = this.add;
-        this.collection_users.find({_id: toMongoIdObject(user_id), password: password, device_token: device_token, active: true}).toArray(function(err, docs) {
-            if(!err){
-                if(docs.length > 0) {
-                    var user = new User();
-                    user.update(docs[0]);
-                    user.socket_id = socket_id;
-                    collection_users.update({_id: toMongoIdObject(user_id)}, {$set: user}, function(){
-                        console.log(user);
-                        if(callback != undefined){ callback(user); }
-                    })
-                    // add(user, function(user){
-                    //     console.log(user);
-                    //     if(callback != undefined){ callback(user); }
-                    // }, error_handler);
+
+        this.collection_users.findOneAndUpdate(
+            {_id: toMongoIdObject(user_id), password: password, device_token: device_token, active: true},
+            {$set: {socket_id: socket_id}},
+            {returnNewDocument: true },
+            function (err, docs) {
+                if(!err){
+                    if(docs.lastErrorObject.updatedExisting == true) {
+                        var value = docs.value;
+                        if(callback != undefined){ callback(value); }
+                    }
+                    else{
+                        error_handler("Invalid Authentication Information");
+                    }
                 }
                 else{
-                    error_handler("authentication failed");
+                    console.log(err);
+                    error_handler("Authenticate Failed!");
                 }
             }
-            else{
-                error_handler("authentication failed");
-            }
-
-        });
+        );
     },
     login: function(email_address, password, device_token, socket_id, callback, error_handler){
         password = hashPassword(password);
-        var add = this.add;
-        this.collection_users.find({email_address: email_address, password: password}).toArray(function(err, docs) {
-            if(!err){
-                if(docs.length > 0) {
-                    var user = new User();
-                    user.update(docs[0]);
-                    user.active = true;
-                    user.last_login_time = new Date().getTime();
-                    user.logged_in = true;
-                    user.device_token = device_token;
-                    user.socket_id = socket_id;
-                    add(user, function(user){
-                        console.log(user);
-                        if(callback != undefined){ callback(user); }
-                    }, error_handler);
+
+        this.collection_users.findOneAndUpdate(
+            {email_address: email_address, password: password},
+            { $set:
+                { active: true, last_login_time: new Date().getTime(), logged_in: true, device_token: device_token, socket_id : socket_id}
+            },
+            { returnNewDocument: true },
+            function (err, docs) {
+                if(!err){
+                    if(docs.lastErrorObject.updatedExisting == true) {
+                        var value = docs.value;
+                        if(callback != undefined){ callback(value); }
+                    }
+                    else{
+                        error_handler("Invalid Login Information");
+                    }
                 }
                 else{
-                    error_handler("Invalid Login Information");
+                    error_handler("An Error Occured while Logging in!")
                 }
             }
-            else{
-                error_handler("Login Failed");
-            }
-        });
+        );
     },
     logout: function(user_id, callback, error_handler){
         this.collection_users.update({_id: toMongoIdObject(user_id)}, {$set: {logged_in: false, active: false}}, function (err, count, status) {
@@ -182,7 +175,7 @@ UsersCollection.prototype = {
                 callback();
             }
             else{
-                error_handler("addBuyingListingId failed");
+                error_handler("logout failed");
             }
         });
     },
