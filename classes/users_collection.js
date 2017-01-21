@@ -232,6 +232,17 @@ UsersCollection.prototype = {
             }
         });
     },
+    updateProfilePicture: function(user_id, profile_picture, callback, error_handler){
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {$set: {profile_picture: profile_picture}}, function (err, count, status) {
+            if (!err) {
+                // console.log(count);
+                callback();
+            }
+            else {
+                error_handler("updateVenmoId failed");
+            }
+        });
+    },
 
 }
 

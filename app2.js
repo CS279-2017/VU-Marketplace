@@ -698,20 +698,21 @@ io.on('connection', function (socket) {
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
-        var profile_picture = json.profile_picture;
 
         var socket_id = socket.id
 
+        var profile_picture = json.profile_picture;
+
+
         authenticate(user_id, password, device_token, socket_id, function(user){
-            updateProfilePicture(user_id, profile_picture, callback, error_handler)
+            users_collection.updateProfilePicture(user_id, profile_picture, callback, error_handler)
+            // updateProfilePicture(user_id, profile_picture, callback, error_handler)
         }, error_handler)
 
         function callback(){
             socket.emit("update_profile_picture_response", {data: null, error: null});
-            io.emit("profile_picture_updated", {data: {user_id: user_id}, error: null});
-            getUserInfo(user_id, function(user_info){
-                console.log(user_info.first_name + " " + user_info.last_name + " updated his/her profile picture")
-            }, function(){})
+            console.log("update_profile_picture successful!")
+            // io.emit("profile_picture_updated", {data: {user_id: user_id}, error: null});
         }
 
         function error_handler(e){
@@ -1677,22 +1678,18 @@ function updateUserInDatabase(user, callback, error_handler){
 
 function emitEvent(event_name, data, user_id_arr, notification_info){
     for(var i=0; i<user_id_arr.length; i++){
-        getUser(user_id_arr[i], function(user){
+        users_collection.get(user_id_arr[i], function(user){
             var notification_database_object = {message: notification_info.alert, transaction_id: data.transaction_id, user_id: user._id, sender_user_id: data.user_id, active: true, time_sent: new Date().getTime()};
             addNotificationToDatabase(notification_database_object, function(){
                 var user_socket;
-                if(user != undefined){
+                if(user != undefined) {
                     user_socket = io.sockets.connected[user.socket_id];
                 }
-                // var event = new Event(event_name, data, null);
-                // var event = new Event("transaction_declined", {transaction_id: transaction._id.toString()}, null);
-
                 if(user_socket != undefined) {
-                    user_socket.emit(event.name , event.message);
+                    user_socket.emit(event_name , data);
                 }
                 else{
                     if(user != undefined) {
-                        // user.enqueueEvent(event);
                         if(notification_info != undefined){
                             sendNotification(notification_info, user.device_token, data.user_id, data.transaction_id);
                         }
@@ -1701,11 +1698,9 @@ function emitEvent(event_name, data, user_id_arr, notification_info){
             }, function(error){
                 console.log(error)
             });
-
-
-        });
-
-
+        }, function(error){
+            console.log(error);
+        })
     }
 }
 

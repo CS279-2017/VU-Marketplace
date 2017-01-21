@@ -12,6 +12,8 @@ function User(first_name, last_name, password, email_address){
     this.venmo_id = undefined ;
     this.socket_id = undefined;
 
+    this.profile_picture = undefined;
+
     this.creation_time = new Date().getTime();
 
     this.buying_listing_ids = [];
@@ -41,6 +43,11 @@ User.prototype = {
         if(user.email_address != undefined){
             this.email_address = user.email_address;
         }
+
+        if(user.profile_picture != undefined){
+            this.profile_picture = user.profile_picture.buffer;
+        }
+
         if(user.venmo_id != undefined){
             this.venmo_id = user.venmo_id;
         }
