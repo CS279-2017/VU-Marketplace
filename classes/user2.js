@@ -8,7 +8,7 @@ function User(first_name, last_name, password, email_address){
     }
     this.email_address = email_address
 
-    this.device_token = undefined;
+    // this.device_token = undefined;
     this.venmo_id = undefined ;
     this.socket_id = undefined;
 
@@ -18,8 +18,6 @@ function User(first_name, last_name, password, email_address){
     this.selling_listing_ids = [];
 
     this.location = undefined;
-    this.logged_in = undefined;
-
     this.active = true;
 }
 
@@ -56,9 +54,9 @@ User.prototype = {
         // this.location.initFromDatabase(user.location);
 
 
-        if(user.device_token != undefined){
-            this.device_token = user.device_token;
-        }
+        // if(user.device_token != undefined){
+        //     this.device_token = user.device_token;
+        // }
         if(user.creation_time != undefined){
             this.creation_time = user.creation_time;
         }

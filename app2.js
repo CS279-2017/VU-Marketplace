@@ -6,11 +6,10 @@ var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var apn = require('apn');
 
-var request = require("request");
-
-
 const crypto = require('crypto');
 const secret = 'vandylistisawesome';
+
+var request = require("request");
 
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
@@ -170,21 +169,15 @@ io.on('connection', function (socket) {
         var email_address = json.email_address.toLowerCase();
         var password = json.password;
         var device_token = json.device_token;
+        var socket_id = socket.id
 
-        var callback = function(user){
-            user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
-            user.device_token = device_token;
-            updateUserInDatabase(user, function(){
-                console.log("new device token: " + user.device_token + " for " + user.first_name + " " + user.last_name);
-                socket.emit("login_response", {data: {user_id: user._id}, error: null});
-            }, error_handler)
-        };
-        var error_handler = function(e) {
-            socket.emit("login_response", {data: null, error: e});
-            console.log(e);
-        }
         //TODO: should we allow logging in from multiple devices at once? for now yes
-        login(email_address, password, device_token, callback, error_handler);
+        users_collection.login(email_address, password, device_token, socket_id, function(user){
+            socket.emit("login_response", {data: {user: user}, error: null});
+        }, function(error){
+            socket.emit("login_response", {data: null, error: error});
+            console.log(error);
+        })
     });
 
     socket.on('logout', function(json){
@@ -192,28 +185,28 @@ io.on('connection', function (socket) {
         var password = json.password;
         var device_token = json.device_token
         function callback(){
-            if(socket != undefined) {
-                socket.emit("logout_response", {data: null, error: null});
-            }
-            io.emit("user_logged_out", {data: {user_id: user_id}});
-            // }socket.emit("logout_response", {data: null, error: null});
+            socket.emit("logout_response", {data: null, error: null});
         }
         function error_handler(e){
-            if(socket != undefined){
-                socket.emit("logout_response", {data: null, error: e});
-            }
+            socket.emit("logout_response", {data: null, error: e});
             console.log(e);
         }
-        logout(user_id, password, device_token, callback, error_handler);
+
+        authenticate(user_id, password, device_token, function(user){
+            users_collection.logout(user._id, function(){
+                console.log(user.first_name + " " + user.last_name + " has logged out");
+                if(callback != undefined){ callback(); }
+            }, error_handler)
+        }, error_handler);
     });
 
     socket.on('authenticate', function(json){
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token;
+        var socket_id = socket.id
 
         function callback(user){
-            user.socket_id = socket.id; //store the socket_id of the user upon login and authentication
             socket.emit('authenticate_response', {data: null, error: null});
             console.log("authenticated " + user.first_name + " " + user.last_name)
         }
@@ -221,18 +214,7 @@ io.on('connection', function (socket) {
             socket.emit('authenticate_response', {data: null, error:e});
             console.log(e);
         }
-        
-        if(users_collection != undefined){
-            users_collection.get([user_id], function(user){
-                if(user != undefined && (device_token != user.device_token)){
-                    error_handler("tried to authenticate an invalid user_id/password combination");
-                }
-                else {
-                    // console.log("entered device_token: " + device_token);
-                    authenticate(user_id, password, device_token, callback, error_handler);
-                }
-            });
-        }
+        users_collection.authenticate(user_id, password, device_token, socket_id, callback, error_handler)
     });
 
 
@@ -576,39 +558,15 @@ io.on('connection', function (socket) {
         var venmo_id = json.venmo_id;
         function callback(updated_venmo_id){
             socket.emit("update_venmo_id_response", {data: {updated_venmo_id: updated_venmo_id}, error: null});
-            //notify all users, or all users in the same transaction with user whose venmo_id was updated,
-            var user = users_collection.get(user_id, function(user){
-                try {
-                    getUserInfo(user_id, function(user_info){
-                        console.log(user_info.first_name + " " + user_info.last_name + " updated his/her venmo_id")
-                    }, function(){})
-                    io.emit("venmo_id_updated", {data: {user_id: user._id, venmo_id: venmo_id}, error: null});
-
-                }catch(e){
-                    console.log(e.message);
-                    error_handler(e.message);
-                    return;
-                }
-            });
-            // var current_transaction_ids = user.current_transactions_ids;
-
         }
         function error_handler(e){
             socket.emit("update_venmo_id_response", {data: null, error: e});
             console.log(e);
         }
         authenticate(user_id, password, device_token, function(user){
-            users_collection.get(user_id, function(user){
-                if (user != undefined) {
-                    user.venmo_id = venmo_id;
-                    updateUserInDatabase(user, function(){
-                        callback(venmo_id);
-                    }, error_handler)
-                }
-                else{
-                    error_handler("user is undefined i.e not logged in, cannot set venmo_id");
-                }
-            });
+            users_collection.updateVenmoId(user_id, venmo_id, function(){
+                callback(venmo_id);
+            }, error_handler)
         })
     });
 
@@ -1376,62 +1334,8 @@ function resetPasswordVerificationCode(verification_code, email_address, passwor
     });
 }
 
-
-function login(email_address, password, device_token, callback, error_handler){
-    password = hashPassword(password);
-    email_address = email_address.toLowerCase();
-    //query database for user with given email_address and password
-    console.log("login called");
-    var collection = database.collection('users');
-    collection.find({email_address: email_address, password: password}).toArray(function(err, docs) {
-        if(err){
-            error_handler(err);
-        }
-        if(docs.length > 0) {
-            //log user in (create and add a new User object to ActiveUsers), alert client that he's been logged in
-            var user = new User();
-            user.update(docs[0]);
-            user.active = true;
-            user.last_login_time = new Date().getTime();
-            user.logged_in = true;
-            user.device_token = device_token;
-            users_collection.add(user, function(user){
-                console.log(user);
-                if(callback != undefined){ callback(user); }
-            }, error_handler);
-        }
-        else{
-            //if not found: alert user that login failed, because incorrect email_address/password
-            error_handler("Incorrect Email Address or Password");
-        }
-    });
-}
-
-//TODO: what if a user logs out during a transaction? while he/she has listings? or he or she has requested a transaction
-//TODO: or when he or she has received a transaction?
-function logout(user_id, password, device_token, callback, error_handler){
-    //verify credentials of user calling logout
-    authenticate(user_id, password, device_token, function(user){
-        try {
-            users_collection.get(user_id, function(user){
-                user.active = false;
-                user.logged_in = false;
-                users_collection.add(user, function(user){
-                    console.log(user.first_name + " " + user.last_name + " has logged out");
-                    if(callback != undefined){ callback(); }
-                }, error_handler)
-            });
-        }catch(e){
-            error_handler(e.message);
-            return;
-        }
-    }, error_handler);
-}
-
-function authenticate(user_id, password, device_token, callback, error_handler){
-    password = hashPassword(password);
-    var authentication_info = {user_id: user_id, password: password, device_token: device_token};
-    users_collection.authenticate(authentication_info, callback, error_handler);
+function authenticate(user_id, password, device_token, socket_id, callback, error_handler){
+    users_collection.authenticate(user_id, password, device_token, socket_id, callback, error_handler);
 }
 
 function validateListing(listing){
@@ -1561,29 +1465,7 @@ function deletePictureFromListing(picture_id, listing_id, user_id, callback, err
         listing.removePictureId(picture_id);
         updateListingInDatabase(listing, callback, error_handler);
     });
-
 }
-
-// function sendChatMessage(user_id, password, device_token, transaction_id, message_text, callback, error_handler){
-//     authenticate(user_id, password, device_token, function(user){
-//         active_transactions.get(transaction_id, function(transaction){
-//             if(transaction.buyer_user_id.toString() == user._id.toString() || transaction.seller_user_id.toString() == user_id.toString()){
-//                 try {
-//                     var message = transaction.sendChatMessage(user, message_text);
-//                     updateTransactionInDatabase(transaction, function(){
-//                         callback(message);
-//                     }, error_handler)
-//                 }catch(e){
-//                     error_handler(e.message);
-//                     return;
-//                 }
-//             }
-//             else{
-//                 error_handler("user with user_id " + user_id + " tried to send a message to conversation in a transaction of which he/she is not apart of");
-//             }
-//         });
-//     }, error_handler)
-// }
 
 //1. authenticate
 //2. get listings_collection
@@ -1666,7 +1548,6 @@ function getUserInfo(user_id, callback, error_handler){
 }
 
 function getUser(user_id, callback, error_handler){
-    // password = hashPassword(password);
     var collection = database.collection('users');
     collection.find({_id: toMongoIdObject(user_id)}).toArray(function(err, docs) {
         if(docs.length > 0) {
@@ -1978,12 +1859,6 @@ function validateBuy(buy){
     return "";
 }
 
-function hashPassword(password){
-    return crypto.createHmac('sha256', secret)
-        .update(password)
-        .digest('hex');
-}
-
 function getUUID(){
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
@@ -1994,6 +1869,13 @@ function getUUID(){
 function toMongoIdObject(id){
     return new require('mongodb').ObjectID(id.toString());
 }
+
+function hashPassword(password){
+    return crypto.createHmac('sha256', secret)
+        .update(password)
+        .digest('hex');
+}
+
 
 function sendNotification(notification_info, device_token, user_id, transaction_id){
     // Enter the device token from the Xcode console

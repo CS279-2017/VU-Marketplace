@@ -1,4 +1,6 @@
 var User = require("./user2.js");
+const crypto = require('crypto');
+const secret = 'vandylistisawesome';
 
 function UsersCollection(database){
     this.database = database;
@@ -18,16 +20,20 @@ UsersCollection.prototype = {
                 }
             });
         }
-        else{
+        else {
             this.collection_users.insert(user, function (err, count, status) {
-                if(err){error_handler(err.message);}
-                else{
-                    collection_users.find(user).toArray(function(err, docs){
-                        if(docs.length == 1){
+                if (err) {
+                    error_handler(err.message);
+                }
+                else {
+                    collection_users.find(user).toArray(function (err, docs) {
+                        if (docs.length == 1) {
                             user.update(docs[0]);
-                            if(callback != undefined){ callback(new_user);}
+                            if (callback != undefined) {
+                                callback(new_user);
+                            }
                         }
-                        else{
+                        else {
                             error_handler("more than 1 listing inserted into database");
                             return;
                         }
@@ -114,17 +120,24 @@ UsersCollection.prototype = {
             }
         });
     },
-    authenticate: function(authentication_info, callback, error_handler){
-        var user_id = authentication_info.user_id
-        var password = authentication_info.password;
-        var device_token = authentication_info.device_token;
-
+    authenticate: function(user_id, password, device_token, socket_id, callback, error_handler){
+        password = hashPassword(password);
+        var collection_users = this.collection_users
+        // var add = this.add;
         this.collection_users.find({_id: toMongoIdObject(user_id), password: password, device_token: device_token, active: true}).toArray(function(err, docs) {
             if(!err){
                 if(docs.length > 0) {
                     var user = new User();
                     user.update(docs[0]);
-                    callback(user);
+                    user.socket_id = socket_id;
+                    collection_users.update({_id: toMongoIdObject(user_id)}, {$set: user}, function(){
+                        console.log(user);
+                        if(callback != undefined){ callback(user); }
+                    })
+                    // add(user, function(user){
+                    //     console.log(user);
+                    //     if(callback != undefined){ callback(user); }
+                    // }, error_handler);
                 }
                 else{
                     error_handler("authentication failed");
@@ -134,6 +147,43 @@ UsersCollection.prototype = {
                 error_handler("authentication failed");
             }
 
+        });
+    },
+    login: function(email_address, password, device_token, socket_id, callback, error_handler){
+        password = hashPassword(password);
+        var add = this.add;
+        this.collection_users.find({email_address: email_address, password: password}).toArray(function(err, docs) {
+            if(!err){
+                if(docs.length > 0) {
+                    var user = new User();
+                    user.update(docs[0]);
+                    user.active = true;
+                    user.last_login_time = new Date().getTime();
+                    user.logged_in = true;
+                    user.device_token = device_token;
+                    user.socket_id = socket_id;
+                    add(user, function(user){
+                        console.log(user);
+                        if(callback != undefined){ callback(user); }
+                    }, error_handler);
+                }
+                else{
+                    error_handler("Invalid Login Information");
+                }
+            }
+            else{
+                error_handler("Login Failed");
+            }
+        });
+    },
+    logout: function(user_id, callback, error_handler){
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {$set: {logged_in: false, active: false}}, function (err, count, status) {
+            if(!err){
+                callback();
+            }
+            else{
+                error_handler("addBuyingListingId failed");
+            }
         });
     },
     //adds listing_id to buying_listing_ids of user, if called multiple times for same user_id and listing_id, will only add listing_id once.
@@ -179,11 +229,27 @@ UsersCollection.prototype = {
             }
         });
     },
+    updateVenmoId: function(user_id, venmo_id, callback, error_handler) {
+        this.collection_users.update({_id: toMongoIdObject(user_id)}, {$set: {venmo_id: venmo_id}}, function (err, count, status) {
+            if (!err) {
+                callback();
+            }
+            else {
+                error_handler("updateVenmoId failed");
+            }
+        });
+    },
 
 }
 
 function toMongoIdObject(id){
     return new require('mongodb').ObjectId(id.toString());
+}
+
+function hashPassword(password){
+    return crypto.createHmac('sha256', secret)
+        .update(password)
+        .digest('hex');
 }
 
 module.exports = UsersCollection;
