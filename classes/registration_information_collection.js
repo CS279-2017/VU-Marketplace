@@ -1,5 +1,17 @@
 var RegistrationInformation = require("./registration_information.js");
+var nodemailer = require('nodemailer');
+
 var registrationAttemptsLimit = 5;
+
+var transporter = nodemailer.createTransport({
+    service: 'SendGrid',
+    auth: {
+        // user: 'mealplanapp@gmail.com', // Your email id
+        // pass: 'chocho513' // Your password
+        user: 'mealplanapp',
+        pass: 'chocho513'
+    }
+});
 
 function RegistrationInformationCollection(database){
     this.database = database;
@@ -11,12 +23,14 @@ RegistrationInformationCollection.prototype = {
     registerEmail: function(email_address, callback, error_handler){
         //generate verification_code
         var verification_code = generateVerificationCode(6);
+        console.log(verification_code);
         //sendEmail
         sendEmail(email_address, verification_code)
         var registration_information = new RegistrationInformation(email_address);
         registration_information.verification_code = verification_code;
        this.collection_registration_information.findAndModify(
            {email_address: email_address},
+           [],
            {$set: registration_information},
            {new: true, upsert: true},
            function (err, docs) {
@@ -25,7 +39,9 @@ RegistrationInformationCollection.prototype = {
                    if(callback != undefined){ callback(value); }
                }
                else{
-                   error_handler("An Error Occured while Logging in!")
+                   console.log(err);
+                   console.log("collection.registration_information.findAndModify error");
+                   error_handler("An error occured!")
                }
            }
        );
@@ -33,11 +49,11 @@ RegistrationInformationCollection.prototype = {
     registerVerificationCode: function(verification_code, email_address, password, callback, error_handler){
         var collection_registration_information = this.collection_registration_information;
         this.collection_registration_information.find({email_address: email_address}).toArray(function(err, docs) {
-            if(docs.length == 0){
+            if(docs.length == 1) {
                 var registration_information = docs[0]
-                if(registration_information.verification_code == verification_code){
-                    if(registration_information.registration_attempts <= registrationAttemptsLimit){
-                        if(registration_information.registered == false){
+                if (registration_information.registration_attempts < registrationAttemptsLimit) {
+                    if (registration_information.verification_code == verification_code) {
+                        if (registration_information.registered == false) {
                             collection_registration_information.update({email_address: email_address}, {$set: {registered: true}}, function (err, count, status) {
                                 if (!err) {
                                     callback();
@@ -49,26 +65,26 @@ RegistrationInformationCollection.prototype = {
                                 }
                             });
                         }
-                        else{
+                        else {
                             console.log("This email has already been registered!")
                             error_handler("This email has already been registered!")
                         }
                     }
-                    else{
-                        console.log("Too many registration attempts, please resend verification code");
-                        error_handler("Too many registration attempts, please resend verification code");
+                    else {
+                        collection_registration_information.update({email_address: email_address}, {$inc: {registration_attempts: 1}}, function (err, count, status) {
+                            if (!err) {
+                                error_handler("Invalid verification code")
+                            }
+                            else {
+                                console.log("error occured while updating registration attempts")
+                                error_handler("An error occurred");
+                            }
+                        })
                     }
                 }
                 else{
-                    collection_registration_information.update({email_address: email_address}, {$inc: {registration_attempts: 1}}, function (err, count, status) {
-                        if(!err){
-                            error_handler("Invalid verification code")
-                        }
-                        else{
-                            console.log("error occured while updating registration attempts")
-                            error_handler("An error occurred");
-                        }
-                    })
+                    console.log("Too many registration attempts, please resend verification code");
+                    error_handler("Too many registration attempts, please resend verification code");
                 }
             }
             else{
@@ -79,13 +95,16 @@ RegistrationInformationCollection.prototype = {
     resetPasswordEmail: function(email_address, callback, error_handler){
         var collection_registration_information = this.collection_registration_information;
         this.collection_registration_information.find({email_address: email_address}).toArray(function(err, docs) {
-            if(docs.length == 0){
+            if(docs.length == 1){
                 //generate reset_password_verification_code
                 var reset_password_verification_code = generateVerificationCode(6)
+                console.log(reset_password_verification_code);
+
                 //send email
                 sendEmail(email_address, reset_password_verification_code);
                 this.collection_registration_information.findAndModify(
                     {email_address: email_address},
+                    [],
                     {$set: {reset_password_verification_code: reset_password_verification_code , reset_password_attempts: 0, password_reset: false}},
                     {new: true},
                     function (err, docs) {
@@ -109,10 +128,10 @@ RegistrationInformationCollection.prototype = {
     resetPasswordVerificationCode: function(verification_code, email_address, password, callback, error_handler){
         var collection_registration_information = this.collection_registration_information;
         this.collection_registration_information.find({email_address: email_address}).toArray(function(err, docs) {
-            if(docs.length == 0){
+            if(docs.length == 1){
                 var registration_information = docs[0]
-                if(registration_information.reset_password_verification_code == verification_code){
-                    if(registration_information.reset_password_attempts <= registrationAttemptsLimit){
+                if(registration_information.reset_password_attempts < registrationAttemptsLimit){
+                    if(registration_information.reset_password_verification_code == verification_code){
                         if(registration_information.password_reset == false){
                             collection_registration_information.update({email_address: email_address}, {$set: {password_reset: true}}, function (err, count, status) {
                                 if (!err) {
@@ -131,21 +150,22 @@ RegistrationInformationCollection.prototype = {
                         }
                     }
                     else{
-                        console.log("Too many password reset attempts, please resend verification code");
-                        error_handler("Too many password reset attempts, please resend verification code");
+                        collection_registration_information.update({email_address: email_address}, {$inc: {password_reset_attempts: 1}}, function (err, count, status) {
+                            if(!err){
+                                error_handler("Invalid password reset verification code")
+                            }
+                            else{
+                                console.log("error occured while updating password reset attempts")
+                                error_handler("An error occurred");
+                            }
+                        })
                     }
                 }
                 else{
-                    collection_registration_information.update({email_address: email_address}, {$inc: {password_reset_attempts: 1}}, function (err, count, status) {
-                        if(!err){
-                            error_handler("Invalid password reset verification code")
-                        }
-                        else{
-                            console.log("error occured while updating password reset attempts")
-                            error_handler("An error occurred");
-                        }
-                    })
+                    console.log("Too many password reset attempts, please resend verification code");
+                    error_handler("Too many password reset attempts, please resend verification code");
                 }
+
             }
             else{
                 error_handler("Invalid email address");

@@ -1,6 +1,5 @@
 var http = require('http');
 var bodyParser = require('body-parser');
-var nodemailer = require('nodemailer');
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
@@ -30,18 +29,19 @@ var UsersCollection = require("./classes/users_collection")
 var ListingsCollection = require("./classes/listings_collection")
 var MessagesCollection = require("./classes/messages_collection")
 var ConversationsCollection = require("./classes/conversations_collection")
+var RegistrationInformationCollection = require("./classes/registration_information_collection");
 
 
 // create reusable transporter object using the default SMTP transport
-var transporter = nodemailer.createTransport({
-    service: 'SendGrid',
-    auth: {
-        // user: 'mealplanapp@gmail.com', // Your email id
-        // pass: 'chocho513' // Your password
-        user: 'mealplanapp',
-        pass: 'chocho513'
-    }
-});
+// var transporter = nodemailer.createTransport({
+//     service: 'SendGrid',
+//     auth: {
+//         // user: 'mealplanapp@gmail.com', // Your email id
+//         // pass: 'chocho513' // Your password
+//         user: 'mealplanapp',
+//         pass: 'chocho513'
+//     }
+// });
 
 // Set up apn with the APNs Auth Key
 var apnProvider = new apn.Provider({
@@ -74,6 +74,7 @@ var listings_collection;
 var users_collection;
 var messages_collection;
 var conversation_collection;
+var registration_information_collection;
 
 server.listen(port,function () {
     host = server.address().address
@@ -93,6 +94,7 @@ server.listen(port,function () {
         listings_collection = new ListingsCollection(db);
         messages_collection = new MessagesCollection(db);
         conversation_collection = new ConversationsCollection(db);
+        registration_information_collection = new RegistrationInformationCollection(db);
     });
 });
 
@@ -113,6 +115,7 @@ io.on('connection', function (socket) {
 
     socket.on('register_email_address', function(json) {
         var email_address = json.email_address.toLowerCase();
+
         var callback = function (verification_code, email_address) {
             socket.emit('register_email_address_response', {data: null , error: null});
         };
@@ -121,28 +124,20 @@ io.on('connection', function (socket) {
             console.log(e);
             return;
         }
-        email_address = email_address.toLowerCase() //converts email_address to lowercase because email_addresses are case insensitive
-        //validate email address is real
         if(validateEmail(email_address) == false){
             //return a object type that has an error message
             error_handler("invalid email address");
+            console.log("validateEmail is false");
             return;
         }
         //validate email address is vanderbilt.edu
         if(validateVanderbiltEmail(email_address) == false){
             error_handler("Must be a valid vanderbilt.edu email address")
+            console.log("validateVanderbiltEmail is false");
             return;
         }
-        //validate email address send out verification email
-        try {
-            //generates veritification code and sends out email containing the code to email_address
-            sendVerificationEmail(email_address);
-        }catch(e){
-            console.log(e.message);
-        }
+        registration_information_collection.registerEmail(email_address, callback, error_handler)
 
-        //returns the verification_code and asychronously adds it to the database
-        
     });
 
     socket.on('register_verification_code', function(json){
@@ -150,18 +145,21 @@ io.on('connection', function (socket) {
         var password = json.password;
         var email_address = json.email_address.toLowerCase();
         var callback = function(){
-            socket.emit("register_verification_code_response", {data: null, error: null});
+            var user = new User(email_address, password);
+            users_collection.add(user, function(user){
+                socket.emit("register_verification_code_response", {data: null, error: null});
+            }, error_handler)
         };
         var error_handler = function(e) {
             socket.emit("register_verification_code_response", {data: null, error: e});
             console.log(e);
         }
-        registerVerificationCode(verification_code, email_address, password, callback, error_handler);
+        registration_information_collection.registerVerificationCode(verification_code, email_address, password, callback, error_handler)
     });
 
     socket.on('reset_password_email_address', function(json) {
         var email_address = json.email_address.toLowerCase();
-        var callback = function (verification_code, email_address) {
+        var callback = function () {
             socket.emit('reset_password_email_address_response', {data: null , error: null});
         };
         var error_handler = function (e) {
@@ -169,7 +167,7 @@ io.on('connection', function (socket) {
             console.log(e);
             return;
         }
-        resetPasswordEmailAddress(email_address, callback, error_handler)
+        registration_information_collection.resetPasswordEmail(email_address, callback, error_handler)
     });
 
     socket.on('reset_password_verification_code', function(json){
@@ -183,7 +181,7 @@ io.on('connection', function (socket) {
             socket.emit("reset_password_verification_code_response", {data: null, error: e});
             console.log(e);
         }
-        resetPasswordVerificationCode(verification_code, email_address, password, callback, error_handler);
+        registration_information_collection.resetPasswordVerificationCode(verification_code, email_address, password, callback, error_handler)
     });
 
     socket.on('login', function(json){
@@ -246,13 +244,6 @@ io.on('connection', function (socket) {
         users_collection.authenticate(user_id, password, device_token, socket_id, callback, error_handler)
     });
 
-
-    //TODO: the following API calls may involve message queues where he receiver of the message is offline
-    //TODO: or currently unavailable to respond to the message, in that case the message must be saved
-    //TODO: until the receiver is ready
-
-    //TODO: max number of listings per user?
-    //tODO: multiple listings of the same title?
     socket.on('make_listing', function(json){
         var user_id = json.user_id;
         var password = json.password;
@@ -956,295 +947,6 @@ io.on('connection', function (socket) {
 //**BEGIN Client -> Server API methods**
 //**************************************
 
-//note each method has a callback and error_handler methods, one or the other will be called in each execution
-//successful execution calls callback, unsuccessful calls error_handler
-
-//note we pass an error handler method to each of these methods, if the methods are called, they are passed
-//a string that describes the error
-function registerEmailAddress(email_address, callback, error_handler){
-
-    //notify client that verification email has been sent (client moves to text page with verification code username and password)
-    //TODO:return message that indicates validation of email was successful
-    return true;
-}
-
-//this causes a race condition is two users registerVerification code within about .5 seconds of each other
-//fixed: by adding an index to database before inserting
-//TODO: automatically infer first and last name from email_address
-function registerVerificationCode(verification_code, email_address, password, callback, error_handler){
-    //adds a function to String prototype to capitalize first letter
-    String.prototype.capitalizeFirstLetter = function() {
-        return this.charAt(0).toUpperCase() + this.slice(1);
-    }
-    email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
-    if(!validateEmail(email_address)){
-        error_handler("invalid email_address");
-        return;
-    }
-    var first_name;
-    var last_name;
-    var nameString = email_address.substring(0, email_address.indexOf("@"));
-    var nameStringSplit = nameString.split(".");
-    if(nameStringSplit.length == 2){
-        first_name = nameStringSplit[0];
-        last_name = nameStringSplit[1];
-    }
-    else if(nameStringSplit.length ==3){
-        first_name = nameStringSplit[0];
-        last_name = nameStringSplit[2];
-    }
-    else if(nameStringSplit.length == 4){
-        first_name = nameStringSplit[0];
-        last_name = nameStringSplit[2];
-    }
-    else{
-        error_handler("the vanderbilt email is of invalid format");
-        return;
-    }
-    first_name = first_name.toLowerCase(); //converts first name to lower case
-    first_name = first_name.capitalizeFirstLetter(); //then capitalizes first letter
-    last_name = last_name.toLowerCase(); //converts last name to lower case
-    last_name = last_name.capitalizeFirstLetter(); //then capitalizes first letter
-    //verify password is valid
-    if(!validatePassword(password)) {
-        error_handler("invalid password");
-        return;
-    }
-    //hashes password
-    password = hashPassword(password);
-    //verify password confirm matches password
-    // if(password != confirm_password){
-    //     error_handler("password doesn't match");
-    //     return;
-    // }
-    //create user and add to database
-    var user = new User(first_name, last_name, password, email_address);
-    //note this action happens asynchronously, subsequent events will probably occur before callback occurs
-    //verify that the verification code is valid, or if user has clicked on verification link
-    var collection_emails = database.collection('emails');
-    //register the user
-    collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
-        if(docs.length > 0) {
-            //checks that verification_code is valid and email hasn't already been registered
-            if(docs[0].verification_code == verification_code){
-                if(docs[0].registered == false){
-                    registerUser();
-                }
-                else{
-                    error_handler(email_address + " has already been registered");
-                    return;
-                }
-            }
-            else{
-                error_handler("verification code doesn't match")
-                return;
-            }
-        }
-        else{
-            error_handler("cannot register, email_address not found in emails database ")
-            return;
-        }
-    });
-
-
-    function registerUser(){
-        var collection_emails = database.collection('emails');
-        var collection_users = database.collection('users');
-        //check to make sure that email and username are unique
-        //change emails database entry to reflect that a email has been registered
-        checkIfEmailAddressUnique(function() {
-            insertUser(function () {
-                //log user registering
-                if (callback != undefined) {
-                    callback(email_address, password); //used for testing purposes
-                }
-            })
-        });
-
-        function checkIfEmailAddressUnique(callback){
-            collection_users.find({email_address: email_address}).toArray(function(err, docs) {
-                if(docs.length > 0) {
-                    error_handler("email address has already been registered")
-                    return;
-                }
-                else{
-                    callback()
-                }
-            });
-        }
-
-        function insertUser(callback){
-            collection_users.createIndex({email_address: 1}, {unique: true}, function(){
-                collection_users.insert(user, function (err, result) {
-                    if (err) {
-                        if(err.message.indexOf('duplicate key error') >= 0){
-                            error_handler('email_address has been taken, cannot register ' + user.email_address);
-                        }
-                        else{
-                            error_handler(err);
-                        }
-                        return;
-                    } else {
-                        console.log('Inserted ' + user.email_address + ' into user database');
-                        collection_emails.update({email_address:email_address}, {$set: {registered : true}}, function(err, result) {
-                            if(err){
-                                error_handler(err);
-                                return;
-                            }
-                            callback();
-                        });
-
-                    }
-                });
-            });
-        }
-    }
-
-    //return something indicating all the validation of input is valid but database may still trigger error
-    return true;
-}
-
-function resetPasswordEmailAddress(email_address, callback, error_handler){
-    email_address = email_address.toLowerCase() //converts email_address to lowercase because email_addresses are case insensitive
-    //validate email address is real
-    if(validateEmail(email_address) == false){
-        //return a object type that has an error message
-        error_handler("invalid email address");
-        return;
-    }
-    //validate email address is vanderbilt.edu
-    if(validateVanderbiltEmail(email_address) == false){
-        error_handler("Must be a valid vanderbilt.edu email address")
-        return;
-    }
-    //validate email address send out verification email
-    try {
-        //generates veritification code and sends out email containing the code to email_address
-        sendVerificationEmail(email_address);
-    }catch(e){
-        console.log(e.message);
-    }
-
-    //returns the verification_code and asychronously adds it to the database
-    function sendVerificationEmail(email_address){
-        //first ensure that email address has not already been verified
-        //if the email address exists but hasn't been verified delete the email address
-        function makeVerificationCode(length){
-            var text = "";
-            // var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            var possible = "0123456789";
-
-            for( var i=0; i < length; i++ )
-                text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-            return text;
-        }
-        var verification_code = makeVerificationCode(6);
-        var collection = database.collection('emails');
-        collection.find({email_address: email_address}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                //if email has already been registered throw error saying email is taken
-                if(docs[0].registered == true){
-                    var email = {email_address: email_address, registered: docs[0].registered, verification_code: docs[0].verification_code, reset_password_verification_code: verification_code}
-                    //adding unique index on email_address ensures no duplicate email_addresses
-                    collection.update({email_address: email_address}, email, function (err, result) {
-                        if (err) {
-                            console.log(err);
-                            return;
-                        } else {
-                            console.log('Inserted reset password verification code ' + verification_code + ' into the email database under email address ' + email_address)
-                            sendEmail(email_address, verification_code);
-                            callback()
-                        }
-                    });
-                }
-                else{
-                    error_handler("This email address has not been registered")
-                }
-            }
-            else{
-                error_handler("This email address has not been registered")
-            }
-            //adds the verification code and email to database
-            //TODO: For testing purposes, dont actually send emails!
-
-        });
-        function sendEmail(email_address, verification_code){
-            // setup e-mail data with unicode symbols
-            // var mailOptions = {
-            //     from: '"VandyList" <mealplanapp@gmail.com>', // sender address
-            //     to: email_address, // list of receivers
-            //     subject: 'Reset Password Verification Link for VandyList', // Subject line
-            //     text: 'Reset Password Verification Link: <a href="http://' + host + ':' + port + 'reset_password?reset_password_verification_code=' +
-            //     verification_code + '&email_address=' + email_address + '>Click Here</a>', // plaintext body
-            // };
-            var mailOptions = {
-                from: '"VandyList" <mealplanapp@gmail.com>', // sender address
-                to: email_address, // list of receivers
-                subject: 'Reset Password Verification Code for VandyList', // Subject line
-                text: 'Reset Password Verification Code: ' + verification_code, // plaintext body
-            };
-
-            // send mail with defined transport object
-            transporter.sendMail(mailOptions, function(error, info){
-                if(error){
-                    return console.log(error);
-                }
-                console.log('Message sent: ' + info.response);
-                //send verification_code to callback as well as email (for testing purposes)
-            });
-        }
-        return verification_code;
-    }
-    //notify client that verification email has been sent (client moves to text page with verification code username and password)
-    //TODO:return message that indicates validation of email was successful
-    return true;
-}
-
-function resetPasswordVerificationCode(verification_code, email_address, password, callback, error_handler){
-    //adds a function to String prototype to capitalize first letter
-    String.prototype.capitalizeFirstLetter = function() {
-        return this.charAt(0).toUpperCase() + this.slice(1);
-    }
-    password = hashPassword(password);
-    email_address = email_address.toLowerCase(); //converts email_address to lower_case because email_addresses are case insensitive
-    var collection_emails = database.collection('emails');
-    collection_emails.find({email_address: email_address}).toArray(function(err, docs) {
-        if(docs.length > 0) {
-            //checks that verification_code is valid and email hasn't already been registered
-            if(docs[0].reset_password_verification_code == verification_code){
-                if(docs[0].registered == true){
-                    users_collection.getForEmailAddress(email_address, function(user){
-                        if(user != undefined){
-                            user.password = password;
-                        }
-                        var collection_users = database.collection('users');
-                        collection_users.update({email_address:email_address}, {$set: {password : password}}, function(err, result) {
-                            if(err){
-                                error_handler(err);
-                                return;
-                            }
-                            callback();
-                        });
-                    });
-
-                }
-                else{
-                    error_handler(email_address + " hasn't been");
-                    return;
-                }
-            }
-            else{
-                error_handler("verification code doesn't match")
-                return;
-            }
-        }
-        else{
-            error_handler("cannot register, email_address not found in emails database ")
-            return;
-        }
-    });
-}
 
 function authenticate(user_id, password, device_token, socket_id, callback, error_handler){
     users_collection.authenticate(user_id, password, device_token, socket_id, callback, error_handler);
@@ -1277,24 +979,6 @@ function validateListing(listing){
         error_string += (validateBuy(new_listing.buy) + "\n");
     }
     return error_string;
-}
-
-function updateProfilePicture(user_id, profile_picture, callback, error_handler){
-    console.log("profile_picture length " + profile_picture.length)
-    if(profile_picture.length <= max_picture_size){
-        var collection_profile_pictures = database.collection('profile_pictures');
-        collection_profile_pictures.update({user_id: user_id}, {user_id: user_id, profile_picture: profile_picture}, {upsert: true}, function (err, count, status) {
-            if(err){error_handler(err.message);}
-            else{
-                if(callback != undefined && callback != null){callback();}
-            }
-        });
-    }
-    else{
-        console.log("picture size: " + profile_picture.length)
-        error_handler("Picture Size Too Large!")
-    }
-
 }
 
 function updatePicture(picture_id, user_id, picture, callback, error_handler){

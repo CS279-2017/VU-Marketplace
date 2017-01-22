@@ -1,5 +1,5 @@
 function Conversation(user_id1, user_id2){
-    this._id = undefined;
+    // this._id = undefined;
     this.user_id1 = user_id1;
     this.user_id2 = user_id2
     this.messages = [];

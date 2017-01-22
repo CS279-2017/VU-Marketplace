@@ -1,7 +1,7 @@
 function Listing(user_id, book, description, price) {
     //Listing(id, titile, description, location, creation_time, expiration_time, price, buy)
     //this._id (this will be initialized when listing retrieved from database)
-    this._id = undefined;
+    // this._id = undefined;
     this.user_id = user_id;
     this.book = book;
     this.price = price;

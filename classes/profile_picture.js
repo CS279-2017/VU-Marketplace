@@ -1,5 +1,5 @@
 function ProfilePicture(user_id, binary_data){
-    this._id = undefined;
+    // this._id = undefined;
     this.user_id = user_id
     this.binary_data = binary_data;
     this.last_modified_time = new Date().getTime()

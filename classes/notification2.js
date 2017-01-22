@@ -1,7 +1,7 @@
-function Notification(_id, to_user_id,  message, notification_info) {
+function Notification(to_user_id,  message, notification_info) {
     //Listing(id, titile, description, location, creation_time, expiration_time, price, buy)
     //this._id (this will be initialized when listing retrieved from database)
-    this._id = _id;
+    // this._id = _id;
     this.to_user_id = to_user_id;
     this.notification_info = notification_info
     this.message = message;

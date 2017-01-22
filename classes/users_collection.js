@@ -21,6 +21,7 @@ UsersCollection.prototype = {
             });
         }
         else {
+            user.password = hashPassword(user.password);
             this.collection_users.insert(user, function (err, count, status) {
                 if (err) {
                     error_handler(err.message);
@@ -30,7 +31,7 @@ UsersCollection.prototype = {
                         if (docs.length == 1) {
                             user.update(docs[0]);
                             if (callback != undefined) {
-                                callback(new_user);
+                                callback(user);
                             }
                         }
                         else {
@@ -124,13 +125,13 @@ UsersCollection.prototype = {
         password = hashPassword(password);
 
         this.collection_users.findAndModify(
-            {query:
-                {_id: toMongoIdObject(user_id), password: password, device_token: device_token, active: true},
-            },
-            {update: {socket_id: socket_id}},
+            {_id: toMongoIdObject(user_id), password: password, device_token: device_token, active: true},
+            [],
+            {$set: {socket_id: socket_id}},
             {new: true },
             function (err, docs) {
                 if(!err){
+                    console.log(docs);
                     if(docs.lastErrorObject.updatedExisting == true) {
                         var value = docs.value;
                         if(callback != undefined){ callback(value); }
@@ -150,18 +151,21 @@ UsersCollection.prototype = {
         password = hashPassword(password);
 
         this.collection_users.findAndModify(
-            {query: {email_address: email_address, password: password}},
-            {update:
+            {email_address: email_address, password: password},
+            [],
+            {$set:
                 { active: true, last_login_time: new Date().getTime(), logged_in: true, device_token: device_token, socket_id : socket_id}
             },
-            {new: true },
+            {new: true},
             function (err, docs) {
                 if(!err){
+                    console.log(docs);
                     if(docs.lastErrorObject.updatedExisting == true) {
                         var value = docs.value;
                         if(callback != undefined){ callback(value); }
                     }
                     else{
+                        console.log(err);
                         error_handler("Invalid Login Information");
                     }
                 }

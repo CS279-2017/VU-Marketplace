@@ -1,6 +1,5 @@
 function RegistrationInformation(email_address){
     //TODO: find way to get a unique id that we can then assign the registration_information, probably have to get it by querying the Database
-    this._id = undefined;
     this.email_address = email_address
     
     this.verification_code = undefined;
