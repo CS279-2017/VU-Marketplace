@@ -494,7 +494,7 @@ io.on('connection', function (socket) {
         }
         try {
             authenticate(user_id, password, device_token, socket_id, function(user){
-                conversation_collection.getForPairUserIds(user._id, other_user_id, function(conversation){
+                conversation_collection.getForPairUserIds(user._id.toString(), other_user_id, function(conversation){
                     //change to return conversation object?
                     callback(conversation);
                 }, error_handler)
@@ -525,7 +525,7 @@ io.on('connection', function (socket) {
         try {
             authenticate(user_id, password, device_token, socket_id, function(user){
                 listings_collection.get(listing_id, function(listing){
-                    conversation_collection.getOneToMany(user._id, listing.buyer_user_ids, function(conversations){
+                    conversation_collection.getOneToMany(user._id.toString(), listing.buyer_user_ids, function(conversations){
                         //change to return conversation object?
                         callback(conversations);
                     }, error_handler)

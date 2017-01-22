@@ -69,7 +69,13 @@ UsersCollection.prototype = {
                 }
             }
             else{
-                error_handler("No users were found");
+                if(user_ids.length > 1){
+                    error_handler("No users were found");
+                }
+                else{
+                    error_handler("User wasn't found");
+                }
+
             }
         });
     },

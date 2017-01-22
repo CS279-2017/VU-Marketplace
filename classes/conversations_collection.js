@@ -14,8 +14,8 @@ ConversationsCollection.prototype = {
     getForPairUserIds: function(user_id1, user_id2, callback, error_handler){
         this.collection_conversations.find(
             {$or: [
-                {$and:[{user_id1: user_id1}, {user_id2: user_id2}]},
-                {$and:[{user_id1: user_id2}, {user_id2: user_id1}]}
+                {$and:[{user_id1: user_id1.toString()}, {user_id2: user_id2.toString()}]},
+                {$and:[{user_id1: user_id2.toString()}, {user_id2: user_id1.toString()}]}
             ]}
         ).toArray(function(err, docs) {
             if(!err){
@@ -42,8 +42,8 @@ ConversationsCollection.prototype = {
         }
         this.collection_conversations.find(
             {$or: [
-                {$and:[{user_id1: {$in: other_user_ids}}, {user_id2: user_id}]},
-                {$and:[{user_id1: user_id}, {user_id2: {$in: other_user_ids}}]}
+                {$and:[{user_id1: {$in: other_user_ids}}, {user_id2: user_id.toString()}]},
+                {$and:[{user_id1: user_id.toString()}, {user_id2: {$in: other_user_ids}}]}
             ]}
         ).toArray(function(err, docs) {
             if(docs.length > 0){
