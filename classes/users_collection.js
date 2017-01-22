@@ -123,10 +123,12 @@ UsersCollection.prototype = {
     authenticate: function(user_id, password, device_token, socket_id, callback, error_handler){
         password = hashPassword(password);
 
-        this.collection_users.findOneAndUpdate(
-            {_id: toMongoIdObject(user_id), password: password, device_token: device_token, active: true},
-            {$set: {socket_id: socket_id}},
-            {returnNewDocument: true },
+        this.collection_users.findAndModify(
+            {query:
+                {_id: toMongoIdObject(user_id), password: password, device_token: device_token, active: true},
+            },
+            {update: {socket_id: socket_id}},
+            {new: true },
             function (err, docs) {
                 if(!err){
                     if(docs.lastErrorObject.updatedExisting == true) {
@@ -147,12 +149,12 @@ UsersCollection.prototype = {
     login: function(email_address, password, device_token, socket_id, callback, error_handler){
         password = hashPassword(password);
 
-        this.collection_users.findOneAndUpdate(
-            {email_address: email_address, password: password},
-            { $set:
+        this.collection_users.findAndModify(
+            {query: {email_address: email_address, password: password}},
+            {update:
                 { active: true, last_login_time: new Date().getTime(), logged_in: true, device_token: device_token, socket_id : socket_id}
             },
-            { returnNewDocument: true },
+            {new: true },
             function (err, docs) {
                 if(!err){
                     if(docs.lastErrorObject.updatedExisting == true) {
