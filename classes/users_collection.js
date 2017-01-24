@@ -43,7 +43,8 @@ UsersCollection.prototype = {
             });
         }
     },
-    get: function(user_ids, callback, error_handler){
+    get: function(user_ids_input, callback, error_handler){
+        var user_ids = user_ids_input;
         if(!(Array.isArray(user_ids))){
             // error_handler("user_ids must be an array!")
             user_ids = [user_ids];
@@ -61,7 +62,7 @@ UsersCollection.prototype = {
                     user.update(docs[j]);
                     users_arr.push(user);
                 }
-                if(users_arr.length == 1){
+                if(users_arr.length == 1 && !(Array.isArray(user_ids_input))){
                     callback(users_arr[0]);
                 }
                 else{

@@ -1,5 +1,6 @@
 var Notification = require("./notification2.js");
 
+
 function NotificationsCollection(database){
     this.database = database;
     this.collection_notifications = database.collection('notifications');
@@ -16,7 +17,7 @@ NotificationsCollection.prototype = {
                     collection_notifications.find(notification).toArray(function(err, docs){
                         if(docs.length == 1){
                             notification.update(docs[0]);
-                            if(callback != undefined){ callback();}
+                            if(callback != undefined){ callback(notification);}
                         }
                         else{
                             error_handler("more than 1 notification inserted into database");
@@ -55,7 +56,7 @@ NotificationsCollection.prototype = {
     },
     getForUserId: function(user_id, callback, error_handler){
         this.collection_notifications.find({to_user_id: user_id}).toArray(function(err, docs) {
-            if(docs.length > 0) {
+            if(!err){
                 var notifications_arr = [];
                 for(var j=0; j< docs.length; j++){
                     var notification = new Notification();
@@ -65,54 +66,7 @@ NotificationsCollection.prototype = {
                 callback(notifications_arr);
             }
             else{
-                error_handler("Notification with email_address " + email_address + " was not found");
-            }
-        });
-    },
-    remove: function(_id, callback){
-
-    },
-    size: function(){
-
-    },
-
-    getConversation: function(user_id1, user_id2, callback, error_handler){
-        this.collection_notifications.find(
-            {$or:[
-                {$and:
-                    [{to_user_id: user_id1},
-                        {from_user_id: user_id2}]
-                },
-                {$and:
-                    [{to_user_id: user_id2},
-                        {from_user_id: user_id1}]
-                }
-            ]}
-        ).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                var active_notifications = [];
-                for(var i=0; i<docs.length; i++){
-                    var notification = new Notification();
-                    notification.update(docs[i]);
-                    active_notifications.push(notification);
-                }
-                callback(active_notifications);
-            }
-            else{
-                callback([])
-            }
-        });
-    },
-    //TODO: find some faster way to search notifications on socket id, maybe make another hashmap
-    getNotificationBySocketId: function(socket_id, callback){
-        this.collection_notifications.find({socket_id: socket_id}).toArray(function(err, docs) {
-            if(docs.length > 0) {
-                var notification = new Notification();
-                notification.update(docs[0]);
-                callback(notification);
-            }
-            else{
-                callback([])
+                error_handler("An Error Occured While Retrieving Notifications");
             }
         });
     },

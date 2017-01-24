@@ -3,7 +3,7 @@ var bodyParser = require('body-parser');
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-var apn = require('apn');
+
 
 const crypto = require('crypto');
 const secret = 'vandylistisawesome';
@@ -28,6 +28,8 @@ var Notification = require("./classes/notification2.js");
 var UsersCollection = require("./classes/users_collection")
 var ListingsCollection = require("./classes/listings_collection")
 var MessagesCollection = require("./classes/messages_collection")
+var NotificationsCollection = require("./classes/notifications_collection")
+
 var ConversationsCollection = require("./classes/conversations_collection")
 var RegistrationInformationCollection = require("./classes/registration_information_collection");
 
@@ -44,14 +46,6 @@ var RegistrationInformationCollection = require("./classes/registration_informat
 // });
 
 // Set up apn with the APNs Auth Key
-var apnProvider = new apn.Provider({
-    token: {
-        key: 'apnkey.p8', // Path to the key p8 file
-        keyId: 'Y3M29GE5QJ', // The Key ID of the p8 file (available at https://developer.apple.com/account/ios/certificate/key)
-        teamId: 'DE4758AREF', // The Team ID of your Apple Developer Account (available at https://developer.apple.com/account/#/membership/)
-    },
-    production: false // Set to true if sending a notification to a production iOS app
-});
 
 app.use(bodyParser.urlencoded({
     extended: true
@@ -75,6 +69,7 @@ var users_collection;
 var messages_collection;
 var conversation_collection;
 var registration_information_collection;
+var notifications_collection;
 
 server.listen(port,function () {
     host = server.address().address
@@ -95,6 +90,7 @@ server.listen(port,function () {
         messages_collection = new MessagesCollection(db);
         conversation_collection = new ConversationsCollection(db);
         registration_information_collection = new RegistrationInformationCollection(db);
+        notifications_collection = new NotificationsCollection(db);
     });
 });
 
@@ -789,7 +785,7 @@ io.on('connection', function (socket) {
                 conversation_collection.addMessage(message, function(){
                     //sends notification to user receiving the message
                     var alert = user.first_name + " " + user.last_name + ": " + message_text;
-                    var notification_info = {alert: alert, category: "MESSAGE_SENT", payload: {from_user_id: user_id, to_user_id: to_user_id}};
+                    var notification_info = {alert: alert, category: "MESSAGE_SENT", payload: {from_user_id: user_id, to_user_id: to_user_id, listing_id: listing_id}};
                     emitEvent("message_sent", message, [to_user_id], notification_info);
 
                     //add user_id to buyer_ids of the listing
@@ -810,24 +806,24 @@ io.on('connection', function (socket) {
         }, error_handler)
     });
 
-    socket.on('get_users_active_notifications', function(json){
+    socket.on('get_notifications', function(json){
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
 
         var socket_id = socket.id
 
-        function callback(users_active_notification){
+        function callback(notifications){
             //send all_listings_collection back to client
 
-            socket.emit("get_users_active_notifications_response", {data: {users_active_notifications: users_active_notification}, error: null});
+            socket.emit("get_notifications_response", {data: {notifications: notifications}, error: null});
         }
         function error_handler(e){
-            socket.emit("get_users_active_notifications_response", {data: null, error: e});
+            socket.emit("get_notifications_response", {data: null, error: e});
             console.log(e);
         }
         authenticate(user_id, password, device_token, socket_id, function(user){
-            getUsersActiveNotifications(user_id, callback, error_handler)
+            notifications_collection.getForUserId(user_id, callback, error_handler);
         }, error_handler);
     });
 
@@ -839,21 +835,21 @@ io.on('connection', function (socket) {
         var socket_id = socket.id
 
         var notification_id = json.notification_id
-        function callback(){
-            //send all_listings_collection back to client
-            socket.emit("deactivate_notification_response", {data: null, error: null});
-        }
-        function error_handler(e){
-            socket.emit("deactivate_notification_response", {data: null, error: e});
-            console.log(e);
-        }
-        authenticate(user_id, password, device_token, socket_id, function(user){
-            getNotification(notification_id, function(notification){
-                if(notification.user_id == user_id){
-                    deactivateNotification(notification_id, callback, error_handler)
-                }
-            }, function(error){console.log(error)})
-        }, error_handler);
+        // function callback(){
+        //     //send all_listings_collection back to client
+        //     socket.emit("deactivate_notification_response", {data: null, error: null});
+        // }
+        // function error_handler(e){
+        //     socket.emit("deactivate_notification_response", {data: null, error: e});
+        //     console.log(e);
+        // }
+        // authenticate(user_id, password, device_token, socket_id, function(user){
+        //     getNotification(notification_id, function(notification){
+        //         if(notification.user_id == user_id){
+        //             deactivateNotification(notification_id, callback, error_handler)
+        //         }
+        //     }, function(error){console.log(error)})
+        // }, error_handler);
     });
 
 
@@ -1283,8 +1279,9 @@ function updateUserInDatabase(user, callback, error_handler){
 function emitEvent(event_name, data, user_id_arr, notification_info){
     for(var i=0; i<user_id_arr.length; i++){
         users_collection.get(user_id_arr[i], function(user){
-            var notification_database_object = {message: notification_info.alert, transaction_id: data.transaction_id, user_id: user._id, sender_user_id: data.user_id, active: true, time_sent: new Date().getTime()};
-            addNotificationToDatabase(notification_database_object, function(){
+            // var notification_database_object = {message: notification_info.alert, transaction_id: data.transaction_id, user_id: user._id, sender_user_id: data.user_id, active: true, time_sent: new Date().getTime()};
+            var notification = new Notification(user._id.toString(), notification_info.alert, notification_info);
+            notifications_collection.add(notification, function(notification){
                 var user_socket;
                 if(user != undefined) {
                     user_socket = io.sockets.connected[user.socket_id];
@@ -1293,15 +1290,17 @@ function emitEvent(event_name, data, user_id_arr, notification_info){
                     user_socket.emit(event_name , data);
                 }
                 else{
-                    if(user != undefined) {
-                        if(notification_info != undefined){
-                            sendNotification(notification_info, user.device_token, data.user_id, data.transaction_id);
-                        }
+                    if(user != undefined){
+                        notification.send(user.device_token, function(){
+
+                        }, function(error){
+
+                        });
                     }
                 }
             }, function(error){
-                console.log(error)
-            });
+                console.log("emitEvent error occured: " + error);
+            })
         }, function(error){
             console.log(error);
         })
@@ -1419,47 +1418,5 @@ function hashPassword(password){
     return crypto.createHmac('sha256', secret)
         .update(password)
         .digest('hex');
-}
-
-
-function sendNotification(notification_info, device_token, user_id, transaction_id){
-    // Enter the device token from the Xcode console
-
-    var deviceToken = device_token;
-
-// Prepare a new notification
-    var notification = new apn.Notification();
-    // Specify your iOS app's Bundle ID (accessible within the project editor)
-    notification.topic = 'bowen.jin.mealplanappiOS';
-    // Set expiration to 1 hour from now (in case device is offline)
-    notification.expiry = Math.floor(Date.now() / 1000) + 3600;
-    notification_info.badge = 1;
-    // Set app badge indicator
-    if(notification_info.badge != undefined){
-        notification.badge = notification_info.badge;
-    }
-    if(notification_info.sound != undefined){
-        notification.sound = notification_info.sound;
-    }
-    else{
-        notification.sound = "default";
-    }
-    if(notification_info.alert != undefined){
-        notification.alert = notification_info.alert;
-    }
-    if(notification_info.payload != undefined){
-        notification.payload = notification_info.payload;
-    }
-    if(notification_info.category != undefined){
-        notification.category = notification_info.category;
-    }
-    // Actually send the notification
-
-    apnProvider.send(notification, deviceToken).then(function(result) {
-        // Check the result for any failed devices
-        console.log(result);
-        console.log(device_token);
-    });
-
 }
 

@@ -53,6 +53,8 @@ ConversationsCollection.prototype = {
                     conversation.update(docs[j]);
                     conversations.push(conversation);
                 }
+                console.log("conversations_collection.oneToMany result:")
+                console.log(conversations);
                 callback(conversations);
             }
             else{
