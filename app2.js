@@ -393,14 +393,29 @@ io.on('connection', function (socket) {
         }, error_handler);
     });
 
-    socket.on('get_listings', function(json){
-        var listing_ids = json.listing_ids;
+    socket.on('get_listing', function(json){
+        var listing_id = json.listing_id;
         function callback(listing){
             //send all_listings_collection back to client
-            socket.emit("get_listing_response", {data: {listings: listings}, error: null});
+            socket.emit("get_listing_response", {data: {listing: listing}, error: null});
         }
         function error_handler(e){
             socket.emit("get_listing_response", {data: null, error: e});
+            console.log(e);
+        }
+        listings_collection.get(listing_id, function(listing){
+            callback(listing);
+        }, error_handler);
+    });
+
+    socket.on('get_listings', function(json){
+        var listing_ids = json.listing_ids;
+        function callback(listings){
+            //send all_listings_collection back to client
+            socket.emit("get_listings_response", {data: {listings: listings}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("get_listings_response", {data: null, error: e});
             console.log(e);
         }
         listings_collection.get(listing_ids, function(listings){
@@ -503,6 +518,7 @@ io.on('connection', function (socket) {
     })
 
     socket.on('get_conversations_with_listing_id', function(json){
+        console.log('get_conversations_with_listing_id was called!')
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token;

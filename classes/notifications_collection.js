@@ -54,6 +54,16 @@ NotificationsCollection.prototype = {
             }
         });
     },
+    deactivate: function(notification_id, callback, error_handler){
+        this.collection_notifications.update({_id: toMongoIdObject(notification_id)},{$set: {active: false}}, function (err, count, status) {
+            if(!err){
+                callback();
+            }
+            else{
+                error_handler("Failed to deactive notification");
+            }
+        })
+    },
     getForUserId: function(user_id, callback, error_handler){
         this.collection_notifications.find({to_user_id: user_id}).toArray(function(err, docs) {
             if(!err){

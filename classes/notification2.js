@@ -14,7 +14,10 @@ function Notification(to_user_id, message, notification_info) {
     //this._id (this will be initialized when listing retrieved from database)
     // this._id = _id;
     this.to_user_id = to_user_id;
-    this.listing_id = notification_info.payload.listing_id;
+    if(notification_info != undefined){
+        this.listing_id = notification_info.payload.listing_id;
+        this.from_user_id = notification_info.payload.from_user_id
+    }
     this.message = message;
     this.notification_info = notification_info
     this.active = true;
@@ -24,7 +27,7 @@ function Notification(to_user_id, message, notification_info) {
 Notification.prototype = {
     constructor: Notification,
     send: function(device_token, callback, error_handler){
-        sendNotification(device_token, this.notification_info, callback, error_handler);
+        sendNotification(this.notification_info, device_token, callback, error_handler);
     },
     //updates the notification to the defined parameters in the passed in object
     update: function (notification) {
@@ -33,6 +36,9 @@ Notification.prototype = {
         }
         if(notification.to_user_id != undefined){
             this.to_user_id = notification.to_user_id;
+        }
+        if(notification.from_user_id != undefined){
+            this.from_user_id = notification.from_user_id;
         }
         if(notification.listing_id != undefined){
             this.listing_id = notification.listing_id;

@@ -61,9 +61,10 @@ ListingsCollection.prototype = {
     remove: function(listing_id){
 
     },
-    get: function(listing_ids, callback, error_handler){
+    get: function(listing_ids_input, callback, error_handler){
+        var listing_ids = listing_ids_input;
         if(!(Array.isArray(listing_ids))){
-            error_handler("listing_ids must be an array!")
+            listing_ids = [listing_ids];
         }
         var listing_id_arr = [];
         for(var i=0; i< listing_ids.length; i++){
@@ -77,7 +78,7 @@ ListingsCollection.prototype = {
                     listing.update(docs[j]);
                     listings_arr.push(listing);
                 }
-                if(listings_arr.length == 1){
+                if(listings_arr.length == 1 && !(Array.isArray(listing_ids_input))){
                     callback(listings_arr[0]);
                 }
                 else{

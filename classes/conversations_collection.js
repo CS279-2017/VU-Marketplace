@@ -46,11 +46,14 @@ ConversationsCollection.prototype = {
                 {$and:[{user_id1: user_id.toString()}, {user_id2: {$in: other_user_ids}}]}
             ]}
         ).toArray(function(err, docs) {
+            console.log(docs);
             if(docs.length > 0){
                 var conversations = [];
                 for(var j=0; j< docs.length; j++){
                     var conversation = new Conversation();
                     conversation.update(docs[j]);
+                    console.log(docs[j]);
+                    console.log(conversation);
                     conversations.push(conversation);
                 }
                 console.log("conversations_collection.oneToMany result:")

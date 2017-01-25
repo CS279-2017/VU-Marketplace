@@ -4,6 +4,7 @@ function Conversation(user_id1, user_id2){
     this.user_id2 = user_id2
     this.messages = [];
     this.time_created = new Date().getTime();
+    this.last_message_sent = undefined;
 }
 
 Conversation.prototype = {
@@ -19,10 +20,13 @@ Conversation.prototype = {
             this.user_id1 = conversation.user_id1;
         }
         if(conversation.user_id2 != undefined){
-            this.user_id2 != conversation.user_id2;
+            this.user_id2 = conversation.user_id2;
         }
         if(conversation.time_created != undefined){
             this.time_created = conversation.time_created;
+        }
+        if(conversation.last_message_sent != undefined){
+            this.last_message_sent = conversation.last_message_sent;
         }
     }
 }
