@@ -65,7 +65,7 @@ NotificationsCollection.prototype = {
         })
     },
     getForUserId: function(user_id, callback, error_handler){
-        this.collection_notifications.find({to_user_id: user_id}).toArray(function(err, docs) {
+        this.collection_notifications.find({to_user_id: user_id, active: true}).toArray(function(err, docs) {
             if(!err){
                 var notifications_arr = [];
                 for(var j=0; j< docs.length; j++){

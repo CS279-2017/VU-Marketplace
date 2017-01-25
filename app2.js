@@ -851,21 +851,17 @@ io.on('connection', function (socket) {
         var socket_id = socket.id
 
         var notification_id = json.notification_id
-        // function callback(){
-        //     //send all_listings_collection back to client
-        //     socket.emit("deactivate_notification_response", {data: null, error: null});
-        // }
-        // function error_handler(e){
-        //     socket.emit("deactivate_notification_response", {data: null, error: e});
-        //     console.log(e);
-        // }
-        // authenticate(user_id, password, device_token, socket_id, function(user){
-        //     getNotification(notification_id, function(notification){
-        //         if(notification.user_id == user_id){
-        //             deactivateNotification(notification_id, callback, error_handler)
-        //         }
-        //     }, function(error){console.log(error)})
-        // }, error_handler);
+
+
+        function callback(){
+            //send all_listings_collection back to client
+            socket.emit("deactivate_notification_response", {data: null, error: null});
+        }
+        function error_handler(e){
+            socket.emit("deactivate_notification_response", {data: null, error: e});
+            console.log(e);
+        }
+        notifications_collection.deactivate(notification_id, callback, error_handler)
     });
 
 
