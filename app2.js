@@ -13,8 +13,8 @@ var request = require("request");
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -801,22 +801,24 @@ io.on('connection', function (socket) {
                 conversation_collection.addMessage(message, function(){
                     //sends notification to user receiving the message
                     var alert = user.first_name + " " + user.last_name + ": " + message_text;
-                    var notification_info = {alert: alert, category: "MESSAGE_SENT", payload: {from_user_id: user_id, to_user_id: to_user_id, listing_id: listing_id}};
-                    emitEvent("message_sent", message, [to_user_id], notification_info);
+                    notifications_collection.getNumberOfUnviewedNotifications(user_id, function(numberOfUnviewedNotifications){
+                        var notification_info = {alert: alert, category: "MESSAGE_SENT", badge: numberOfUnviewedNotifications, payload: {from_user_id: user_id, to_user_id: to_user_id, listing_id: listing_id}};
+                        emitEvent("message_sent", message, [to_user_id], notification_info);
 
-                    //add user_id to buyer_ids of the listing
-                    console.log(listing_id);
-                    if(listing_id != undefined && listing_id != null){
-                        //adds to a set, thus can call multiple times without adding repeats
-                        listings_collection.addBuyerId(listing_id, user_id, function(){
+                        //add user_id to buyer_ids of the listing
+                        console.log(listing_id);
+                        if(listing_id != undefined && listing_id != null){
+                            //adds to a set, thus can call multiple times without adding repeats
+                            listings_collection.addBuyerId(listing_id, user_id, function(){
+                                callback(message);
+                            }, error_handler)
+                        }
+                        else{
+                            //if listing_id isn't passed with message, it isn't attached to a listing,
+                            //however it is still added to message_collection and to a conversation
                             callback(message);
-                        }, error_handler)
-                    }
-                    else{
-                        //if listing_id isn't passed with message, it isn't attached to a listing,
-                        //however it is still added to message_collection and to a conversation
-                        callback(message);
-                    }
+                        }
+                    }, error_handler)
                 }, error_handler);
             }, error_handler)
         }, error_handler)
@@ -853,15 +855,35 @@ io.on('connection', function (socket) {
         var notification_id = json.notification_id
 
 
-        function callback(){
+        function callback(notification){
             //send all_listings_collection back to client
-            socket.emit("deactivate_notification_response", {data: null, error: null});
+            socket.emit("deactivate_notification_response", {data: {notification: notification}, error: null});
         }
         function error_handler(e){
             socket.emit("deactivate_notification_response", {data: null, error: e});
             console.log(e);
         }
         notifications_collection.deactivate(notification_id, callback, error_handler)
+    });
+
+    socket.on('set_notification_as_viewed', function(json){
+        var user_id = json.user_id;
+        var password = json.password;
+        var device_token = json.device_token
+
+        var socket_id = socket.id
+
+        var notification_id = json.notification_id
+
+        function callback(){
+            //send all_listings_collection back to client
+            socket.emit("set_notification_as_viewed_response", {data: null, error: null});
+        }
+        function error_handler(e){
+            socket.emit("set_notification_as_viewed_response", {data: null, error: e});
+            console.log(e);
+        }
+        notifications_collection.setAsViewed(notification_id, callback, error_handler)
     });
 
 

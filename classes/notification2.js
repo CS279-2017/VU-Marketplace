@@ -21,6 +21,7 @@ function Notification(to_user_id, message, notification_info) {
     this.message = message;
     this.notification_info = notification_info
     this.active = true;
+    this.viewed = false;
     this.time_sent = new Date().getTime()
 }
 
@@ -52,6 +53,9 @@ Notification.prototype = {
         if(notification.time_sent != undefined){
             this.time_sent = notification.time_sent;
         }
+        if(notification.viewed != undefined){
+            this.viewed = notification.viewed;
+        }
     }
 }
 
@@ -66,7 +70,6 @@ function sendNotification(notification_info, device_token, callback, error_handl
     notification.topic = 'bowen.jin.mealplanappiOS';
     // Set expiration to 1 hour from now (in case device is offline)
     notification.expiry = Math.floor(Date.now() / 1000) + 3600;
-    notification_info.badge = 1;
     // Set app badge indicator
     if(notification_info.badge != undefined){
         notification.badge = notification_info.badge;

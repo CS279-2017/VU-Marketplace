@@ -55,7 +55,22 @@ NotificationsCollection.prototype = {
         });
     },
     deactivate: function(notification_id, callback, error_handler){
-        this.collection_notifications.update({_id: toMongoIdObject(notification_id)},{$set: {active: false}}, function (err, count, status) {
+        this.collection_notifications.findOneAndUpdate(
+            {_id: toMongoIdObject(notification_id)},
+            {$set: {active: false}},
+            { new: true },
+            function (err, documents) {
+                if(!err){
+                    callback(documents[0]);
+                }
+                else{
+                    error_handler("Failed to deactive notification");
+                }
+            }
+        );
+    },
+    setAsViewed: function(notification_id, callback, error_handler){
+        this.collection_notifications.update({_id: toMongoIdObject(notification_id)},{$set: {viewed: true}}, function (err, count, status) {
             if(!err){
                 callback();
             }
@@ -78,6 +93,12 @@ NotificationsCollection.prototype = {
             else{
                 error_handler("An Error Occured While Retrieving Notifications");
             }
+        });
+    },
+    getNumberOfUnviewedNotifications: function(user_id, callback, error_handler){
+        this.collection_notifications.count({to_user_id: user_id, active: true, viewed: false}, function(err, count) {
+            if(!err){callback(count);}
+            else{ error_handler("an error occured when calling getNumberOfUnviewedNotifications")}
         });
     },
 }
