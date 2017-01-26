@@ -61,7 +61,7 @@ NotificationsCollection.prototype = {
             { new: true },
             function (err, documents) {
                 if(!err){
-                    callback(documents[0]);
+                    callback(documents.value);
                 }
                 else{
                     error_handler("Failed to deactive notification");
