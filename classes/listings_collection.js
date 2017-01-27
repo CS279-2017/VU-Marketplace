@@ -161,8 +161,8 @@ ListingsCollection.prototype = {
             }
         });
     },
-    getMostRecent: function(number, callback, error_handler){
-        this.collection_listings.find().sort({creation_time: -1}).limit(number).toArray(function(err, docs) {
+    getMostRecent: function(start_index, callback, error_handler){
+        this.collection_listings.find().skip(start_index).sort({creation_time: -1}).limit(25).toArray(function(err, docs) {
             var most_recent_listings = [];
             if(!err){
                 if(docs.length > 0) {

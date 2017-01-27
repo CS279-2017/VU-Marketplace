@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/notifications_collection.js" afterPath="$PROJECT_DIR$/classes/notifications_collection.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app2.js" afterPath="$PROJECT_DIR$/app2.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/listings_collection.js" afterPath="$PROJECT_DIR$/classes/listings_collection.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -35,10 +36,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="notifications_collection.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="notifications_collection.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/notifications_collection.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="154">
+            <state relative-caret-position="810">
               <caret line="62" column="25" selection-start-line="62" selection-start-column="25" selection-end-line="62" selection-end-column="25" />
               <folding />
             </state>
@@ -55,11 +56,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="app2.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="app2.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app2.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="271">
-              <caret line="812" column="16" selection-start-line="812" selection-start-column="16" selection-end-line="812" selection-end-column="16" />
+            <state relative-caret-position="136">
+              <caret line="965" column="41" selection-start-line="965" selection-start-column="29" selection-end-line="965" selection-end-column="41" />
               <folding />
             </state>
           </provider>
@@ -98,8 +99,8 @@
       <file leaf-file-name="listings_collection.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classes/listings_collection.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="136">
-              <caret line="93" column="6" selection-start-line="93" selection-start-column="4" selection-end-line="93" selection-end-column="6" />
+            <state relative-caret-position="259">
+              <caret line="164" column="13" selection-start-line="164" selection-start-column="13" selection-end-line="164" selection-end-column="13" />
               <folding />
             </state>
           </provider>
@@ -181,12 +182,12 @@
         <option value="$PROJECT_DIR$/classes/user2.js" />
         <option value="$PROJECT_DIR$/classes/notification_collection.js" />
         <option value="$PROJECT_DIR$/classes/users_collection.js" />
-        <option value="$PROJECT_DIR$/classes/listings_collection.js" />
         <option value="$PROJECT_DIR$/classes/conversation.js" />
         <option value="$PROJECT_DIR$/classes/conversations_collection.js" />
         <option value="$PROJECT_DIR$/classes/notification2.js" />
-        <option value="$PROJECT_DIR$/app2.js" />
         <option value="$PROJECT_DIR$/classes/notifications_collection.js" />
+        <option value="$PROJECT_DIR$/classes/listings_collection.js" />
+        <option value="$PROJECT_DIR$/app2.js" />
       </list>
     </option>
   </component>
@@ -400,12 +401,12 @@
       <workItem from="1482428352978" duration="38424000" />
       <workItem from="1483978739276" duration="45638000" />
       <workItem from="1484537842103" duration="90474000" />
-      <workItem from="1485027585496" duration="41392000" />
+      <workItem from="1485027585496" duration="43643000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="743294000" />
+    <option name="totallyTimeSpent" value="745545000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="92" y="23" width="1280" height="739" extended-state="0" />
@@ -768,14 +769,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/listings_collection.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="93" column="6" selection-start-line="93" selection-start-column="4" selection-end-line="93" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/classes/message2.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="90">
@@ -832,18 +825,26 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app2.js">
+    <entry file="file://$PROJECT_DIR$/classes/notifications_collection.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="271">
-          <caret line="812" column="16" selection-start-line="812" selection-start-column="16" selection-end-line="812" selection-end-column="16" />
+        <state relative-caret-position="810">
+          <caret line="62" column="25" selection-start-line="62" selection-start-column="25" selection-end-line="62" selection-end-column="25" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/classes/notifications_collection.js">
+    <entry file="file://$PROJECT_DIR$/classes/listings_collection.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="154">
-          <caret line="62" column="25" selection-start-line="62" selection-start-column="25" selection-end-line="62" selection-end-column="25" />
+        <state relative-caret-position="259">
+          <caret line="164" column="13" selection-start-line="164" selection-start-column="13" selection-end-line="164" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app2.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="965" column="41" selection-start-line="965" selection-start-column="29" selection-end-line="965" selection-end-column="41" />
           <folding />
         </state>
       </provider>

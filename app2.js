@@ -468,7 +468,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('get_listings_most_recent', function(json){
-        var number = json.number;
+        var start_index = json.start_index;
         function callback(listings){
             socket.emit("get_listings_most_recent_response", {data: {listings: listings}, error: null})
         }
@@ -477,7 +477,7 @@ io.on('connection', function (socket) {
         }
         try {
             // console.log("calling listings_collections.getListingsWithUserId");
-            listings_collection.getMostRecent(number, function(listings){
+            listings_collection.getMostRecent(start_index, function(listings){
                 console.log(listings);
                 callback(listings);
             });
@@ -922,9 +922,10 @@ io.on('connection', function (socket) {
     socket.on('search_books', function(json){
         console.log("search_books called!")
         var search_query = json.search_query;
+        var start_index = json.start_index;
         var google_api_key = "AIzaSyDbFhHzgxWBrYnIU0EvS5m4wjp-DuCC7ms";
         var api_key = "4MCC8UA5"
-        var google_request_url = "https://www.googleapis.com/books/v1/volumes?q=" + search_query + "&key=" + google_api_key
+        var google_request_url = "https://www.googleapis.com/books/v1/volumes?q=" + search_query + "&key=" + google_api_key + "&startIndex=" + start_index + "&maxResults=25";
         var request_url = "http://isbndb.com/api/v2/json/" + api_key + "/books?q=" + search_query;
         // console.log(request_url);
         // request(request_url, function (error, response, body) {
