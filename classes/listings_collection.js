@@ -57,9 +57,27 @@ ListingsCollection.prototype = {
             }
         });
     },
-    //remove listing from
-    remove: function(listing_id){
-
+    // remove listing from
+    // remove: function(listing_id){
+    //     var collection_listings = this.collection_listings;
+    //     listing_id = toMongoIdObject(listing_id);
+    //     this.collection_listings.update({_id: listing_id}, {$set: {active: false, deactivated_time: new Date().getTime()}}, function (err, count, status) {
+    //         if(count == 0){error_handler("listing not found!");}
+    //         else{
+    //             if(callback != undefined && callback != null){callback();}
+    //         }
+    //     });
+    //
+    // },
+    markAsSold: function(listing_id, callback, error_handler){
+        var collection_listings = this.collection_listings;
+        listing_id = toMongoIdObject(listing_id);
+        this.collection_listings.update({_id: listing_id}, {$set: {sold: true, time_sold: new Date().getTime()}}, function (err, count, status) {
+            if(count == 0){error_handler("listing not found!");}
+            else{
+                if(callback != undefined && callback != null){callback();}
+            }
+        });
     },
     get: function(listing_ids_input, callback, error_handler){
         var listing_ids = listing_ids_input;

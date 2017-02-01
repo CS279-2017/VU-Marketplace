@@ -17,9 +17,11 @@ function Listing(user_id, book, description, price) {
     // this.price = price;
 
     this.active = true;
-    this.deactivated_time = undefined;
     this.picture_ids = [];
     this.buyer_user_ids = [];
+
+    this.sold = false;
+    this.time_sold = undefined;
 
     this.bought_by_user_id = undefined;
 }
@@ -52,8 +54,8 @@ Listing.prototype = {
         if(listing.active != undefined){
             this.active = listing.active;
         }
-        if(listing.deactivated_time != undefined){
-            this.deactivated_time = this.deactivated_time;
+        if(listing.time_sold != undefined){
+            this.time_sold = this.time_sold;
         }
         if(listing.buyer_user_ids != undefined){
             this.buyer_user_ids = listing.buyer_user_ids;
@@ -67,6 +69,9 @@ Listing.prototype = {
         }
         if(listing.bought_by_user_id != undefined){
             this.bought_by_user_id = listing.bought_by_user_id
+        }
+        if(listing.sold != undefined){
+            this.sold = listing.sold;
         }
 
     },

@@ -302,40 +302,40 @@ io.on('connection', function (socket) {
 
         var socket_id = socket.id
 
-        var listing_id = json.listing_id
-        var title = json.title;
+        var listing_id = json.listing_id;
+        var book = json.book;
         var description = json.description;
-        var location = json.location;
-        var expiration_time = json.expiration_time;
         var price = json.price;
-        var buy = json.buy;
 
         authenticate(user_id, password, device_token, socket_id, function(user){
+            var error_string = "";
+            if(validateDescription(description) != ""){
+                error_string += (validateDescription(description) + "\n");
+            }
+            else if(validatePrice(price) != ""){
+                error_string += (validatePrice(price) + "\n");
+            }
+            if(error_string != ""){
+                error_handler(error_string);
+                return;
+            }
             listings_collection.get(listing_id, function(listing){
-                var new_listing = new Listing(user_id, title, description, location, expiration_time, price, buy);
-                if(user._id.toString() == listing.user_id.toString()){
-                    if(new_listing != undefined && listing != undefined) {
+                if(listing.user_id.toString() == user_id.toString()){
+                    listing.book = book;
+                    listing.description = description;
+                    listing.price = price;
+                    listings_collection.add(listing, function(listing){
+                        callback(listing);
+                    }, error_handler)
+                }
+            }, error_handler)
 
-                        listing.update(new_listing);
-                        listings_collection.add(listing, function(listing){
-                            if(callback != undefined && callback != null){callback(listing);}
-                        }, error_handler)
-                    }
-                }
-                else {
-                    error_handler("This listing doesn't belong to you!");
-                }
-            });
 
         }, error_handler)
-        
+
         function callback(listing){
             socket.emit("update_listing_response", {data: {listing: listing}, error: null});
-            //emit event to all users that a new listing has been made
-            users_collection.get(listing.user_id, function(user){
-                console.log("Listing with title " + listing.title + " was updated by " + user.first_name + " " + user.last_name)
-                io.emit("listing_updated", {data: {listing: listing}});
-            });
+            io.emit("listing_made", {data: {listing: listing}});
         }
         function error_handler(e){
             socket.emit("update_listing_response", {data: null, error: e});
@@ -343,11 +343,7 @@ io.on('connection', function (socket) {
         }
     });
 
-    //TODO: what happens if a you try to remove a listing that transactions have been made from?
-    //TODO: listings are only templates for creating transactions, thus once a transaction has been created 
-    //TODO: it is only loosely related to the listing through the listing_id but otherwise has a life of its own
-    //TODO: what about trying to remove a listing where a transaction has already started?
-    socket.on('remove_listing', function(json){
+    socket.on('mark_listing_as_sold', function(json){
         var user_id = json.user_id;
         var password = json.password;
         var device_token = json.device_token
@@ -355,43 +351,72 @@ io.on('connection', function (socket) {
         var socket_id = socket.id
 
         var listing_id = json.listing_id
-        var callback = function(listing_id){
-            socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
-            //notify all users that listing_id has been removed;
-            io.emit("listing_removed", {data: {listing_id: listing_id}});
-        };
-        var error_handler = function(e) {
-            socket.emit("remove_listing_response", {data: null, error: e});
+        var callback = function(){
+            socket.emit("mark_listing_as_sold_response", {data: null, error: null});
+        }
+        function error_handler(e){
+            socket.emit("mark_listing_as_sold_response", {data: null, error: e});
             console.log(e);
         }
         authenticate(user_id, password, device_token, socket_id, function(user){
             listings_collection.get(listing_id, function(listing){
-                if(listing != undefined){
-                    if(listing.user_id.toString() == user_id.toString()){
-                        console.log("Listing '" + listing.title + "' was removed by " + user.first_name + " " + user.last_name);
-                        listings_collection.get(listing_id, function(listing){
-                            if(listing != undefined) {
-                                listing.removed_time = new Date().getTime();
-                                listing.active = false; //deactivate the listing
-                                listing.add(listing, function(listing){
-                                    callback(listing);
-                                }, error_handler)
-                            }
-                        });
-                        console.log("removeListing called");
-                    }
-                    else{
-                        error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
-                    }
+                if(listing.user_id.toString() == user_id.toString()){
+                    listings_collection.markAsSold(listing_id, function(){
+                        callback();
+                    }, error_handler);
                 }
                 else{
-                    error_handler("listing was not found in listings_collection");
+                    error_handler("This listing doesn't belong to you!");
                 }
-            });
-
-
+            })
         }, error_handler);
     });
+
+    // socket.on('remove_listing', function(json){
+    //     var user_id = json.user_id;
+    //     var password = json.password;
+    //     var device_token = json.device_token
+    //
+    //     var socket_id = socket.id
+    //
+    //     var listing_id = json.listing_id
+    //     var callback = function(listing_id){
+    //         socket.emit("remove_listing_response", {data: {listing_id: listing_id}, error: null})
+    //         //notify all users that listing_id has been removed;
+    //         io.emit("listing_removed", {data: {listing_id: listing_id}});
+    //     };
+    //     var error_handler = function(e) {
+    //         socket.emit("remove_listing_response", {data: null, error: e});
+    //         console.log(e);
+    //     }
+    //     authenticate(user_id, password, device_token, socket_id, function(user){
+    //         listings_collection.get(listing_id, function(listing){
+    //             if(listing != undefined){
+    //                 if(listing.user_id.toString() == user_id.toString()){
+    //                     console.log("Listing '" + listing.title + "' was removed by " + user.first_name + " " + user.last_name);
+    //                     listings_collection.get(listing_id, function(listing){
+    //                         if(listing != undefined) {
+    //                             listing.removed_time = new Date().getTime();
+    //                             listing.active = false; //deactivate the listing
+    //                             listing.add(listing, function(listing){
+    //                                 callback(listing);
+    //                             }, error_handler)
+    //                         }
+    //                     });
+    //                     console.log("removeListing called");
+    //                 }
+    //                 else{
+    //                     error_handler("user_id doesn't match user_id of user who created the listing, unable to delete listing");
+    //                 }
+    //             }
+    //             else{
+    //                 error_handler("listing was not found in listings_collection");
+    //             }
+    //         });
+    //
+    //
+    //     }, error_handler);
+    // });
 
     socket.on('get_listing', function(json){
         var listing_id = json.listing_id;
