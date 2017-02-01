@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="23c09c7d-8aeb-4a27-aac9-56573360e8e6" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app2.js" afterPath="$PROJECT_DIR$/app2.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/listing2.js" afterPath="$PROJECT_DIR$/classes/listing2.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/listings_collection.js" afterPath="$PROJECT_DIR$/classes/listings_collection.js" />
     </list>
     <ignored path="mealplanappserver.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -51,8 +48,8 @@
       <file leaf-file-name="app2.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app2.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="132">
-              <caret line="462" column="33" selection-start-line="462" selection-start-column="32" selection-end-line="462" selection-end-column="33" />
+            <state relative-caret-position="255">
+              <caret line="17" column="94" selection-start-line="17" selection-start-column="94" selection-end-line="17" selection-end-column="94" />
               <folding />
             </state>
           </provider>
@@ -405,12 +402,12 @@
       <workItem from="1485027585496" duration="43927000" />
       <workItem from="1485622624028" duration="196000" />
       <workItem from="1485624716910" duration="1127000" />
-      <workItem from="1485904177584" duration="3574000" />
+      <workItem from="1485904177584" duration="3801000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="750726000" />
+    <option name="totallyTimeSpent" value="750953000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="26" width="1280" height="739" extended-state="6" />
@@ -819,8 +816,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app2.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="132">
-          <caret line="462" column="33" selection-start-line="462" selection-start-column="32" selection-end-line="462" selection-end-column="33" />
+        <state relative-caret-position="255">
+          <caret line="17" column="94" selection-start-line="17" selection-start-column="94" selection-end-line="17" selection-end-column="94" />
           <folding />
         </state>
       </provider>
