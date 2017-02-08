@@ -119,6 +119,9 @@ RegistrationInformationCollection.prototype = {
                     }
                 );
             }
+            else if(docs.length > 1){
+                error_handler("There are duplicate email_addresses")
+            }
             else{
                 error_handler("This email address hasn't been registered");
                 console.log("This email address hasn't been registered");
