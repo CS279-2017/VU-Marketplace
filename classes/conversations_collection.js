@@ -13,9 +13,12 @@ ConversationsCollection.prototype = {
     constructor: ConversationsCollection,
     getForPairUserIds: function(user_id1, user_id2, listing_id, callback, error_handler){
         this.collection_conversations.find(
-            {$or: [
-                {$and:[{user_id1: user_id1.toString()}, {user_id2: user_id2.toString()}]},
-                {$and:[{user_id1: user_id2.toString()}, {user_id2: user_id1.toString()}]}
+            {$and:[
+                {$or: [
+                    {$and:[{user_id1: user_id1.toString()}, {user_id2: user_id2.toString()}]},
+                    {$and:[{user_id1: user_id2.toString()}, {user_id2: user_id1.toString()}]}
+                ]},
+                {listing_id: listing_id},
             ]}
         ).toArray(function(err, docs) {
             if(!err){
