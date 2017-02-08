@@ -28,6 +28,9 @@ function Notification(to_user_id, message, notification_info) {
 Notification.prototype = {
     constructor: Notification,
     send: function(device_token, callback, error_handler){
+        console.log("notification info:")
+        console.log(this.notification_info);
+        console.log(device_token)
         sendNotification(this.notification_info, device_token, callback, error_handler);
     },
     //updates the notification to the defined parameters in the passed in object

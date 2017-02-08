@@ -190,7 +190,10 @@ io.on('connection', function (socket) {
         console.log('login received!')
         //TODO: should we allow logging in from multiple devices at once? for now yes
         users_collection.login(email_address, password, device_token, socket_id, function(user){
-            socket.emit("login_response", {data: {user: user}, error: null});
+            console.log("user");
+            var return_user = new User();
+            return_user.update(user);
+            socket.emit("login_response", {data: {user: return_user}, error: null});
         }, function(error){
             socket.emit("login_response", {data: null, error: error});
             console.log(error);
@@ -1331,7 +1334,11 @@ function updateUserInDatabase(user, callback, error_handler){
 
 function emitEvent(event_name, data, user_id_arr, notification_info){
     for(var i=0; i<user_id_arr.length; i++){
+        console.log("user_id_arr[i]");
+        console.log(user_id_arr[i]);
         users_collection.get(user_id_arr[i], function(user){
+            console.log("user:");
+            console.log(user);
             // var notification_database_object = {message: notification_info.alert, transaction_id: data.transaction_id, user_id: user._id, sender_user_id: data.user_id, active: true, time_sent: new Date().getTime()};
             var notification = new Notification(user._id.toString(), notification_info.alert, notification_info);
             notifications_collection.add(notification, function(notification){
@@ -1344,7 +1351,9 @@ function emitEvent(event_name, data, user_id_arr, notification_info){
                 }
                 else{
                     if(user != undefined){
-                        console.log("sending push notification to " +user.device_token);
+                        console.log("sending push notification to " + user.device_token);
+                        console.log("notification:");
+                        console.log(notification);
                         notification.send(user.device_token, function(){
 
                         }, function(error){

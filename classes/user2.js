@@ -66,9 +66,9 @@ User.prototype = {
         // this.location.initFromDatabase(user.location);
 
 
-        // if(user.device_token != undefined){
-        //     this.device_token = user.device_token;
-        // }
+        if(user.device_token != undefined){
+            this.device_token = user.device_token;
+        }
         if(user.creation_time != undefined){
             this.creation_time = user.creation_time;
         }

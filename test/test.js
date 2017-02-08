@@ -1,5 +1,5 @@
 var assert = require('assert');
-var app = require("../old/app.js");
+var app = require("../app2.js");
 var request = require("request");
 var base_url = "http://localhost:3000/"
 
@@ -11,6 +11,41 @@ function error_handler(error){
     console.log(error);
 }
 
+var apn = require('apn');
+var apnProvider = new apn.Provider({
+    token: {
+        key: 'apnkey.p8', // Path to the key p8 file
+        keyId: 'Y3M29GE5QJ', // The Key ID of the p8 file (available at https://developer.apple.com/account/ios/certificate/key)
+        teamId: 'DE4758AREF', // The Team ID of your Apple Developer Account (available at https://developer.apple.com/account/#/membership/)
+    },
+    production: false // Set to true if sending a notification to a production iOS app
+});
+
+
+describe.only("APN", function(){
+    it("send test message ", function(done) {
+        var notification_info = {alert: "Test Notification", category: "MESSAGE_SENT", badge: 2, payload: {from_user_id: "heyyyy"}};
+
+        notification_info = { alert: 'A B: hi',
+            category: 'MESSAGE_SENT',
+            badge: 0,
+            payload:
+            { from_user_id: '589a96de221801087a5a916b',
+                to_user_id: '58846b622c53464f85cfb6cb',
+                listing_id: '589a95bf221801087a5a916a' } };
+
+        sendNotification(notification_info, "DB80FB74F12B1C28224E99776ED9E25B6D9E648C2DB16738D3B440CF8627279D", function () {
+            console.log("notification sent");
+            console.log("notification_info:");
+            console.log(notification_info);
+            done();
+        }, function (error) {
+            console.log("ERROR:")
+            console.log(error);
+            done();
+        });
+    });
+});
 //1. a listing gets mutliple transactions and the users accepts multiple of them in quick succession, make sure only 1
 //gets accepted and once that one is accepted, the others get deleted
 //TODO: 2. make sure a listing is deleted from active_listings at some point after it is expired
@@ -1107,6 +1142,47 @@ function register3EmailAddresses(callback){
             console.log(error);
         }
     }
+}
+
+function sendNotification(notification_info, device_token, callback, error_handler){
+    // Enter the device token from the Xcode console
+
+    var deviceToken = device_token;
+
+// Prepare a new notification
+    var notification = new apn.Notification();
+    // Specify your iOS app's Bundle ID (accessible within the project editor)
+    notification.topic = 'bowen.jin.mealplanappiOS';
+    // Set expiration to 1 hour from now (in case device is offline)
+    notification.expiry = Math.floor(Date.now() / 1000) + 3600;
+    // Set app badge indicator
+    if(notification_info.badge != undefined){
+        notification.badge = notification_info.badge;
+    }
+    if(notification_info.sound != undefined){
+        notification.sound = notification_info.sound;
+    }
+    else{
+        notification.sound = "default";
+    }
+    if(notification_info.alert != undefined){
+        notification.alert = notification_info.alert;
+    }
+    if(notification_info.payload != undefined){
+        notification.payload = notification_info.payload;
+    }
+    if(notification_info.category != undefined){
+        notification.category = notification_info.category;
+    }
+    // Actually send the notification
+
+    apnProvider.send(notification, deviceToken).then(function(result) {
+        // Check the result for any failed devices
+        console.log(result);
+        console.log(device_token);
+        callback();
+    });
+
 }
 
 // describe('Array', function() {

@@ -102,7 +102,7 @@ RegistrationInformationCollection.prototype = {
 
                 //send email
                 sendEmail(email_address, reset_password_verification_code);
-                this.collection_registration_information.findAndModify(
+                collection_registration_information.findAndModify(
                     {email_address: email_address},
                     [],
                     {$set: {reset_password_verification_code: reset_password_verification_code , reset_password_attempts: 0, password_reset: false}},
