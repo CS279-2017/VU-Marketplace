@@ -38,6 +38,12 @@ Book.prototype = {
     },
     initWithGoogleBooks: function(book){
         var volumeInfo = book.volumeInfo;
+        var salesInfo = book.saleInfo;
+        console.log(salesInfo);
+        if(salesInfo["offers"] != undefined){
+            console.log(salesInfo["offers"]);
+        }
+        // console.log(salesInfo.)
         if(volumeInfo != undefined){
             if(volumeInfo.title != undefined){
                 this.title = volumeInfo.title;

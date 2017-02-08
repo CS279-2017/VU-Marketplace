@@ -12,7 +12,7 @@ NotificationsCollection.prototype = {
         var collection_notifications = this.collection_notifications;
         if(notification._id == undefined){
             this.collection_notifications.insert(notification, function (err, count, status) {
-                if(err){error_handler(err.notification);}
+                if(err){error_handler(err.message);}
                 else{
                     collection_notifications.find(notification).toArray(function(err, docs){
                         if(docs.length == 1){

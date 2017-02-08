@@ -13,8 +13,8 @@ var request = require("request");
 //We need to work with "MongoClient" interface in order to connect to a mongodb server.
 var MongoClient = require('mongodb').MongoClient;
 // Connection URL. This is where your mongodb server is running.
-// var url = 'mongodb://localhost:27017/mealplanappserver';
-var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
+var url = 'mongodb://localhost:27017/mealplanappserver';
+// var url = 'mongodb://heroku_g6cq993c:f5mm0i1mjj4tqtlf8n5m22e9om@ds129018.mlab.com:29018/heroku_g6cq993c'
 //database stores an instance of a connection to the database, will be initialized on server startup.
 var database;
 
@@ -952,34 +952,11 @@ io.on('connection', function (socket) {
         var api_key = "4MCC8UA5"
         var google_request_url = "https://www.googleapis.com/books/v1/volumes?q=" + search_query + "&key=" + google_api_key + "&startIndex=" + start_index + "&maxResults=25";
         var request_url = "http://isbndb.com/api/v2/json/" + api_key + "/books?q=" + search_query;
-        // console.log(request_url);
-        // request(request_url, function (error, response, body) {
-        //     if (!error && response.statusCode == 200) {
-        //         var books = [];
-        //         var json = JSON.parse(body)
-        //         var data = json.data;
-        //         // console.log(data.length);
-        //         if(data != undefined){
-        //             for(var i=0; i<data.length; i++){
-        //                 var book = new Book();
-        //                 book.initWithIsbnDb(data[i])
-        //                 books.push(book);
-        //             }
-        //         }
-        //         console.log("search_books_response success!")
-        //         socket.emit("search_books_response", {data: {books: books}, error: null});
-        //     }
-        //     else{
-        //         console.log("search_books_response failure!")
-        //         socket.emit("search_books_response", {data: null, error: "Search Query Failed"});
-        //     }
-        // });
 
         request(google_request_url, function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 var books = [];
                 var json = JSON.parse(body)
-                var totalItems = json.totalItems;
                 var items = json.items;
                 if(items != undefined){
                     for(var i=0; i<items.length; i++){
@@ -996,6 +973,22 @@ io.on('connection', function (socket) {
                 socket.emit("search_books_response", {data: null, error: "Search Query Failed"});
             }
         });
+    })
+    
+    socket.on("search_listings", function(json){
+        var search_query = json.search_query;
+        var start_index = json.start_index;
+
+        function callback(listings){
+            //send all_listings_collection back to client
+            console.log(listings);
+            socket.emit("search_listings_response", {data: {listings: listings}, error: null});
+        }
+        function error_handler(e){
+            socket.emit("search_listings_response", {data: null, error: e});
+            console.log(e);
+        }
+        listings_collection.search(search_query, start_index, callback, error_handler);
     })
 });
 
@@ -1351,6 +1344,7 @@ function emitEvent(event_name, data, user_id_arr, notification_info){
                 }
                 else{
                     if(user != undefined){
+                        console.log("sending push notification to " +user.device_token);
                         notification.send(user.device_token, function(){
 
                         }, function(error){

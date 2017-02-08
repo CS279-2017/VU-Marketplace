@@ -196,7 +196,38 @@ ListingsCollection.prototype = {
                 }
             }
             else{
-                error_handler(err);
+                error_handler(err.message);
+            }
+        });
+    },
+    search: function(query, start_index, callback, error_handler){
+        this.collection_listings.find
+        (
+            {$or:
+                [
+                    {"book.title": {'$regex': ".*" + query + ".*"}},
+                    {"book.author_names": {'$regex': ".*" + query + ".*"}},
+                    {"book.isbn10": {'$regex': ".*" + query + ".*"}},
+                    {"book.isbn13": {'$regex': ".*" + query + ".*"}},
+                ]
+            }
+        ).skip(start_index).sort({creation_time: -1}).limit(25).toArray(function(err, docs) {
+            var search_results = [];
+            if(!err){
+                if(docs.length > 0) {
+                    for(var i = 0; i < docs.length; i++) {
+                        var listing = new Listing();
+                        listing.update(docs[i]);
+                        search_results.push(listing);
+                    }
+                    callback(search_results);
+                }
+                else {
+                    callback([]);
+                }
+            }
+            else{
+                error_handler(err.message);
             }
         });
     },
