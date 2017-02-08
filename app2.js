@@ -524,6 +524,8 @@ io.on('connection', function (socket) {
 
         var other_user_id = json.other_user_id;
 
+        var listing_id = json.listing_id
+
 
         function callback(conversation){
             socket.emit("get_conversation_response", {data: {conversation: conversation}, error: null})
@@ -533,7 +535,7 @@ io.on('connection', function (socket) {
         }
         try {
             authenticate(user_id, password, device_token, socket_id, function(user){
-                conversation_collection.getForPairUserIds(user._id.toString(), other_user_id, function(conversation){
+                conversation_collection.getForPairUserIds(user._id.toString(), other_user_id, listing_id, function(conversation){
                     //change to return conversation object?
                     callback(conversation);
                 }, error_handler)
@@ -565,7 +567,7 @@ io.on('connection', function (socket) {
         try {
             authenticate(user_id, password, device_token, socket_id, function(user){
                 listings_collection.get(listing_id, function(listing){
-                    conversation_collection.getOneToMany(user._id.toString(), listing.buyer_user_ids, function(conversations){
+                    conversation_collection.getOneToMany(user._id.toString(), listing.buyer_user_ids, listing_id, function(conversations){
                         //change to return conversation object?
                         callback(conversations);
                     }, error_handler)
@@ -823,7 +825,7 @@ io.on('connection', function (socket) {
             console.log(e);
         }
         authenticate(user_id, password, device_token, socket_id, function(user){
-            var message = new Message(message_text, user_id, to_user_id);
+            var message = new Message(message_text, user_id, to_user_id, listing_id);
             //add message to database and send out notification
             messages_collection.add(message, function(message){
                 conversation_collection.addMessage(message, function(){

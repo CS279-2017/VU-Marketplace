@@ -1,10 +1,12 @@
 
 
-function Message(text, from_user_id, to_user_id){
+function Message(text, from_user_id, to_user_id, listing_id){
     // this._id = undefined;
     this.text = text;
     this.from_user_id = from_user_id
     this.to_user_id = to_user_id
+    this.listing_id = listing_id;
+
     this.time_sent = new Date().getTime();
 }
 
@@ -25,6 +27,9 @@ Message.prototype = {
         }
         if(message.time_sent != undefined){
             this.time_sent = message.time_sent;
+        }
+        if(message.listing_id != undefined){
+            this.listing_id = message.listing_id;
         }
     }
 }

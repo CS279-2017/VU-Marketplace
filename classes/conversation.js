@@ -1,10 +1,12 @@
-function Conversation(user_id1, user_id2){
+function Conversation(user_id1, user_id2, listing_id){
     // this._id = undefined;
     this.user_id1 = user_id1;
     this.user_id2 = user_id2;
     this.messages = [];
     this.time_created = new Date().getTime();
     this.last_message_sent = undefined;
+    
+    this.listing_id = listing_id;
 }
 
 Conversation.prototype = {
@@ -27,6 +29,9 @@ Conversation.prototype = {
         }
         if(conversation.last_message_sent != undefined){
             this.last_message_sent = conversation.last_message_sent;
+        }
+        if(conversation.listing_id != undefined){
+            this.listing_id = conversation.listing_id;
         }
     }
 }

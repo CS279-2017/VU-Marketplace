@@ -11,7 +11,7 @@ function ConversationsCollection(database){
 
 ConversationsCollection.prototype = {
     constructor: ConversationsCollection,
-    getForPairUserIds: function(user_id1, user_id2, callback, error_handler){
+    getForPairUserIds: function(user_id1, user_id2, listing_id, callback, error_handler){
         this.collection_conversations.find(
             {$or: [
                 {$and:[{user_id1: user_id1.toString()}, {user_id2: user_id2.toString()}]},
@@ -36,14 +36,14 @@ ConversationsCollection.prototype = {
 
         });
     },
-    getOneToMany: function(user_id, other_user_ids, callback, error_handler){
+    getOneToMany: function(user_id, other_user_ids, listing_id, callback, error_handler){
         if(!(Array.isArray(other_user_ids))){
             other_user_ids = [other_user_ids];
         }
         this.collection_conversations.find(
             {$or: [
-                {$and:[{user_id1: {$in: other_user_ids}}, {user_id2: user_id.toString()}]},
-                {$and:[{user_id1: user_id.toString()}, {user_id2: {$in: other_user_ids}}]}
+                {$and:[{user_id1: {$in: other_user_ids}}, {user_id2: user_id.toString()}, {listing_id: listing_id}]},
+                {$and:[{user_id1: user_id.toString()}, {user_id2: {$in: other_user_ids}}, {listing_id: listing_id}]}
             ]}
         ).toArray(function(err, docs) {
             console.log(docs);
@@ -69,15 +69,19 @@ ConversationsCollection.prototype = {
         if(message != undefined){
             if(message.to_user_id != undefined && message.from_user_id != undefined){
                 this.collection_conversations.update(
-                    {$or: [
-                        {$and:[{user_id1: message.to_user_id}, {user_id2: message.from_user_id}]},
-                        {$and:[{user_id1: message.from_user_id}, {user_id2: message.to_user_id}]}
+                    {$and:[
+                        {$or: [
+                            {$and:[{user_id1: message.to_user_id}, {user_id2: message.from_user_id}]},
+                            {$and:[{user_id1: message.from_user_id}, {user_id2: message.to_user_id}]}
+                        ]},
+                        {listing_id: message.listing_id},
                     ]},
                     {
                         $push: {messages: message},
                         $setOnInsert: {
                             user_id1: message.from_user_id,
                             user_id2: message.to_user_id,
+                            listing_id: message.listing_id,
                             time_created: new Date().getTime()
                         },
                     },
