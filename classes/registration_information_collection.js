@@ -24,27 +24,43 @@ RegistrationInformationCollection.prototype = {
         //generate verification_code
         var verification_code = generateVerificationCode(6);
         console.log(verification_code);
-        //sendEmail
-        sendEmail(email_address, verification_code)
         var registration_information = new RegistrationInformation(email_address);
         registration_information.verification_code = verification_code;
-       this.collection_registration_information.findAndModify(
-           {email_address: email_address},
-           [],
-           {$set: registration_information},
-           {new: true, upsert: true},
-           function (err, docs) {
-               if(!err){
-                   var value = docs.value;
-                   if(callback != undefined){ callback(value); }
-               }
-               else{
-                   console.log(err);
-                   console.log("collection.registration_information.findAndModify error");
-                   error_handler("An error occured!")
-               }
-           }
-       );
+        var collection_registration_information = this.collection_registration_information;
+        this.collection_registration_information.find({email_address: email_address, registered: true}).toArray(function(err, docs) {
+            if (!err) {
+                if (docs.length == 0) {
+                    sendEmail(email_address, verification_code);
+                    collection_registration_information.findAndModify(
+                        {email_address: email_address},
+                        [],
+                        {$set: registration_information},
+                        {new: true, upsert: true},
+                        function (err, docs) {
+                            if (!err) {
+                                var value = docs.value;
+                                if (callback != undefined) {
+                                    callback(value);
+                                }
+                            }
+                            else {
+                                console.log(err);
+                                console.log("collection.registration_information.findAndModify error");
+                                error_handler("An error occured!")
+                            }
+                        }
+                    );
+                }
+                else {
+                    error_handler("This email address has already been registered!")
+                    return;
+                }
+            }
+            else {
+                error_handler("An error occured while registering your email!");
+                return;
+            }
+        });
     },
     registerVerificationCode: function(verification_code, email_address, password, callback, error_handler){
         var collection_registration_information = this.collection_registration_information;
