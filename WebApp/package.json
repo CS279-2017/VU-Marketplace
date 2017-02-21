@@ -1,0 +1,27 @@
+{
+  "name": "VUMarketplace",
+  "version": "1.0.0",
+  "description": "A marketplace for Vanderbilt University",
+  "main": "/src/server/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server/index.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git:https://github.com/CS279-2017/VU-Marketplace"
+  },
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "es6-shim": "^0.35.1",
+    "express": "^4.14.0",
+    "express-session": "^1.15.1",
+    "mongodb": "^2.2.11",
+    "mongoose": "^4.6.5",
+    "morgan": "^1.7.0",
+    "pug": "^2.0.0-beta6",
+    "underscore": "^1.8.3"
+  }
+}
