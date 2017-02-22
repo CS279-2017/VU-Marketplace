@@ -30,13 +30,11 @@ app.use(session({
 }));
 
 
-// mongoose.connect("mongodb://192.168.99.100:32776/leecp", function(error, db) {
-//     if(!error){
-//         console.log("We are connected");
-        let server = app.listen(8080, function () {
-            console.log('Example app listening on ' + server.address().port);
-        });
-//     }
-//     else
-//         console.dir(error);
-// });
+//***********************************API********************************************************************
+
+
+
+
+let server = app.listen(8080, function () {
+    console.log('Example app listening on ' + server.address().port);
+});
