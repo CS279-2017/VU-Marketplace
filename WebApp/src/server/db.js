@@ -18,7 +18,6 @@ const userSchema = new Schema({
     first_name: { type: String, required: true },
     last_name: { type: String, required:  true},
     primary_email: { type: String, required: true, unique: true},
-    posts: {type: [String] } //Not sure if we wills store a string or any array of postSchemas
 });
 
 
@@ -32,7 +31,7 @@ const postSchema = new Schema ({        //will need to add more requirements as 
     owner: {type: String, required:true} //user ID of the creator who posted
 });
 
-const User = mongoose.model('Users', userSchema);
+const User = mongoose.model('User', userSchema);
 const Post = mongoose.model('Post', postSchema);
 
 module.exports = {
