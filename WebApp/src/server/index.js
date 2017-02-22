@@ -30,11 +30,47 @@ app.use(session({
 }));
 
 
-//***********************************API********************************************************************
+//***********************************API********************************************************************//
 
 
+//POST post a new post
+//Create a new post and save it
+app.post('/v1/user/:post', function (req, res) {
+
+});
+
+//PUT update a user
+//Update/edit user information in their userSchema
+app.get('/v1/user/:username', function (req, res) {
+
+});
+
+//PUT update posts
+//Update or edit posts from a user
+app.get('/v1/user/username/:post', function (req, res) {
+
+});
+
+//GET user information
+//Get data from the user's userSchema
+app.get('/v1/user/:username', function (req, res) {
+
+});
+
+//GET user POSTS
+//Receive all posts from a single user
+app.get('/v1/user/username/posts', function (req, res) {
+
+});
+
+//POST user session
+//Creates new user session
+app.post('/v1/session/:username', function (req, res) {
+
+});
 
 
+//Start the server
 let server = app.listen(8080, function () {
     console.log('Example app listening on ' + server.address().port);
 });
