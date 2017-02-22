@@ -9,7 +9,7 @@ let express         = require('express'),
     logger          = require('morgan'),
     _               = require('underscore'),
     session         = require('express-session'),
-    User            = require('./userSchema'),
+    User            = require('./db'),
     mongoose        = require('mongoose');
 
 
