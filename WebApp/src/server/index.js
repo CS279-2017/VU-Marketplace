@@ -41,13 +41,13 @@ app.post('/v1/user/:post', function (req, res) {
 
 //PUT update a user
 //Update/edit user information in their userSchema
-app.get('/v1/user/:username', function (req, res) {
+app.put('/v1/user/:username', function (req, res) {
 
 });
 
 //PUT update posts
 //Update or edit posts from a user
-app.get('/v1/user/username/:post', function (req, res) {
+app.put('/v1/user/username/:post', function (req, res) {
 
 });
 
