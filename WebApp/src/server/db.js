@@ -31,7 +31,7 @@ const postSchema = new Schema ({        //will need to add more requirements as 
     owner: {type: String, required:true} //user ID of the creator who posted
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('User   ', userSchema);
 const Post = mongoose.model('Post', postSchema);
 
 module.exports = {
