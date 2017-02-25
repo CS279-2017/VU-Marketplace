@@ -6,12 +6,14 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// mongoose.connect(`mongodb://localhost:27017/${VUNETID}`, err => {
-//     if (err) {
-//         console.error("ERROR: Could not connect to the mongo db. Is `mongod` running?");
-//         process.exit();
-//     }
-// });
+mongoose.connect(`mongodb://54.159.195.212:27017/`, err => {
+    if (err) {
+        console.error("ERROR: Could not connect to the mongo db. Is `mongod` running?");
+        process.exit();
+    }else{
+        console.log("Connected to MongoDB")
+    }
+});
 
 
 const userSchema = new Schema({
