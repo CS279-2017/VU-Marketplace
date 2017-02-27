@@ -94,8 +94,9 @@ app.put('/v1/user/:username', function (req, res) {
 
 //PUT update posts
 //Update or edit posts from a user
+//Username is VUnet id
 app.put('/v1/user/username/:post', function (req, res) {
-    Post.findOne({_id: req.params._id}, (err, post) => {
+    Post.findOne({username: req.username}, (err, post) => {
         if (err || !post) {
             console.error(err);
             res.status(404).send({ error: 'Error editing user' });
@@ -122,6 +123,7 @@ app.put('/v1/user/username/:post', function (req, res) {
 
 //GET user information
 //Get data from the user's userSchema
+//username is VUnet ID
 app.get('/v1/user/:username', function (req, res) {
     User.findOne({'username': req.params.username}, (err, user) => {
         if (err) {
@@ -137,7 +139,7 @@ app.get('/v1/user/:username', function (req, res) {
 //Receive all posts from a single user
 app.get('/v1/user/username/posts', function (req, res) {
     User.findOne({'username': req.params.username}, (err, user) => {
-        Post.find({'creator': user._id}, (err, posts) => {
+        Post.find({'creator': user.username}, (err, posts) => {
             if (err) {
                 res.status(401).send({error: 'unable to find list of games'});
             } else {

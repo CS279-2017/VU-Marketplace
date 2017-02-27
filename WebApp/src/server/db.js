@@ -19,7 +19,8 @@ mongoose.connect(`mongodb://54.159.195.212:27017/`, err => {
 const userSchema = new Schema({
     first_name: { type: String, required: true },
     last_name: { type: String, required:  true},
-    primary_email: { type: String, required: true, unique: true},
+    primary_email: { type: String, required: true, unique: true}, //vanderbilt email address
+    username:{type: String, required: true, unique: true} //VUnet id
 });
 
 
@@ -31,7 +32,7 @@ const postSchema = new Schema ({        //will need to add more requirements as 
     endDate: {type: Date, required: true},
     price: {type: String, required: true},
     tag: {type: String, required: true},
-    owner: {type: String, required:true} //user ID of the creator who posted
+    owner: {type: String, required:true} //VUNET ID
 });
 
 const User = mongoose.model('User   ', userSchema);
