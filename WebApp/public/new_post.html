@@ -16,75 +16,106 @@
     </div>
 </nav>
 
-<div class="row">
-    <div>
-        <div class="col-xs-1"></div>
-        1) What product or service do you wish to sell?
-    </div>
-    <div>
-        <div class="col-xs-1"></div>
-        <input placeholder="Name of product or service" class="col-xs-6">
-    </div>
-
-</div>
-
-<div class="row" style="margin-top: 20px">
-    <div>
-        <div class="col-xs-1"></div>
-        <label class="btn btn-primary btn-file">
-            Upload photo <input type="file" style="display: none">
-        </label>
-    </div>
-</div>
-
-<div style="margin-top: 20px">
-    <div class="col-xs-1"></div>
-    Select one of the following:
-</div>
-
-
-<div class="container">
-    <form class="form-horizontal">
-        <div class="form-group col-xs-6">
-            <div class="col-xs-1"></div>
-            <div class="radio">
-                <label><input type="radio" name="optradio">Textbook</label>
-            </div>
-            <div class="radio">
-                <label><input type="radio" name="optradio">Furniture</label>
-            </div>
-            <div class="radio disabled">
-                <label><input type="radio" name="optradio">Clothing</label>
-            </div>
-        </div>
-        <div class="form-group col-xs-6">
-            <div class="col-xs-1"></div>
-            <div class="radio">
-                <label><input type="radio" name="optradio">Electronics</label>
-            </div>
-            <div class="radio">
-                <label><input type="radio" name="optradio">Services</label>
-            </div>
-            <div class="radio disabled">
-                <label><input type="radio" name="optradio">Sports Gear</label>
-            </div>
-        </div>
-    </form>
-
-</div>
-
-<div style="margin-top: 20px">
-    <div class="col-xs-1"></div>
-    <div class="row">
-        <label for="TextArea">Text Area</label>
-    </div>
+<body>
     <div class="row">
         <div class="col-xs-1"></div>
+        <div class="row">
+            <label for="productName">1) What product or service do you wish to sell?</label>
+        </div>
         <div>
-            <textarea class="form-control" id="TextArea" style="max-width: 60%"></textarea>
+            <div class="col-xs-1"></div>
+            <input id="productName" placeholder="Name of product or service" class="col-xs-6">
+        </div>
+
+    </div>
+
+    <div class="row" style="margin-top: 20px">
+        <div>
+            <div class="col-xs-1"></div>
+            <label class="btn btn-primary btn-file">
+                Upload photo <input type="file" style="display: none">
+            </label>
         </div>
     </div>
-</div>
 
-</body>
+    <div style="margin-top: 20px">
+        <div class="col-xs-1"></div>
+        Select one of the following:
+    </div>
+
+
+    <div class="container">
+        <form class="form-horizontal">
+            <div class="form-group col-xs-6">
+                <div class="col-xs-1"></div>
+                <div class="radio">
+                    <label><input type="radio" name="optradio">Textbook</label>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="optradio">Furniture</label>
+                </div>
+                <div class="radio disabled">
+                    <label><input type="radio" name="optradio">Clothing</label>
+                </div>
+            </div>
+            <div class="form-group col-xs-6">
+                <div class="col-xs-1"></div>
+                <div class="radio">
+                    <label><input type="radio" name="optradio">Electronics</label>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="optradio">Services</label>
+                </div>
+                <div class="radio disabled">
+                    <label><input type="radio" name="optradio">Sports Gear</label>
+                </div>
+            </div>
+        </form>
+
+    </div>
+
+    <div style="margin-top: 20px">
+        <div class="col-xs-1"></div>
+        <div class="row">
+            <label for="TextArea">2) Describe the item or service:</label>
+        </div>
+        <div class="row">
+            <div class="col-xs-1"></div>
+            <div>
+                <textarea class="form-control" id="TextArea" style="max-width: 60%"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px">
+        <div class="col-xs-1"></div>
+        <div class="row">
+            <label for="price">3) Set the price:</label>
+        </div>
+        <div class="row">
+            <div class="col-xs-1"></div>
+            <div>
+                <input id="price" type="number">
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px">
+        <div class="col-xs-1"></div>
+        <div class="row">
+            <label for="deliveryMethod">4) How will it be delivered?</label>
+        </div>
+        <div class="row">
+            <div class="col-xs-1"></div>
+            <div>
+                <input id="deliveryMethod">
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px"/>
+    <div class="col-xs-1"></div>
+    <button type="submit">Create Listing</button>
+
+    </body>
 </html>
