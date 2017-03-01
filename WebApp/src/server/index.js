@@ -157,11 +157,11 @@ app.post('/v1/session/:username', function (req, res) {
 
 //DELETE post
 app.post('/v1/user/username/:post', function (req, res) {
-    if(!req.body.post_id){ //TODO: REPLACE WITH POST ID
+    if(!req.body._id){ //TODO: REPLACE WITH POST ID
         res.status(400).send({error: 'username required'})
     }else{
-        let post_id = req.body.post_id.toLowerCase();
-        Post.find({ post_id: post_id }).remove().exec();
+        let post_id = req.body._id.toLowerCase();
+        Post.find({ _id: post_id }).remove().exec();
         res.status(200).send('post deleted');
     }
 });
