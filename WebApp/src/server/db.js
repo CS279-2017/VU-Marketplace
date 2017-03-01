@@ -27,7 +27,7 @@ const userSchema = new Schema({
 const postSchema = new Schema ({        //will need to add more requirements as needed
     title: {type: String, required: true},
     description: {type: String, required: true},
-    images: {type: String}, //unsure how to store images https://docs.mongodb.com/manual/core/gridfs/
+    images: {type: String}, //TO DO: unsure how to store images https://docs.mongodb.com/manual/core/gridfs/
     startDate: {type: Date, required: true},
     endDate: {type: Date, required: true},
     price: {type: String, required: true},
