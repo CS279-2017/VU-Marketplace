@@ -9,7 +9,8 @@ let express         = require('express'),
     logger          = require('morgan'),
     _               = require('underscore'),
     session         = require('express-session'),
-    mongoose        = require('mongoose');
+    mongoose        = require('mongoose'),
+    fs              = require('fs');
 
 const User = require('./db').User;
 const Post = require('./db').Post;
@@ -32,7 +33,7 @@ app.use(session({
 }));
 
 
-//***********************************API********************************************************************//
+//***********************************API********************************************************************
 
 
 //POST post a new post
