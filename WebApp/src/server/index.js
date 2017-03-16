@@ -38,11 +38,12 @@ app.use(session({
 
 //POST post a new post
 //Create a new post and save it
-//Posts must have TITLE, OWNER_ID, and PRICE
-app.post('/v1/user/username/:post', function (req, res) {
+//Posts must have TITLE, TAG, VUNETID, DESCRIPTION, and PRICE
+app.post('/v1/user/:vunetid', function (req, res) {
     let post = req.body;
-    if (!post || !post.title || !post.owner || !post.price) {
-        res.status(400).send({ error: 'title, owner, and price are required' });
+    console.log(post);
+    if (!post || !post.title || !post.vunetid || !post.price || !post.description || !post.tag) {
+        res.status(400).send({ error: 'title, owner, description, tag, and price are required' });
     } else {
         // Create the Post in the database
         new Post(post).save((err, post) => {
@@ -51,6 +52,7 @@ app.post('/v1/user/username/:post', function (req, res) {
                 res.status(400).send({error: 'Error creating Post'});
             } else {
                 //SUCCESS
+                console.log(post);
                 res.status(201).send({
                     //TODO:send back JSON stuff if need be
                 })
@@ -138,16 +140,14 @@ app.get('/v1/user/:username', function (req, res) {
 
 //GET user POSTS
 //Receive all posts from a single user
-app.get('/v1/user/username/posts', function (req, res) {
-    User.findOne({'username': req.params.username}, (err, user) => {
-        Post.find({'creator': user.username}, (err, posts) => {
+app.get('/v1/user/:vunetid/posts', function (req, res) {
+        Post.find({'vunetid': req.params.vunetid}, (err, posts) => {
             if (err) {
-                res.status(401).send({error: 'unable to find list of games'});
+                res.status(401).send({error: 'unable to find posts'});
             } else {
                 res.status(200).send(posts);
             }
         });
-    });
 });
 
 //POST user session

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+</head>
+<body>
+
+
+<div ng-app="viewPost" ng-controller="myCtrl">
+
+    <h1>{{Title}}</h1>
+    <h1>{{Description}}</h1>
+    <h1>{{Price}}</h1>
+    <h1>{{StartDate}}</h1>
+    <h1>{{myTag}}</h1>
+
+</div>
+
+<script>
+    var app = angular.module('viewPost', []);
+    app.controller('myCtrl', function($scope, $http) {
+        $http({
+            method: 'GET',
+            url: '/v1/user/leecp/posts'
+        }).then(function successCallback(response) {
+                console.log(response);
+                $scope.Title = response.data[0].title;
+                $scope.Description = response.data[0].description;
+                $scope.Price = response.data[0].price;
+                $scope.StartDate = response.data[0].startDate;
+                $scope.myTag = response.data[0].tag;
+        }, function errorCallback(error) {
+                console.log(error);
+        });
+    });
+</script>
+
+// Simple GET request example:
+
+
+
+
+</body>
+</html>

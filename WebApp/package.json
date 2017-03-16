@@ -14,6 +14,7 @@
     "url": "git:https://github.com/CS279-2017/VU-Marketplace"
   },
   "dependencies": {
+    "angular": "^1.6.3",
     "body-parser": "^1.15.2",
     "es6-shim": "^0.35.1",
     "express": "^4.14.0",
