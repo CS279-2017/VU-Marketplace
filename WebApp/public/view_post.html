@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-
+    <script src="js/common.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
 </head>
 <body>
@@ -11,36 +11,34 @@
 
 <div ng-app="viewPost" ng-controller="myCtrl">
 
-    <h1>{{Title}}</h1>
-    <h1>{{Description}}</h1>
-    <h1>{{Price}}</h1>
-    <h1>{{StartDate}}</h1>
-    <h1>{{myTag}}</h1>
+    <h1>TITLE: {{Title}}</h1>
+    <h1>Description:{{Description}}</h1>
+    <h1>Price: ${{Price}}</h1>
+    <h1>Start Date:{{StartDate}}</h1>
+    <h1>Tags: {{myTag}}</h1>
 
 </div>
 
 <script>
     var app = angular.module('viewPost', []);
     app.controller('myCtrl', function($scope, $http) {
+        const id = getParameterByName('id');
+        console.log(id);
         $http({
             method: 'GET',
-            url: '/v1/user/leecp/posts'
+            url: `/v1/posts/` + id
         }).then(function successCallback(response) {
                 console.log(response);
-                $scope.Title = response.data[0].title;
-                $scope.Description = response.data[0].description;
-                $scope.Price = response.data[0].price;
-                $scope.StartDate = response.data[0].startDate;
-                $scope.myTag = response.data[0].tag;
+                $scope.Title = response.data[response.data.length - 1].title;
+                $scope.Description = response.data[response.data.length - 1].description;
+                $scope.Price = response.data[response.data.length - 1].price;
+                $scope.StartDate = response.data[response.data.length - 1].startDate;
+                $scope.myTag = response.data[response.data.length - 1].tag;
         }, function errorCallback(error) {
                 console.log(error);
         });
     });
 </script>
-
-// Simple GET request example:
-
-
 
 
 </body>

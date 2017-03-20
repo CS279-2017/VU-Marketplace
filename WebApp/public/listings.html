@@ -7,15 +7,17 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
 </head>
 <body>
 
 
 <div id="listings">
+    <form>
+        <input type="text" name="search" placeholder="Search..">
+    </form>
     <div class="container">
-        <form>
-            <input type="text" name="search" placeholder="Search..">
-        </form>
+
         <div class="btn-group">
             <div class="dropdown">
                 <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Sort by Price
@@ -41,67 +43,82 @@
         <div class="row">
             <div class="well">
                 <h1 class="text-center">LISTINGS</h1>
-
                 <div class="list-group">
 
-                    <!--post #1-->
-                    <a href="#" class="list-group-item">
-                        <div class="media col-md-3">
-                            <figure class="pull-left">
-                                <img class="media-object img-rounded img-responsive" src="http://placehold.it/350x250" alt="placehold.it/350x250" >
-                            </figure>
-                        </div>
-                        <div class="col-md-6">
-                            <h4 class="list-group-item-heading"> EXAMPLE #1 -- SELLING PHYSICS 2 BOOK </h4>
-                            <p class="list-group-item-text"> slightly used physics text book. email me at jules.white@gmail.com if interested!
-                            </p>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h2> $45 <small> Towers 4 </small></h2>
-                            <button type="button" class="btn btn-primary btn-lg btn-block">View Full Post</button>
-                        </div>
-                    </a>
 
-                    <!--post #2-->
-                    <a href="#" class="list-group-item">
-                        <div class="media col-md-3">
-                            <figure class="pull-left">
-                                <img class="media-object img-rounded img-responsive" src="http://placehold.it/350x250" alt="placehold.it/350x250" >
-                            </figure>
-                        </div>
-                        <div class="col-md-6">
-                            <h4 class="list-group-item-heading"> EXAMPLE #2 -- BRAND NEW MICROWAVE!!! </h4>
-                            <p class="list-group-item-text"> selling a never used microwave. i don't need because my dad bought me an oven :)!
-                            </p>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h2> $99 <small> Kissam </small></h2>
-                            <button type="button" class="btn btn-primary btn-lg btn-block">View Full Post</button>
-                        </div>
-                    </a>
 
-                    <!--post #3-->
-                    <a href="#" class="list-group-item">
-                        <div class="media col-md-3">
-                            <figure class="pull-left">
-                                <img class="media-object img-rounded img-responsive" src="http://placehold.it/350x250" alt="placehold.it/350x250" >
-                            </figure>
-                        </div>
-                        <div class="col-md-6">
-                            <h4 class="list-group-item-heading"> Looking for college babysitter  </h4>
-                            <p class="list-group-item-text"> Looking for a college student to baby sit my daughter on weekdays from 4-7pm! Pay is good.
-                            </p>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h2> $24/hr <small> Wondry 314 </small></h2>
-                            <button type="button" class="btn btn-primary btn-lg btn-block">View Full Post</button>
-                        </div>
-                    </a>
+                    <div ng-app="viewPost" ng-controller="myCtrl">
+                        <div ng-repeat="item in info">
+
+                        <!--post #1-->
+                        <a ng-href="/view_post.html?id={{item.ID}}"  class="list-group-item">
+                            <div class="media col-md-3">
+                                <figure class="pull-left">
+                                    <img class="media-object img-rounded img-responsive" src="http://placehold.it/350x250" alt="placehold.it/350x250" >
+                                </figure>
+                            </div>
+                            <div class="col-md-6">
+                                <h4 class="list-group-item-heading">{{item.Title}} </h4>
+                                <p class="list-group-item-text"> {{item.Description}}
+                                </p>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <h2> ${{item.Price}} <small> {{item.myTag}} </small></h2>
+                                <button type="button" class="btn btn-primary btn-lg btn-block">View Full Post</button>
+                            </div>
+                        </a>
+
+                        </div> <!-- //ng-repeat div-->
+                    </div>  <!--//view post div-->
+
 
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+
+<!--
+        <h1>TITLE: {{item.Title}}</h1>
+        <h1>Description:{{item.Description}}</h1>
+        <h1>Price: ${{item.Price}}</h1>
+        <h1>Start Date:</h1>
+        <h1>Tags: {{item.myTag}}</h1-->>
+
+
+
+<script>
+    var app = angular.module('viewPost', []);
+    app.controller('myCtrl', function($scope, $http) {
+        //const username = getParameterByName('username');
+        //const username = cplee;
+        $http({
+            method: 'GET',
+            url: '/v1/posts'
+        }).then(function successCallback(response) {
+            console.log(response);
+            $scope.info = [];
+            let arrayText;
+            for(var i = 0; i < response.data.length; i++){
+                 arrayText = {
+                    Title: response.data[i].title,
+                    Description: response.data[i].description,
+                    Price: response.data[i].price,
+                    StartDate: response.data[i].startDate,
+                    myTag: response.data[i].tag,
+                    ID: response.data[i]._id,
+                    vuID: response.data[i].vunetid,
+                };
+                console.log(arrayText);
+                $scope.info.push(arrayText);
+            }
+            JSON.stringify($scope.info);
+        }, function errorCallback(error) {
+            console.log(error);
+        });
+    });
+</script>
+
 </body>
 </html>

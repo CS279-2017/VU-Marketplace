@@ -150,6 +150,31 @@ app.get('/v1/user/:vunetid/posts', function (req, res) {
         });
 });
 
+
+//GET ALL POSTS
+//Receive all posts
+app.get('/v1/posts', function (req, res) {
+    Post.find({},(err, posts) => {
+        if (err) {
+            res.status(401).send({error: 'unable to find posts'});
+        } else {
+            res.status(200).send(posts);
+        }
+    });
+});
+
+//GET POST BY ID
+//Receive all posts
+app.get('/v1/posts/:id', function (req, res) {
+    Post.find({_id: req.params.id},(err, post) => {
+        if (err) {
+            res.status(401).send({error: 'unable to find posts'});
+        } else {
+            res.status(200).send(post);
+        }
+    });
+});
+
 //POST user session
 //Creates new user session
 app.post('/v1/session/:username', function (req, res) {
