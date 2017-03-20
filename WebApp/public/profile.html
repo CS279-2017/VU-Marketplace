@@ -1,18 +1,18 @@
-<!--adapted from: http://bootsnipp.com/snippets/kv2aW-->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Profile</title>
+    <link href="css/stylesheet.css" rel="stylesheet">
+    <!--adapted from: http://bootsnipp.com/snippets/kv2aW-->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 </head>
-<hr>
 
-<link href="css/stylesheet.css" rel="stylesheet">
-<link href="css/bootstrap.min.css" rel="stylesheet">
-<link href="css/bootstrap-theme.min.css" rel="stylesheet">
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 
+
+<body>
 <div class="container bootstrap snippet">
     <div class="row">
         <div class="col-sm-10"><h1>Chris Lee</h1></div>
@@ -41,53 +41,71 @@
             <div class="container">
                 <div class="row">
                     <div class="list-group">
+                        <div class="list-group-item clearfix">
+                            <div class="profile-teaser-left">
+                                <div class="profile-img"><img src="https://static.pexels.com/photos/21011/pexels-photo-large.jpg"/></div>
+                            </div>
+                            <div class="profile-teaser-main">
+                                <h2 class="profile-name">Jane Doe</h2>
+                                <div class="profile-info">
+                                    <div class="info"><span class="">Info:</span> Something here</div>
+                                    <div class="info"><span class="">Info:</span> Something here</div>
+                                    <div class="info"><span class="">Info:</span> Something here</div>
+                                    <div class="info"><span class="">Info:</span> Something here</div>
+                                </div>
+                            </div>
+                        </div><!-- item -->
 
-                        <h1>Your current listings:</h1>
-                        <form action="" method="get">
-                            <input type="submit" value="Delete">
-                            <div class="list-group-item clearfix">
-                                <div class="profile-teaser-left">
-                                    <input type="checkbox" name="vehicle" value="Bike">
-                                    <div class="profile-img"><img src="https://static.pexels.com/photos/21011/pexels-photo-large.jpg"/></div>
+                        <div class="list-group-item clearfix">
+                            <div class="profile-teaser-left">
+                                <div class="profile-img"><img src="https://static.pexels.com/photos/21011/pexels-photo-large.jpg"/></div>
+                            </div>
+                            <div class="profile-teaser-main">
+                                <h2 class="profile-name">Jane Doe</h2>
+                                <div class="profile-info">
+                                    <div class="info"><span class="">Info:</span> Something here</div>
+                                    <div class="info"><span class="">Info:</span> Something here</div>
+                                    <div class="info"><span class="">Info:</span> Something here</div>
+                                    <div class="info"><span class="">Info:</span> Something here</div>
                                 </div>
-                                <div class="profile-teaser-main">
-                                    <h2 class="profile-name">Cool car 2</h2>
-                                    <div class="profile-info">
-                                        <div class="info"><span class="">Description:</span> WOOOOOOOOOOO</div>
-
-                                    </div>
-                                </div>
-                            </div><!-- item -->
-
-                            <div class="list-group-item clearfix">
-                                <div class="profile-teaser-left">
-                                    <div class="profile-img"><img src="https://static.pexels.com/photos/21011/pexels-photo-large.jpg"/></div>
-                                </div>
-                                <div class="profile-teaser-main">
-                                    <h2 class="profile-name">Cool car 1</h2>
-                                    <div class="profile-info">
-                                        <div class="info"><span class="">Description:</span> WOOOOOOOOOOOOO</div>
-                                    </div>
-                                </div>
-                            </div><!-- item -->
-
-                            <div class="list-group-item clearfix">
-                                <div class="profile-teaser-left">
-                                    <div class="profile-img"><img src="https://static.pexels.com/photos/21011/pexels-photo-large.jpg"/></div>
-                                </div>
-                                <div class="profile-teaser-main">
-                                    <h2 class="profile-name">Cool car 3</h2>
-                                    <div class="profile-info">
-                                        <div class="info"><span class="">Description:</span> WOOOOOOOOOOOOO</div>
-                                    </div>
-                                </div>
-                            </div><!-- item -->
-                        </form>
+                            </div>
+                        </div><!-- item -->
                     </div>
                 </div>
             </div>
         </div><!--/col-9-->
-
     </div><!--/row-->
-</div>
+
+    <script>
+        var app = angular.module('viewPost', []);
+        app.controller('myCtrl', function($scope, $http) {
+            //const username = getParameterByName('username');
+            //const username = cplee;
+            $http({
+                method: 'GET',
+                url: '/v1/posts'
+            }).then(function successCallback(response) {
+                console.log(response);
+                $scope.info = [];
+                let arrayText;
+                for(var i = 0; i < response.data.length; i++){
+                    arrayText = {
+                        Title: response.data[i].title,
+                        Description: response.data[i].description,
+                        Price: response.data[i].price,
+                        StartDate: response.data[i].startDate,
+                        myTag: response.data[i].tag,
+                        ID: response.data[i]._id,
+                        vuID: response.data[i].vunetid,
+                    };
+                    console.log(arrayText);
+                    $scope.info.push(arrayText);
+                }
+                JSON.stringify($scope.info);
+            }, function errorCallback(error) {
+                console.log(error);
+            });
+        });
+    </script>
+</body>
 </html>
