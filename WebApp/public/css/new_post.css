@@ -12,3 +12,22 @@
     color: gold;
     background-color: black;
 }
+
+#logo{
+    width: 80px;
+}
+
+.navbar{
+    height: 100px;
+    width: 100%;
+    background-color: black;
+    align-content: stretch;
+}
+
+.navbar-form{
+
+}
+
+.nav > .navbar > .navbar-right{
+    color: gold;
+}
