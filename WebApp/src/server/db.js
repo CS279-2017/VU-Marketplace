@@ -29,7 +29,8 @@ const postSchema = new Schema ({        //will need to add more requirements as 
     startDate: {type: Date, required: true},
     price: {type: String, required: true},
     tag: {type: String, required: true},
-    vunetid: {type: String, required:true} //VUNET ID
+    vunetid: {type: String, required:true}, //VUNET ID
+    email: {type: String, required:true}
 });
 
 const User = mongoose.model('User   ', userSchema);

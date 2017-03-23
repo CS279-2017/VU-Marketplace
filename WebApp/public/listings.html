@@ -13,9 +13,6 @@
 
 
 <div id="listings">
-    <form>
-        <input type="text" name="search" placeholder="Search..">
-    </form>
     <div class="container">
 
         <div class="btn-group">
@@ -38,7 +35,6 @@
                 </ul>
             </div>
         </div>
-
 
         <div class="row">
             <div class="well">
@@ -100,7 +96,7 @@
             console.log(response);
             $scope.info = [];
             let arrayText;
-            for(var i = 0; i < response.data.length; i++){
+            for(var i = response.data.length - 1; i >= 0; i--){
                  arrayText = {
                     Title: response.data[i].title,
                     Description: response.data[i].description,

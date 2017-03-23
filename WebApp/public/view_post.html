@@ -16,6 +16,7 @@
     <h1>Price: ${{Price}}</h1>
     <h1>Start Date:{{StartDate}}</h1>
     <h1>Tags: {{myTag}}</h1>
+    <h1>email: {{myEmail}}</h1>
 
 </div>
 
@@ -34,6 +35,7 @@
                 $scope.Price = response.data[response.data.length - 1].price;
                 $scope.StartDate = response.data[response.data.length - 1].startDate;
                 $scope.myTag = response.data[response.data.length - 1].tag;
+                $scope.myEmail = response.data[response.data.length - 1].email;
         }, function errorCallback(error) {
                 console.log(error);
         });

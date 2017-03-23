@@ -42,7 +42,7 @@ app.use(session({
 app.post('/v1/user/:vunetid', function (req, res) {
     let post = req.body;
     console.log(post);
-    if (!post || !post.title || !post.vunetid || !post.price || !post.description || !post.tag) {
+    if (!post || !post.title || !post.vunetid || !post.price || !post.description || !post.tag || !post.email) {
         res.status(400).send({ error: 'title, owner, description, tag, and price are required' });
     } else {
         // Create the Post in the database
