@@ -13,7 +13,7 @@
 .info { display: inline-block; margin-right: 10px; color: #777; }
 .info span { font-weight: bold; }
 
-/*JON'S CSS BELOW*/
+/*JON'S CSS BELOW SEARCH */
 input[type=text] {
     width: 130px;
     box-sizing: border-box;
@@ -50,7 +50,8 @@ a.list-group-item.active small {
 /********************************* HEADER CSS****************************************************************************/
 
 #flipkart-navbar {
-    background-color: #000000;
+
+    background-color: #231F20;
     color: #FFFFFF;
 }
 

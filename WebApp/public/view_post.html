@@ -16,6 +16,7 @@
     <h1>Price: ${{Price}}</h1>
     <h1>Start Date:{{StartDate}}</h1>
     <h1>Tags: {{myTag}}</h1>
+    <h1>email: {{myEmail}}</h1>
 
     <!--http://stackoverflow.com/questions/8499633/how-to-display-base64-images-in-html-->
     <img data-ng-src="data:image/png;base64,{{myImage}}">
@@ -37,12 +38,16 @@
                 $scope.Price = response.data[response.data.length - 1].price;
                 $scope.StartDate = response.data[response.data.length - 1].startDate;
                 $scope.myTag = response.data[response.data.length - 1].tag;
+<<<<<<< HEAD
 
 
                  var arrayBuffer = response.data[response.data.length - 1].img.data.data;
                 $scope.myImage = base64ArrayBuffer(arrayBuffer);
                 console.log(base64ArrayBuffer(arrayBuffer));
 
+=======
+                $scope.myEmail = response.data[response.data.length - 1].email;
+>>>>>>> 51513e6d6855315fe0fa83b09acca1b5442032b5
         }, function errorCallback(error) {
                 console.log(error);
         });

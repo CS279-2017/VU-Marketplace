@@ -51,6 +51,7 @@ app.post('/v1/user/:vunetid', multipartyMiddleware ,function (req, res) {
 
     //https://gist.github.com/aheckmann/2408370
     let post = req.body;
+<<<<<<< HEAD
     let imgPath = req.files.file.path;
     post.img.data = fs.readFileSync(imgPath); //converts image to binary
     post.img.contentType = 'image/png';
@@ -59,7 +60,14 @@ app.post('/v1/user/:vunetid', multipartyMiddleware ,function (req, res) {
     var today = new Date();
     post.startDate = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
 
+=======
+<<<<<<< HEAD
+    console.log(post);
+    if (!post || !post.title || !post.vunetid || !post.price || !post.description || !post.tag || !post.email) {
+=======
+>>>>>>> 51513e6d6855315fe0fa83b09acca1b5442032b5
     if (!post || !post.title || !post.vunetid || !post.price || !post.description || !post.tag) {
+>>>>>>> 84bcf686470b05f74de1311856910475b0f3fe82
         res.status(400).send({ error: 'title, owner, description, tag, and price are required' });
     } else {
         // Create the Post in the database

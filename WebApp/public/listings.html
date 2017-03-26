@@ -8,14 +8,19 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+
+    <script>
+        $(function(){
+            $("#header").load("header.html");
+        });
+    </script>
 </head>
 <body>
 
+<div id="header">
+</div>
 
 <div id="listings">
-    <form>
-        <input type="text" name="search" placeholder="Search..">
-    </form>
     <div class="container">
 
         <div class="btn-group">
@@ -38,7 +43,6 @@
                 </ul>
             </div>
         </div>
-
 
         <div class="row">
             <div class="well">
@@ -101,6 +105,7 @@
             console.log(response);
             $scope.info = [];
             let arrayText;
+<<<<<<< HEAD
             for(var i = 0; i < response.data.length; i++){
 
 //                DELETE ALL
@@ -116,6 +121,9 @@
                 var img = base64ArrayBuffer(arrayBuffer);
                 resizeImage(img, i);
 
+=======
+            for(var i = response.data.length - 1; i >= 0; i--){
+>>>>>>> 51513e6d6855315fe0fa83b09acca1b5442032b5
                  arrayText = {
                     Title: response.data[i].title,
                     Description: response.data[i].description,
