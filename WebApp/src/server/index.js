@@ -47,10 +47,18 @@ app.use(session({
 //POST post a new post
 //Create a new post and save it
 //Posts must have TITLE, TAG, VUNETID, DESCRIPTION, and PRICE
-app.post('/v1/user/:vunetid', multipartyMiddleware,function (req, res) {
+app.post('/v1/user/:vunetid', multipartyMiddleware ,function (req, res) {
 
-    //TODO: https://gist.github.com/aheckmann/2408370
+    //https://gist.github.com/aheckmann/2408370
     let post = req.body;
+    let imgPath = req.files.file.path;
+    post.img.data = fs.readFileSync(imgPath); //converts image to binary
+    post.img.contentType = 'image/png';
+
+    //add date
+    var today = new Date();
+    post.startDate = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+
     if (!post || !post.title || !post.vunetid || !post.price || !post.description || !post.tag) {
         res.status(400).send({ error: 'title, owner, description, tag, and price are required' });
     } else {
@@ -61,7 +69,7 @@ app.post('/v1/user/:vunetid', multipartyMiddleware,function (req, res) {
                 res.status(400).send({error: 'Error creating Post'});
             } else {
                 //SUCCESS
-                console.log(post);
+                console.log("Saved:" + post);
                 res.status(201).send({
                     //TODO:send back JSON stuff if need be
                 })
@@ -180,7 +188,6 @@ app.get('/v1/posts', function (req, res) {
 });
 
 //GET POST BY ID
-//Receive all posts
 app.get('/v1/posts/:id', function (req, res) {
     Post.find({_id: req.params.id},(err, post) => {
         if (err) {
@@ -198,9 +205,9 @@ app.post('/v1/session/:username', function (req, res) {
 });
 
 //DELETE post
-app.post('/v1/user/username/:post', function (req, res) {
-    if(!req.body._id){ //TODO: REPLACE WITH POST ID
-        res.status(400).send({error: 'username required'})
+app.post('/v1/user/delete/:post', function (req, res) {
+    if(!req.body._id){
+        res.status(400).send({error: 'id required'})
     }else{
         let post_id = req.body._id.toLowerCase();
         Post.find({ _id: post_id }).remove().exec();
@@ -218,3 +225,7 @@ app.post('/v1/user/username/:post', function (req, res) {
 let server = app.listen(8080, function () {
     console.log('Example app listening on ' + server.address().port);
 });
+
+
+
+

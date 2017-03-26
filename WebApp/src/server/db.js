@@ -25,11 +25,11 @@ const userSchema = new Schema({
 const postSchema = new Schema ({        //will need to add more requirements as needed
     title: {type: String, required: true},
     description: {type: String, required: true},
-    //img: { data: Buffer, contentType: String }, //TO DO: unsure how to store images https://docs.mongodb.com/manual/core/gridfs/
+    img: { data: Buffer, contentType: String },
     startDate: {type: Date, required: true},
     price: {type: String, required: true},
     tag: {type: String, required: true},
-    vunetid: {type: String, required:true} //VUNET ID
+    vunetid: {type: String, required:true}, //VUNET ID
 });
 
 const User = mongoose.model('User   ', userSchema);
