@@ -6,7 +6,13 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="../public/css/new_post.css">
+
+    <!--image upload-->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.js"></script>
+    <script src="https://angular-file-upload.appspot.com/js/ng-file-upload.js"></script>
+    <script src="https://angular-file-upload.appspot.com/js/ng-file-upload-shim.js"></script>
+
+    <link rel="stylesheet" href="css/new_post.css">
     <script src="js/new_post.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0rc1/angular-route.min.js"></script>
@@ -64,8 +70,6 @@
 <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 <div id="flipkart-navbar">
     <div class="container">
-        <div class="row row1">
-        </div>
         <div class="row row2">
             <div class="col-sm-2">
                 <h2 style="margin:0px;"><span class="smallnav menu" onclick="openNav()">☰ Brand</span></h2>
@@ -87,6 +91,17 @@
                 </a>
             </div>
         </div>
+        <div class="row row1">
+            <ul class="largenav pull-left">
+                <li class="upper-links"><a class="links" href="http://clashhacks.in/">BOOKS</a></li>
+                <li class="upper-links"><a class="links" href="http://clashhacks.in/">CLOTHING</a></li>
+                <li class="upper-links"><a class="links" href="http://clashhacks.in/">FURNITURE</a></li>
+                <li class="upper-links"><a class="links" href="http://clashhacks.in/">JOBS</a></li>
+                <li class="upper-links"><a class="links" href="http://clashhacks.in/">ELECTRONICS</a></li>
+                <li class="upper-links"><a class="links" href="http://clashhacks.in/">TUTORING</a></li>
+                </li>
+            </ul>
+        </div>
     </div>
 </div>
 <div id="mySidenav" class="sidenav">
@@ -102,36 +117,29 @@
 
 
 <!--END-->
-<body>
-    <form>
-    <div class="row">
-        <div class="col-xs-1"></div>
-        <div class="row">
-            <label for="title">1) TITLE </label>
-        </div>
-        <div>
-            <div class="col-xs-1"></div>
-            <input name="title" id="title" placeholder="Name of product or service" class="col-xs-6" required>
-        </div>
-    </div>
 
 
+<!--adapted from: http://jsfiddle.net/danialfarid/maqbzv15/1118/-->
 
-    <!--<div class="row" style="margin-top: 20px">-->
-        <!--<div>-->
-            <!--<div class="col-xs-1"></div>-->
-            <!--<label class="btn btn-primary btn-file" id="btnUploadPhoto">-->
-                <!--Upload photo <input type="file" style="display: none">-->
-            <!--</label>-->
-        <!--</div>-->
-    <!--</div>-->
+<body ng-app="fileUpload" ng-controller="MyCtrl">
+    <form name="myForm">
+            <legend>Upload on form submit</legend>
+            <!--TITLE-->
+            </br>1) TITLE
+            <input name="title" id="title" ng-model="title" placeholder="Name of product or service" required>
+            <i ng-show="myForm.title.$error.required">*required</i>
 
-    <div style="margin-top: 20px">
-        <div class="col-xs-1"></div>
-        Select one of the following:
-    </div>
+            <!--DESCRIPTION-->
+            </br>2) DESCRIPTION
+            <input name="description" id="description" ng-model="description" placeholder="description" required>
+            <i ng-show="myForm.description.$error.required">*required</i>
 
+            <!--PRICE-->
+            </br>3) PRICE
+            <input name="price" id="price" ng-model="price" placeholder="price" type="number" required>
+            <i ng-show="myForm.price.$error.required">*required</i>
 
+<<<<<<< HEAD
     <div class="container">
             <div class="form-group col-xs-6">
                 <div class="col-xs-1"></div>
@@ -157,49 +165,44 @@
                     <label><input type="radio" name="tag" id="other" value="other">Other</label>
                 </div>
             </div>
+=======
+            <!--VUNET ID-->
+            </br>4) VUNETID
+            <input name="vunetid" id="vunetid" ng-model="vunetid" placeholder="vunetid"  required>
+            <i ng-show="myForm.vunetid.$error.required">*required</i>
+>>>>>>> 84bcf686470b05f74de1311856910475b0f3fe82
 
 
-    </div>
+            <!--TYPE:-->
+            </br> 5) TYPE
+            <div class="container">
+                <div class="form-group">
+                    <div class="radio">
+                        <label><input type="radio" name="tag" id="textbook" ng-model="tag"  value="textbook" required>Textbook</label>
+                    </div>
 
-        <div style="margin-top: 20px">
-            <div class="col-xs-1"></div>
-            <div class="row">
-                <label for="description">2) DESCRIPTION: </label>
-            </div>
-            <div class="row">
-                <div class="col-xs-1"></div>
-                <div>
-                    <input class="form-control" name="description" id="description" style="max-width: 60%" required>
+                    <div class="radio">
+                         <label><input type="radio" name="tag" id="furniture" ng-model="tag" value="furniture" >Furniture</label>
+                    </div>
+
+                    <div class="radio disabled">
+                        <label><input type="radio" name="tag" id="clothing" ng-model="tag" value="clothing">Clothing</label>
+                    </div>
+
+                    <div class="radio">
+                        <label><input type="radio" name="tag" id="electronics" ng-model="tag" value="electronics">Electronics</label>
+                    </div>
+
+                    <div class="radio">
+                        <label><input type="radio" name="tag" id="services" ng-model="tag"  value="services">Services</label>
+                    </div>
+
+                    <div class="radio">
+                        <label><input type="radio" name="tag" id="other" ng-model="tag" value="other">Other</label>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div style="margin-top: 20px">
-            <div class="col-xs-1"></div>
-            <div class="row">
-                <label for="price">3) PRICE: </label>
-            </div>
-            <div class="row">
-                <div class="col-xs-1"></div>
-                <div>
-                    <input id="price" name="price" type="number" required>
-                </div>
-            </div>
-        </div>
-
-
-        <!--TODO: DELETE THIS ONCE WE HAVE SESSIONS AND LOGIN WORKING-->
-        <div style="margin-top: 20px">
-            <div class="col-xs-1"></div>
-            <div class="row">
-                <label for="vunetid">4) VUnetID </label>
-            </div>
-            <div class="row">
-                <div class="col-xs-1"></div>
-                <div>
-                    <input id="vunetid" name="vunetid"  required>
-                </div>
-            </div>
+<<<<<<< HEAD
         </div>
 
         <div style="margin-top: 20px">
@@ -215,10 +218,35 @@
             </div>
         </div>
 
+=======
+>>>>>>> 84bcf686470b05f74de1311856910475b0f3fe82
 
-        <input type="submit" class="btn btn-primary" id="submit">
+            <!--NEW IMAGE UPLOAD-->
+            <br>Photo:
+            <input type="file" ngf-select ng-model="picFile" name="file"
+                   accept="image/*" ngf-max-size="2MB" required
+                   ngf-model-invalid="errorFile">
+            <i ng-show="myForm.file.$error.required">*required</i><br>
+            <i ng-show="myForm.file.$error.maxSize">File too large
+                {{errorFile.size / 1000000|number:1}}MB: max 2M</i>
+            <img ng-show="myForm.file.$valid" ngf-thumbnail="picFile" class="thumb"> <button ng-click="picFile = null" ng-show="picFile">Remove</button>
+            <br>
+
+            <button ng-disabled="!myForm.$valid"
+                    ng-click="uploadPic(picFile)">Submit</button>
+            <span class="progress" ng-show="picFile.progress >= 0">
+            <div style="width:{{picFile.progress}}%"
+                 ng-bind="picFile.progress + '%'"></div>
+          </span>
+            <span ng-show="picFile.result">Upload Successful</span>
+            <span class="err" ng-show="errorMsg">{{errorMsg}}</span>
+
+        </fieldset>
+        <br>
     </form>
+</body>
 
+<<<<<<< HEAD
     <body ng-app="fileUpload" ng-controller="MyCtrl">
     <h4>Upload on file select</h4>
     <button ngf-select="uploadFiles($files, $invalidFiles)" multiple
@@ -245,4 +273,7 @@
 
 
     </body>
+=======
+
+>>>>>>> 84bcf686470b05f74de1311856910475b0f3fe82
 </html>

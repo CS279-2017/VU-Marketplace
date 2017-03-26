@@ -10,7 +10,9 @@ let express         = require('express'),
     _               = require('underscore'),
     session         = require('express-session'),
     mongoose        = require('mongoose'),
-    fs              = require('fs');
+    fs              = require('fs'),
+    multiparty      = require('connect-multiparty'),
+    multipartyMiddleware = multiparty();
 
 const User = require('./db').User;
 const Post = require('./db').Post;
@@ -35,14 +37,26 @@ app.use(session({
 
 //***********************************API********************************************************************
 
+//https://github.com/danialfarid/ng-file-upload/wiki/Node-example
+// https://www.npmjs.com/package/connect-multiparty
+// app.post('/v1/user/uploads', multipartyMiddleware, function(req,res){
+//     console.log("here bitch");
+//     console.log(req.body);
+// });
 
 //POST post a new post
 //Create a new post and save it
 //Posts must have TITLE, TAG, VUNETID, DESCRIPTION, and PRICE
-app.post('/v1/user/:vunetid', function (req, res) {
+app.post('/v1/user/:vunetid', multipartyMiddleware,function (req, res) {
+
+    //TODO: https://gist.github.com/aheckmann/2408370
     let post = req.body;
+<<<<<<< HEAD
     console.log(post);
     if (!post || !post.title || !post.vunetid || !post.price || !post.description || !post.tag || !post.email) {
+=======
+    if (!post || !post.title || !post.vunetid || !post.price || !post.description || !post.tag) {
+>>>>>>> 84bcf686470b05f74de1311856910475b0f3fe82
         res.status(400).send({ error: 'title, owner, description, tag, and price are required' });
     } else {
         // Create the Post in the database
@@ -60,6 +74,13 @@ app.post('/v1/user/:vunetid', function (req, res) {
         });
     }
 });
+
+
+
+
+
+
+
 
 //PUT update a user
 //Update/edit user information in their userSchema
@@ -191,6 +212,9 @@ app.post('/v1/user/username/:post', function (req, res) {
         res.status(200).send('post deleted');
     }
 });
+
+
+
 
 
 
