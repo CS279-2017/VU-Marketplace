@@ -30,10 +30,6 @@ const postSchema = new Schema ({        //will need to add more requirements as 
     price: {type: String, required: true},
     tag: {type: String, required: true},
     vunetid: {type: String, required:true}, //VUNET ID
-<<<<<<< HEAD
-=======
-    email: {type: String, required:true}
->>>>>>> 51513e6d6855315fe0fa83b09acca1b5442032b5
 });
 
 const User = mongoose.model('User   ', userSchema);

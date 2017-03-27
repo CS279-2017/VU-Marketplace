@@ -13,5 +13,6 @@
     <orderEntry type="library" name="jquery-3.1.1" level="application" />
     <orderEntry type="library" name="ng-file-upload" level="application" />
     <orderEntry type="library" name="ng-file-upload-shim" level="application" />
+    <orderEntry type="library" name="jquery" level="application" />
   </component>
 </module>
