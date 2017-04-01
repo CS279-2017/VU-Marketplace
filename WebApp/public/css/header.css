@@ -14,7 +14,8 @@
 }
 
 #logo{
-    width: 100px;
+    width: 150px;
+    padding-top: 0;
 }
 
 .navbar{
@@ -24,8 +25,8 @@
     align-content: stretch;
 }
 
-.navbar-form{
-
+.container{
+    padding-top: 50px;
 }
 
 .nav > .navbar > .navbar-right{
