@@ -12,3 +12,10 @@ function getParameterByName(name, url) {
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
+
+function getFormData(){
+    const url = document.getElementById('search').value;
+    console.log(url);
+    window.location= 'listings.html?'+ url;
+}
+

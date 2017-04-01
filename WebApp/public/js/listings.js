@@ -8,18 +8,18 @@ app.controller('myCtrl', function($scope, $http) {
     //const username = cplee;
 
     let url = '/v1/posts';
+    const tag = getParameterByName('tag');
+    //http://stackoverflow.com/questions/16376438/get-path-and-query-string-from-url-using-javascript
     const window_url = window.location.pathname + window.location.search;
-    const pm = getParameterByName('tag', window_url);
 
-    if(pm == 'books' || pm == 'furniture' || pm == 'clothing' || pm == 'electronics' || pm == 'services' || 'other'){
-
+    if(tag == 'books' || tag == 'furniture' || tag == 'clothing' || tag == 'electronics' || tag == 'services' || tag == 'other'){
+        url = '/v1/posts/tag';
     }
-
 
     $http({
         method: 'GET',
         url: url,
-        data: window_url
+        params: {tag: tag, window_url: window_url}
     }).then(function successCallback(response) {
         console.log(response);
         $scope.info = [];
