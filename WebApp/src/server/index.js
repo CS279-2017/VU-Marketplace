@@ -24,11 +24,11 @@ db.on('error', console.error);
 
 let app = express();
 app.use(express.static('../../public'));
-app.use(logger('combined'));
+app.use(logger('comnobined'));
 app.use(bodyParser.json({}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
-    secret: 'keyboard cat',
+    secret: 'not a secret',
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 1000 * 60 * 60 * 24 * 30 }
@@ -36,6 +36,40 @@ app.use(session({
 
 
 //***********************************API********************************************************************
+
+
+// Handle POST to create a user session
+app.post('/v1/session', function(req, res) {
+    if (!req.body || !req.body.vunetid || !req.body.password) {
+        res.status(400).send({ error: 'VUNetID and password required'});
+    } else {
+        User.findOne({vunetid: req.body.vunetid}, (err, user) => {
+            if (err) {
+                console.error(err);
+                res.status(400).send({ error: 'Error signing in user [user could not be found]' });
+            } else {
+                if (user) {
+                    if (user == null) {
+                        console.error(err);
+                        res.status(400).send({ error: 'Error signing in user [user == null]' });
+                    } else if (req.body.password == user.password){
+                        req.session.vunetid = user.vunetid;
+                        req.session.primary_email = user.primary_email;
+                        req.session.user_id = user._id;
+
+                        res.status(201).send({
+                            vunetid:        user.vunetid,
+                            primary_email:  user.primary_email
+                        });
+                    } else {
+                        res.status(400).send({error: 'Error signing in user'});
+                    }
+                }
+            }
+        });
+    }
+});
+
 
 //https://github.com/danialfarid/ng-file-upload/wiki/Node-example
 // https://www.npmjs.com/package/connect-multiparty

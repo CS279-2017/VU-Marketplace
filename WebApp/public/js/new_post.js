@@ -22,6 +22,7 @@ app.controller('MyCtrl', ['$scope', 'Upload', '$timeout', function ($scope, Uplo
         });
 
         file.upload.then(function (response) {
+            window.location = 'listings.html';
             $timeout(function () {
                 file.result = response.data;
             });
