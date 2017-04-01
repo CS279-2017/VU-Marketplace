@@ -22,6 +22,7 @@ const userSchema = new Schema({
     vunetid:{type: String, required: true, unique: true} //VUnet id
 });
 
+
 const postSchema = new Schema ({        //will need to add more requirements as needed
     title: {type: String, required: true},
     description: {type: String, required: true},
@@ -30,6 +31,8 @@ const postSchema = new Schema ({        //will need to add more requirements as 
     price: {type: String, required: true},
     tag: {type: String, required: true},
     vunetid: {type: String, required:true}, //VUNET ID
+}).index({
+    "$::":"text"
 });
 
 const User = mongoose.model('User   ', userSchema);
