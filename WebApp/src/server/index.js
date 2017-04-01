@@ -198,6 +198,17 @@ app.get('/v1/posts/:id', function (req, res) {
     });
 });
 
+//GET POST BY TAG
+app.get('/v1/posts/tag', function (req, res) {
+    Post.find({tag: req.params.tag},(err, post) => {
+        if (err) {
+            res.status(401).send({error: 'unable to find posts'});
+        } else {
+            res.status(200).send(post);
+        }
+    });
+});
+
 //POST user session
 //Creates new user session
 app.post('/v1/session/:username', function (req, res) {
