@@ -24,7 +24,7 @@ db.on('error', console.error);
 
 let app = express();
 app.use(express.static('../../public'));
-app.use(logger('comnobined'));
+app.use(logger('combined'));
 app.use(bodyParser.json({}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
@@ -71,6 +71,47 @@ app.post('/v1/session', function(req, res) {
 });
 
 
+
+app.post('/v1/user', function(req, res) {
+    let user = req.body;
+    console.log("user: " + JSON.stringify(user));
+    // Ensure all required fields are included
+    const hasRequiredFields = ['vunetid', 'first_name', 'last_name', 'primary_email']
+        .every(property => user.hasOwnProperty(property));
+
+    if (!hasRequiredFields) {
+        return res.status(400).send({ error: 'Invalid payload' });
+    }
+
+    // // Verify the password is correct before we hash it (Mongoose does this, see db.js)
+    // const LOWER_UPPER_NUM_AND_SYMBOL_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*(_|[^\w])).+$/;
+    // if (user.password.length < 8 || !user.password.match(LOWER_UPPER_NUM_AND_SYMBOL_REGEX)) {
+    //     return res.status(400).send({ error: 'Invalid password format' });
+    // }
+
+    // Create the User in the database
+    new User(user).save((err, user) => {
+        if (err) {
+            console.error(err);
+            res.status(400).send({ error: 'Error creating user' });
+        } else {
+            console.log("userCreated: " + JSON.stringify(user));
+            // Add the proper session data
+            req.session.vunetid = user.vunetid;
+            req.session.primary_email = user.primary_email;
+            req.session.user_id = user._id;
+
+            res.status(201).send({
+                vunetid: user.vunetid,
+                primary_email: user.primary_email,
+            });
+        }
+    });
+});
+
+
+
+
 //https://github.com/danialfarid/ng-file-upload/wiki/Node-example
 // https://www.npmjs.com/package/connect-multiparty
 // app.post('/v1/user/uploads', multipartyMiddleware, function(req,res){
@@ -111,10 +152,6 @@ app.post('/v1/user/:vunetid', multipartyMiddleware ,function (req, res) {
         });
     }
 });
-
-
-
-
 
 
 

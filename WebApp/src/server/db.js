@@ -15,10 +15,10 @@ mongoose.connect(`mongodb://54.159.195.212:27017/`, err => {
 
 
 const userSchema = new Schema({
+    vunetid:{type: String, required: true, unique: true}, //VUnet id
     first_name: { type: String, required: true },
     last_name: { type: String, required:  true},
     primary_email: { type: String, required: true, unique: true}, //vanderbilt email address
-    vunetid:{type: String, required: true, unique: true}, //VUnet id
     password: {type: String, required: true},
 });
 
