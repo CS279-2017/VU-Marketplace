@@ -83,7 +83,8 @@
             //const username = cplee;
             $http({
                 method: 'GET',
-                url: '/v1/posts'
+                url: '/v1/posts',
+
             }).then(function successCallback(response) {
                 console.log(response);
                 $scope.info = [];

@@ -23,17 +23,16 @@ const userSchema = new Schema({
 });
 
 
-const postSchema = new Schema ({        //will need to add more requirements as needed
-    title: {type: String, required: true},
-    description: {type: String, required: true},
+let postSchema = new Schema ({        //will need to add more requirements as needed
+    title: {type: String, index: true,  required: true},
+    description: {type: String, index: true, required: true},
     img: { data: Buffer, contentType: String },
     startDate: {type: Date, required: true},
     price: {type: String, required: true},
-    tag: {type: String, required: true},
+    tag: {type: String, index: true, required: true},
     vunetid: {type: String, required:true}, //VUNET ID
-}).index({
-    "$::":"text"
 });
+
 
 const User = mongoose.model('User   ', userSchema);
 const Post = mongoose.model('Post', postSchema);

@@ -208,17 +208,54 @@ app.get('/v1/user/:vunetid/posts', function (req, res) {
         });
 });
 
+//GET POST BY TAG
+app.get('/v1/posts/tag', function (req, res) {
+    Post.find({tag: req.query.tag},(err, post) => {
+        if (err) {
+            res.status(401).send({error: 'unable to find posts'});
+        } else {
+            res.status(200).send(post);
+        }
+    });
+});
+
 
 //GET ALL POSTS
 //Receive all posts
 app.get('/v1/posts', function (req, res) {
-    Post.find({},(err, posts) => {
-        if (err) {
-            res.status(401).send({error: 'unable to find posts'});
-        } else {
-            res.status(200).send(posts);
-        }
-    });
+
+    //http://stackoverflow.com/questions/22094081/how-to-get-url-value-after-question-mark-in-javascript
+    let searchString = req.query.window_url;
+
+    if(searchString.indexOf("?") > -1){
+        searchString = req.query.window_url.substring(req.query.window_url.indexOf("?")+1);
+        searchString =  decodeURI(searchString);
+        searchString = searchString.toLocaleLowerCase();
+
+        //https://code.tutsplus.com/tutorials/full-text-search-in-mongodb--cms-24835
+        //http://stackoverflow.com/questions/39177201/not-able-to-create-index-using-mongoose
+        //const find = {'$text':{'$search': searchString}};
+
+        Post.find({ $text : { $search : searchString } },{ score : { $meta: "textScore" } })
+            .sort({ score : { $meta : 'textScore' } })
+            .exec(function(err, posts) {
+                if (err) {
+                    res.status(401).send({error: 'unable to find posts'});
+                } else {
+                    res.status(200).send(posts);
+                }
+            });
+
+    }else{
+        Post.find({},(err, post) => {
+            if (err) {
+                res.status(401).send({error: 'unable to find posts'});
+            } else {
+                res.status(200).send(post);
+            }
+        });
+    }
+
 });
 
 //GET POST BY ID
@@ -232,16 +269,7 @@ app.get('/v1/posts/:id', function (req, res) {
     });
 });
 
-//GET POST BY TAG
-app.get('/v1/posts/tag', function (req, res) {
-    Post.find({tag: req.params.tag},(err, post) => {
-        if (err) {
-            res.status(401).send({error: 'unable to find posts'});
-        } else {
-            res.status(200).send(post);
-        }
-    });
-});
+
 
 //POST user session
 //Creates new user session
