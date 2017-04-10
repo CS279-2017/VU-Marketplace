@@ -29,11 +29,11 @@ AccountController.prototype.hashPassword = function (password, salt, callback) {
 };
 
 
-AccountController.prototype.logon = function(email, password, callback) {
+AccountController.prototype.logon = function(vunetid, password, callback) {
 
     var me = this;
 
-    me.userModel.findOne({ primary_email: email }, function (err, user) {
+    me.userModel.findOne({ vunetid: vunetid }, function (err, user) {
 
         if (err) {
             return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }));
@@ -46,6 +46,7 @@ AccountController.prototype.logon = function(email, password, callback) {
                 if (passwordHash == user.passwordHash) {
 
                     var userProfileModel = new me.UserProfileModel({
+                        vunetid : user.vunetid,
                         primary_email: user.primary_email,
                         first_name: user.first_name,
                         last_name: user.last_name
@@ -95,6 +96,7 @@ AccountController.prototype.register = function (newUser, callback) {
                 if (numberAffected === 1) {
 
                     var userProfileModel = new me.UserProfileModel({
+                        vunetid : user.vunetid,
                         primary_email: user.primary_email,
                         first_name: user.first_name,
                         last_name: user.last_name

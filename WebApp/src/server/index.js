@@ -101,6 +101,7 @@ app.post('/v1/register', function(req, res) {
         passwordHashIn;
 
     var user = new User({
+        vunetid : req.body.vunetid,
         first_name : req.body.first_name,
         last_name : req.body.last_name,
         primary_email : req.body.primary_email,
