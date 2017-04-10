@@ -19,28 +19,28 @@ $(function() {
 
 
 $(document).ready(function() {
-    $('login-form').submit(function(e) {
-        console.log("REACHED");
-        e.preventDefault();
-
-        // http://stackoverflow.com/questions/1184624/convert-form-data-to-javascript-object-with-jquery
-        const formData = {};
-        $(e.target).serializeArray().map(function(x){formData[x.name] = x.value;});
-        console.log("reached2");
-        $.post('/v1/session', formData)
-            .done((result) => {
-                console.log("reached");
-                window.location = 'listings.html';
-                localStorage.setItem('vunetid', result.vunetid);
-                localStorage.setItem('primary_email', result.primary_email);
-            })
-            .fail((err) => {
-                alert('Could not authenticate user. Please try again.');
-                localStorage.removeItem('vunetid');
-                localStorage.removeItem('primary_email');
-                console.error(err);
-            });
-    });
+    // $('login-form').submit(function(e) {
+    //     console.log("REACHED");
+    //     e.preventDefault();
+    //
+    //     // http://stackoverflow.com/questions/1184624/convert-form-data-to-javascript-object-with-jquery
+    //     const formData = {};
+    //     $(e.target).serializeArray().map(function(x){formData[x.name] = x.value;});
+    //     console.log("reached2");
+    //     $.post('/v1/session', formData)
+    //         .done((result) => {
+    //             console.log("reached");
+    //             window.location = 'listings.html';
+    //             localStorage.setItem('vunetid', result.vunetid);
+    //             localStorage.setItem('primary_email', result.primary_email);
+    //         })
+    //         .fail((err) => {
+    //             alert('Could not authenticate user. Please try again.');
+    //             localStorage.removeItem('vunetid');
+    //             localStorage.removeItem('primary_email');
+    //             console.error(err);
+    //         });
+    // });
 /*
     $('register-form').submit(function(e) {
         e.preventDefault();

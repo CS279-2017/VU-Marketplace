@@ -16,6 +16,9 @@ let express         = require('express'),
 
 const User = require('./db').User;
 const Post = require('./db').Post;
+const Account  = require('./account');
+const MailerMock = require('./test/mailer-mock');
+var AccountController = require('./account');
 
 
 mongoose.Promise = global.Promise;
@@ -43,31 +46,45 @@ app.post('/v1/session', function(req, res) {
     if (!req.body || !req.body.vunetid || !req.body.password) {
         res.status(400).send({ error: 'VUNetID and password required'});
     } else {
-        User.findOne({vunetid: req.body.vunetid}, (err, user) => {
-            if (err) {
-                console.error(err);
-                res.status(400).send({ error: 'Error signing in user [user could not be found]' });
-            } else {
-                if (user) {
-                    if (user == null) {
-                        console.error(err);
-                        res.status(400).send({ error: 'Error signing in user [user == null]' });
-                    } else if (req.body.password == user.password){
-                        req.session.vunetid = user.vunetid;
-                        req.session.primary_email = user.primary_email;
-                        req.session.user_id = user._id;
+        let mailerMock = new MailerMock();
+        let controller = new AccountController(User, {},{}, mailerMock);
 
-                        res.status(201).send({
-                            vunetid:        user.vunetid,
-                            primary_email:  user.primary_email
-                        });
-                    } else {
-                        res.status(400).send({error: 'Error signing in user'});
-                    }
+        controller.logon(req.body.vunetid, req.body.password, function (err, apiResponse) {
+            if(err){
+                console.log(err);
+            }else{
+                console.log(apiResponse);
+                if(!apiResponse.success){
+                    res.status(400).send({error: apiResponse.msg});
                 }
             }
         });
     }
+        // User.findOne({vunetid: req.body.vunetid}, (err, user) => {
+        //     if (err) {
+        //         console.error(err);
+        //         res.status(400).send({ error: 'Error signing in user [user could not be found]' });
+        //     } else {
+        //         if (user) {
+        //             if (user == null) {
+        //                 console.error(err);
+        //                 res.status(400).send({ error: 'Error signing in user [user == null]' });
+        //             } else if (req.body.password == user.password){
+        //                 req.session.vunetid = user.vunetid;
+        //                 req.session.primary_email = user.primary_email;
+        //                 req.session.user_id = user._id;
+        //
+        //                 res.status(201).send({
+        //                     vunetid:        user.vunetid,
+        //                     primary_email:  user.primary_email
+        //                 });
+        //             } else {
+        //                 res.status(400).send({error: 'Error signing in user'});
+        //             }
+        //         }
+        //     }
+        // });
+
 });
 
 
@@ -307,12 +324,6 @@ app.get('/v1/posts/:id', function (req, res) {
 });
 
 
-
-//POST user session
-//Creates new user session
-app.post('/v1/session/:username', function (req, res) {
-
-});
 
 //DELETE post
 app.post('/v1/user/delete/:post', function (req, res) {
