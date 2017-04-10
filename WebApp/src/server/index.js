@@ -59,6 +59,8 @@ app.post('/v1/session', function(req, res) {
                 console.log(apiResponse);
                 if(!apiResponse.success){
                     res.status(400).send({error: apiResponse.msg});
+                }else{
+                    res.status(201).send(apiResponse.extras);
                 }
             }
         });
@@ -107,7 +109,7 @@ app.post('/v1/register', function(req, res) {
     });
 
     let mailerMock = new MailerMock();
-    let controller = new AccountController(User, {}, UserSession, mailerMock);
+    let controller = new AccountController(User, {}, mailerMock);
 
     controller.register(user, function (err, apiResponse) {
         if(err){

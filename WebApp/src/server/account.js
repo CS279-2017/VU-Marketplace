@@ -1,7 +1,7 @@
 /**
  * Created by Githiora_Wamunyu on 4/9/2017.
  */
-var AccountController = function (userModel, session, userSession, mailer) {
+var AccountController = function (userModel, session, mailer) {
     this.crypto = require('crypto');
     this.uuid = require('node-uuid');
     this.ApiResponse = require('./api-response');
@@ -11,7 +11,6 @@ var AccountController = function (userModel, session, userSession, mailer) {
     this.session = session;
     this.mailer = mailer;
 
-    this.userSession = userSession;
 
 };
 
@@ -40,9 +39,8 @@ AccountController.prototype.logon = function(email, password, callback) {
             return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }));
         }
 
-        // console.log(user.passwordSalt);
         if (user) {
-            console.log('found something');
+
             me.hashPassword(password, user.passwordSalt, function (err, passwordHash) {
 
                 if (passwordHash == user.passwordHash) {
@@ -53,41 +51,18 @@ AccountController.prototype.logon = function(email, password, callback) {
                         last_name: user.last_name
                     });
 
-                    // Save to http session.
                     me.session.userProfileModel = userProfileModel;
-                    me.session.id = me.uuid.v4();
 
-                    // Save to persistent session.
-                    me.userSession.userId = user._id;
-                    me.userSession.sessionId = me.session.id;
-
-                    console.log(me.userSession);
-
-                    me.userSession.save(function (err, sessionData, numberAffected) {
-
-                        if (err) {
-                            return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }));
+                    return callback(err, new me.ApiResponse({
+                        success: true, extras: {
+                            userProfileModel:userProfileModel
                         }
-
-                        if (numberAffected === 1) {
-                            // Return the user profile so the router sends it to the client app doing the logon.
-                            return callback(err, new me.ApiResponse({
-                                success: true, extras: {
-                                    userProfileModel: userProfileModel,
-                                    sessionId: me.session.id
-                                }
-                            }));
-                        } else {
-
-                            return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.COULD_NOT_CREATE_SESSION } }));
-                        }
-                    });
+                    }));
                 } else {
                     return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.INVALID_PWD } }));
                 }
             });
         } else {
-            console.log('other else');
             return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.EMAIL_NOT_FOUND } }));
         }
 
