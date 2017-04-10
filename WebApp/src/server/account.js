@@ -40,7 +40,8 @@ AccountController.prototype.logon = function(email, password, callback) {
             return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }));
         }
 
-        if (user && user.passwordSalt) {
+        // console.log(user.passwordSalt);
+        if (user) {
             console.log('found something');
             me.hashPassword(password, user.passwordSalt, function (err, passwordHash) {
 
@@ -59,6 +60,8 @@ AccountController.prototype.logon = function(email, password, callback) {
                     // Save to persistent session.
                     me.userSession.userId = user._id;
                     me.userSession.sessionId = me.session.id;
+
+                    console.log(me.userSession);
 
                     me.userSession.save(function (err, sessionData, numberAffected) {
 

@@ -41,63 +41,63 @@ $(document).ready(function() {
     //             console.error(err);
     //         });
     // });
-/*
-    $('register-form').submit(function(e) {
-        e.preventDefault();
-        console.log("REACHEDDD");
-        // http://stackoverflow.com/questions/1184624/convert-form-data-to-javascript-object-with-jquery
-        const formData = {};
-        $(e.target).serializeArray().map(function(x){formData[x.name] = x.value;});
 
-       // $("#error").hide();
-/!*        const valid = [validateUsername, validatePassword].every(validator => {
-            const error = validator(formData);
-            if (error) {
-                $("#error").text(error).show();
-                return false;
-            }
-            return true;
-        });
-
-        if (!valid) {
-            return;
-        }*!/
-
-        $.post('/v1/user', formData)
-            .done((result) => {
-                localStorage.setItem('vunetid', result.vunetid);
-                localStorage.setItem('email', result.primary_email);
-                window.location = `/listings.html`
-                console.log(result);
-            })
-            .fail((err) => {
-                alert('Error signing up. Please try again.');
-                console.error(err);
-            });
-    });*/
+    // $('register-form').submit(function(e) {
+    //     e.preventDefault();
+    //     console.log("REACHEDDD");
+    //     // http://stackoverflow.com/questions/1184624/convert-form-data-to-javascript-object-with-jquery
+    //     const formData = {};
+    //     $(e.target).serializeArray().map(function(x){formData[x.name] = x.value;});
+    //
+    //    // $("#error").hide();
+    //         const valid = [validateUsername, validatePassword].every(validator => {
+    //         const error = validator(formData);
+    //         if (error) {
+    //             $("#error").text(error).show();
+    //             return false;
+    //         }
+    //         return true;
+    //     });
+    //
+    //     if (!valid) {
+    //         return;
+    //     }
+    //
+    //     $.post('/v1/user', formData)
+    //         .done((result) => {
+    //             localStorage.setItem('vunetid', result.vunetid);
+    //             localStorage.setItem('email', result.primary_email);
+    //             window.location = `/listings.html`
+    //             console.log(result);
+    //         })
+    //         .fail((err) => {
+    //             alert('Error signing up. Please try again.');
+    //             console.error(err);
+    //         });
+    // });
 
 });
 
 $(document).ready(function() {
-    $('#register-form').submit(function(e) {
-        e.preventDefault();
-        console.log("REACHEDDD");
-        // http://stackoverflow.com/questions/1184624/convert-form-data-to-javascript-object-with-jquery
-        const formData = {};
-        $(e.target).serializeArray().map(function(x){formData[x.name] = x.value;});
-
-        $.post('/v1/user', formData)
-            .done((result) => {
-                localStorage.setItem('vunetid', result.vunetid);
-                localStorage.setItem('email', result.primary_email);
-                //window.location = `/listings.html`
-                console.log("user created");
-            })
-            .fail((err) => {
-                alert('Error signing up. Please try again.');
-                console.error(err);
-            });
-    });
+    // $('#register-form').submit(function(e) {
+    //     e.preventDefault();
+    //     console.log("REACHEDDD");
+    //     // http://stackoverflow.com/questions/1184624/convert-form-data-to-javascript-object-with-jquery
+    //     const formData = {};
+    //     $(e.target).serializeArray().map(function(x){formData[x.name] = x.value;});
+    //
+    //     $.post('/v1/user', formData)
+    //         .done((result) => {
+    //             localStorage.setItem('vunetid', result.vunetid);
+    //             localStorage.setItem('email', result.primary_email);
+    //             //window.location = `/listings.html`
+    //             console.log("user created");
+    //         })
+    //         .fail((err) => {
+    //             alert('Error signing up. Please try again.');
+    //             console.error(err);
+    //         });
+    // });
 });
 
 

@@ -14,11 +14,14 @@ let express         = require('express'),
     multiparty      = require('connect-multiparty'),
     multipartyMiddleware = multiparty();
 
-const User = require('./db').User;
+var User = require('./db').User;
 const Post = require('./db').Post;
 const Account  = require('./account');
 const MailerMock = require('./test/mailer-mock');
 var AccountController = require('./account');
+var crypt = require('crypto');
+var uuID = require('node-uuid');
+var UserSession = require('./user-session');
 
 
 mongoose.Promise = global.Promise;
@@ -87,6 +90,39 @@ app.post('/v1/session', function(req, res) {
 
 });
 
+app.post('/v1/register', function(req, res) {
+    // console.log(req.body);
+
+    var passwordSaltIn = uuID.v4(),
+        cryptoIterations = 10000, // Must match iterations used in controller#hashPassword.
+        cryptoKeyLen = 64,       // Must match keyLen used in controller#hashPassword.
+        passwordHashIn;
+
+    var user = new User({
+        first_name : req.body.first_name,
+        last_name : req.body.last_name,
+        primary_email : req.body.primary_email,
+        passwordHash : crypt.pbkdf2Sync(req.body.password, passwordSaltIn, cryptoIterations, cryptoKeyLen),
+        passwordSalt : passwordSaltIn
+    });
+
+    let mailerMock = new MailerMock();
+    let controller = new AccountController(User, {}, UserSession, mailerMock);
+
+    controller.register(user, function (err, apiResponse) {
+        if(err){
+            console.log(err);
+            res.status(400).send(err);
+        }
+
+        if (apiResponse.success){
+            console.log(apiResponse.extras);
+            res.status(201).send(apiResponse.extras);
+        }
+
+    });
+
+});
 
 
 app.post('/v1/user', function(req, res) {

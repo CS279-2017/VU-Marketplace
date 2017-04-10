@@ -12,9 +12,14 @@ mongoose.connect(`mongodb://54.159.195.212:27017/`, err => {
         process.exit();
     }else{
         console.log("Connected to MongoDB");
-        User.remove({}, function(err) {
-            console.log('collection removed');
-        });
+        // User.remove({}, function(err) {
+        //     if(err){
+        //         console.log(err);
+        //     }else{
+        //         console.log('collection removed');
+        //     }
+        //
+        // });
     }
 });
 
