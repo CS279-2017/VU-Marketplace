@@ -6,7 +6,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 mongoose.Promise = global.Promise;
-mongoose.connect(`mongodb://54.159.195.212:27017/`, err => {
+mongoose.connect(`mongodb://54.211.243.192:27017/`, err => {
     if (err) {
         console.error("ERROR: Could not connect to the mongo db. Is `mongod` running?");
         process.exit();

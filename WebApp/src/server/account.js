@@ -64,7 +64,7 @@ AccountController.prototype.logon = function(vunetid, password, callback) {
                 }
             });
         } else {
-            return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.EMAIL_NOT_FOUND } }));
+            return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.VUNETID_NOT_FOUND } }));
         }
 
     });
@@ -77,14 +77,16 @@ AccountController.prototype.logoff = function () {
 
 AccountController.prototype.register = function (newUser, callback) {
     var me = this;
-    me.userModel.findOne({ primary_email: newUser.primary_email }, function (err, user) {
+    me.userModel.findOne({ vunetid: newUser.vunetid }, function (err, user) {
 
         if (err) {
+            console.log('found one: ', err);
             return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }));
         }
 
         if (user) {
-            return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.EMAIL_ALREADY_EXISTS } }));
+            console.log('user: ', user);
+            return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.VUNETID_ALREADY_EXISTS } }));
         } else {
 
             newUser.save(function (err, user, numberAffected) {

@@ -22,6 +22,7 @@ var AccountController = require('./account');
 var crypt = require('crypto');
 var uuID = require('node-uuid');
 var UserSession = require('./user-session');
+var api_response = require('./api-response');
 
 
 mongoose.Promise = global.Promise;
@@ -51,17 +52,19 @@ app.post('/v1/session', function(req, res) {
     } else {
         let mailerMock = new MailerMock();
         let controller = new AccountController(User, {},{}, mailerMock);
+        // window.location.href = 'listings.html';
 
         controller.logon(req.body.vunetid, req.body.password, function (err, apiResponse) {
             if(err){
                 console.log(err);
             }else{
-                console.log(apiResponse);
+                // console.log(apiResponse);
                 if(!apiResponse.success){
-                    res.status(400).send({error: apiResponse.msg});
+                    res.status(400).send(apiResponse);
                 }else{
-                    res.status(201).send(apiResponse.extras);
+                    res.status(201).send(apiResponse);
                 }
+
             }
         });
     }
@@ -110,17 +113,18 @@ app.post('/v1/register', function(req, res) {
     });
 
     let mailerMock = new MailerMock();
-    let controller = new AccountController(User, {}, mailerMock);
+    let controller = new AccountController(User, {},{}, mailerMock);
 
     controller.register(user, function (err, apiResponse) {
         if(err){
-            console.log(err);
-            res.status(400).send(err);
+            // console.log(err);
+            res.status(400).send(apiResponse);
         }
-
         if (apiResponse.success){
             console.log(apiResponse.extras);
-            res.status(201).send(apiResponse.extras);
+            res.status(201).send(apiResponse);
+        }else{
+            res.status(400).send(apiResponse);
         }
 
     });

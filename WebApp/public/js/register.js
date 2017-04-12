@@ -17,30 +17,117 @@ $(function() {
 
 });
 
+"use strict";
 
+function onLoad() {
+    let buttonLogin = document.getElementById('login-submit');
+    let buttonRegister = document.getElementById('register-submit');
+    buttonLogin.addEventListener('click', onLogin, false );
+    buttonRegister.addEventListener('click', onRegister, false );
+}
+
+function onRegister(event) {
+    event.preventDefault();
+
+    const formData = {
+        vunetid:       document.getElementById('vunetid').value,
+        password:       document.getElementById('password').value,
+        first_name : document.getElementById('first_name').value,
+        last_name : document.getElementById('last_name').value,
+        primary_email : document.getElementById('primary_email').value
+    };
+    // console.log(formData);
+    $.post('/v1/register', formData)
+        .done((result) => {
+        console.log(result);
+            // alert('successfully registered');
+            window.location = 'listings.html';
+            // localStorage.setItem('vunetid', result.vunetid);
+            // localStorage.setItem('primary_email', result.primary_email);
+        })
+        .fail((err) => {
+            // alert('Could not authenticate user. Please try again.');
+            // localStorage.removeItem('vunetid');
+            // localStorage.removeItem('primary_email');
+            const apiResponse = JSON.parse(err.responseText);
+            // console.log(err);
+            switch (apiResponse.extras.msg){
+                case 'VUNETID_NOT_FOUND':
+                    alert('VunetID not found');
+                    break;
+                case 'VUNETID_ALREADY_EXISTS':
+                    alert('VunetID already exists');
+                    break;
+                case 'INVALID_PWD':
+                    alert('invalid password');
+                    break;
+                case 'DB_ERROR':
+                    alert('Unexpected error occurred');
+                    break;
+                case 'NOT_FOUND':
+                    alert('User not found');
+                    break;
+                case 'EMAIL_ALREADY_EXISTS':
+                    alert('Email address already exists');
+                    break;
+                case 'COULD_NOT_CREATE_USER':
+                    alert('Could not create user');
+                    break;
+            }
+        });
+
+}
+function onLogin(event) {
+    event.preventDefault();
+
+    const formData = {
+        vunetid:       document.getElementById('vunetid-login').value,
+        password:       document.getElementById('password-login').value
+    };
+    console.log(formData);
+    $.post('/v1/session', formData)
+        .done((result) => {
+            console.log("reached");
+            console.log('result = ',result);
+            window.location = 'listings.html';
+            // localStorage.setItem('vunetid', result.vunetid);
+            // localStorage.setItem('primary_email', result.primary_email);
+        })
+        .fail((err) => {
+            // localStorage.removeItem('vunetid');
+            // localStorage.removeItem('primary_email');
+            const apiResponse = JSON.parse(err.responseText);
+            switch (apiResponse.extras.msg){
+                case 'VUNETID_NOT_FOUND':
+                    alert('VunetID not found');
+                    break;
+                case 'INVALID_PWD':
+                    alert('invalid password');
+                    break;
+                case 'DB_ERROR':
+                    alert('Unexpected error occurred');
+                    break;
+                case 'NOT_FOUND':
+                    alert('User not found');
+                    break;
+                case 'EMAIL_ALREADY_EXISTS':
+                    alert('Email address already exists');
+                    break;
+                case 'COULD_NOT_CREATE_USER':
+                    alert('Could not create user');
+                    break;
+            }
+        });
+
+}
 $(document).ready(function() {
-    // $('login-form').submit(function(e) {
-    //     console.log("REACHED");
-    //     e.preventDefault();
-    //
-    //     // http://stackoverflow.com/questions/1184624/convert-form-data-to-javascript-object-with-jquery
-    //     const formData = {};
-    //     $(e.target).serializeArray().map(function(x){formData[x.name] = x.value;});
-    //     console.log("reached2");
-    //     $.post('/v1/session', formData)
-    //         .done((result) => {
-    //             console.log("reached");
-    //             window.location = 'listings.html';
-    //             localStorage.setItem('vunetid', result.vunetid);
-    //             localStorage.setItem('primary_email', result.primary_email);
-    //         })
-    //         .fail((err) => {
-    //             alert('Could not authenticate user. Please try again.');
-    //             localStorage.removeItem('vunetid');
-    //             localStorage.removeItem('primary_email');
-    //             console.error(err);
-    //         });
-    // });
+    // console.log("REACHED");
+    $('login-form').submit(function(e) {
+
+
+
+
+    });
 
     // $('register-form').submit(function(e) {
     //     e.preventDefault();
