@@ -12,6 +12,7 @@ let express         = require('express'),
     mongoose        = require('mongoose'),
     fs              = require('fs'),
     multiparty      = require('connect-multiparty'),
+    path            = require('path'),
     multipartyMiddleware = multiparty();
 
 var User = require('./db').User;
@@ -30,10 +31,10 @@ var db = mongoose.connection;
 db.on('error', console.error);
 
 let app = express();
-app.use(express.static('../../public'));
 app.use(logger('combined'));
 app.use(bodyParser.json({}));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '../../public')));
 app.use(session({
     secret: 'not a secret',
     resave: false,
@@ -43,6 +44,20 @@ app.use(session({
 
 
 //***********************************API********************************************************************
+
+var sess;
+app.get('/',function(req,res){
+    // console.log(sess);
+    sess=req.session;
+    // console.log('after resetting: ', sess);
+    if(sess.vunetid) {
+        res.sendFile(path.join(__dirname, '../../public', 'listings.html'));
+    }
+    else {
+        // console.log('sesh has no vunetid');
+        res.sendFile(path.join(__dirname, '../../public', 'register.html'));
+    }
+});
 
 
 // Handle POST to create a user session
@@ -58,11 +73,15 @@ app.post('/v1/session', function(req, res) {
             if(err){
                 console.log(err);
             }else{
-                // console.log(apiResponse);
                 if(!apiResponse.success){
                     res.status(400).send(apiResponse);
                 }else{
+                    sess = req.session;
+                    sess.vunetid=req.body.vunetid;
+                    // console.log(req.session);
+                    // console.log('after logging in: ', sess);
                     res.status(201).send(apiResponse);
+                    res.end('done');
                 }
 
             }
@@ -378,8 +397,6 @@ app.post('/v1/user/delete/:post', function (req, res) {
         res.status(200).send('post deleted');
     }
 });
-
-
 
 
 

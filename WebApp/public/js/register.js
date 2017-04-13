@@ -97,6 +97,7 @@ function onLogin(event) {
             // localStorage.removeItem('vunetid');
             // localStorage.removeItem('primary_email');
             const apiResponse = JSON.parse(err.responseText);
+            // console.log(err);
             switch (apiResponse.extras.msg){
                 case 'VUNETID_NOT_FOUND':
                     alert('VunetID not found');
